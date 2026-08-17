@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Navbar } from "./components/layout/Navbar";
 import { Footer } from "./components/layout/Footer";
 import { ScrollToTop } from "./components/layout/ScrollToTop";
+import { FloatingAssistant } from "./components/common/FloatingAssistant";
 
 // Pages
 import { HomePage } from "./pages/HomePage";
@@ -87,6 +88,9 @@ export const App: React.FC = () => {
 
         {/* Global Multi-Column Footer */}
         <Footer />
+
+        {/* Global Floating Quick Solar Assistant & WhatsApp Widget */}
+        <FloatingAssistant />
       </div>
     </Router>
   );

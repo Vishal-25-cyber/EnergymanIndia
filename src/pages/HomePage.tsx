@@ -24,8 +24,11 @@ import { HeroCarousel } from "../components/common/HeroCarousel";
 import { StatCounter } from "../components/common/StatCounter";
 import { SolutionsCarousel } from "../components/common/SolutionsCarousel";
 import { SavingsCalculator } from "../components/common/SavingsCalculator";
+import { LiveSolarTelemetry } from "../components/common/LiveSolarTelemetry";
+import { EMIFinanceCalculator } from "../components/common/EMIFinanceCalculator";
 import { EnergyFlowDiagram } from "../components/common/EnergyFlowDiagram";
 import { TechnologyCarousel } from "../components/common/TechnologyCarousel";
+import { LiveSCADADemo } from "../components/common/LiveSCADADemo";
 import { ProjectCarousel } from "../components/common/ProjectCarousel";
 import { TestimonialCarousel } from "../components/common/TestimonialCarousel";
 import { FAQAccordion } from "../components/common/FAQAccordion";
@@ -53,6 +56,12 @@ export const HomePage: React.FC = () => {
 
       {/* 04. INTERACTIVE SOLAR SAVINGS CALCULATOR */}
       <SavingsCalculator />
+
+      {/* 04B. LIVE SOLAR TELEMETRY & TILT OPTIMIZER */}
+      <LiveSolarTelemetry />
+
+      {/* 04C. ZERO UPFRONT EMI & SOLAR FINANCING CALCULATOR */}
+      <EMIFinanceCalculator />
 
       {/* 05. WHY ENERGY MAN INDIA (6 Feature Cards) */}
       <section className="section-padding bg-brand-950 relative overflow-hidden">
@@ -147,6 +156,9 @@ export const HomePage: React.FC = () => {
 
       {/* 07. HARDWARE TECHNOLOGY CAROUSEL */}
       <TechnologyCarousel />
+
+      {/* 07B. LIVE SCADA PLANT TELEMETRY DEMONSTRATION */}
+      <LiveSCADADemo />
 
       {/* 08. PRODUCTS CATALOGUE PREVIEW */}
       <section className="section-padding bg-brand-950 relative overflow-hidden" id="products">
