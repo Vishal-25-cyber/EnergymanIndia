@@ -14,6 +14,7 @@ import {
 import { SEOHead } from "../../components/common/SEOHead";
 import { solutionsData } from "../../data/solutions";
 import { companyData } from "../../data/company";
+import { SolarHealthAudit } from "../../components/common/SolarHealthAudit";
 import { FAQAccordion } from "../../components/common/FAQAccordion";
 
 export const SolarEPCMaintenancePage: React.FC = () => {
@@ -146,6 +147,9 @@ export const SolarEPCMaintenancePage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Interactive Fault & Plant Health Audit Tool */}
+      <SolarHealthAudit />
 
       {/* FAQs */}
       <section className="section-padding bg-brand-950/90 border-t border-slate-800">

@@ -30,6 +30,7 @@ import { EnergyFlowDiagram } from "../components/common/EnergyFlowDiagram";
 import { TechnologyCarousel } from "../components/common/TechnologyCarousel";
 import { LiveSCADADemo } from "../components/common/LiveSCADADemo";
 import { ProjectCarousel } from "../components/common/ProjectCarousel";
+import { BeforeAfterSolar } from "../components/common/BeforeAfterSolar";
 import { TestimonialCarousel } from "../components/common/TestimonialCarousel";
 import { FAQAccordion } from "../components/common/FAQAccordion";
 import { productsData } from "../data/products";
@@ -241,6 +242,9 @@ export const HomePage: React.FC = () => {
 
       {/* 09. PROJECTS SHOWCASE CAROUSEL */}
       <ProjectCarousel />
+
+      {/* 09B. BEFORE & AFTER SOLAR ECONOMIC TRANSFORMATION */}
+      <BeforeAfterSolar />
 
       {/* 10. GOVERNMENT SUBSIDY TIMELINE STRIP */}
       <section className="section-padding bg-brand-950/80 relative overflow-hidden" id="subsidy">
