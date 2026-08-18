@@ -118,9 +118,9 @@ export const SavingsCalculator: React.FC = () => {
       <div className="absolute top-0 right-1/3 w-96 h-96 bg-energy-500/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-solar-500/5 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="site-container relative z-10">
+      <div className="site-container relative z-10 space-y-12">
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
+        <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-solar-500/10 text-solar-400 border border-solar-500/30">
             <Calculator className="w-3.5 h-3.5" />
             <span>Interactive ROI & Subsidy Estimator</span>
@@ -148,7 +148,7 @@ export const SavingsCalculator: React.FC = () => {
                   onClick={() => setPropertyType("residential")}
                   className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold transition-all ${
                     propertyType === "residential"
-                      ? "bg-energy-500/15 border-energy-500 text-energy-400 shadow-md"
+                      ? "bg-energy-500/15 border-energy-500 text-energy-400 shadow-md ring-1 ring-energy-500/40"
                       : "bg-brand-850 border-slate-700/80 text-slate-300 hover:border-slate-600"
                   }`}
                 >
@@ -161,7 +161,7 @@ export const SavingsCalculator: React.FC = () => {
                   onClick={() => setPropertyType("commercial")}
                   className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold transition-all ${
                     propertyType === "commercial"
-                      ? "bg-solar-500/15 border-solar-500 text-solar-400 shadow-md"
+                      ? "bg-solar-500/15 border-solar-500 text-solar-400 shadow-md ring-1 ring-solar-500/40"
                       : "bg-brand-850 border-slate-700/80 text-slate-300 hover:border-slate-600"
                   }`}
                 >
@@ -174,7 +174,7 @@ export const SavingsCalculator: React.FC = () => {
                   onClick={() => setPropertyType("industrial")}
                   className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold transition-all ${
                     propertyType === "industrial"
-                      ? "bg-blue-500/15 border-blue-500 text-blue-400 shadow-md"
+                      ? "bg-blue-500/15 border-blue-500 text-blue-400 shadow-md ring-1 ring-blue-500/40"
                       : "bg-brand-850 border-slate-700/80 text-slate-300 hover:border-slate-600"
                   }`}
                 >
@@ -187,7 +187,7 @@ export const SavingsCalculator: React.FC = () => {
                   onClick={() => setPropertyType("agricultural")}
                   className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold transition-all ${
                     propertyType === "agricultural"
-                      ? "bg-emerald-500/15 border-emerald-500 text-emerald-400 shadow-md"
+                      ? "bg-emerald-500/15 border-emerald-500 text-emerald-400 shadow-md ring-1 ring-emerald-500/40"
                       : "bg-brand-850 border-slate-700/80 text-slate-300 hover:border-slate-600"
                   }`}
                 >
@@ -203,7 +203,7 @@ export const SavingsCalculator: React.FC = () => {
                 <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
                   2. Average Monthly Electricity Bill
                 </label>
-                <span className="text-lg font-extrabold text-solar-400 bg-brand-850 px-3 py-1 rounded-lg border border-slate-700">
+                <span className="text-lg font-extrabold text-solar-400 bg-brand-850 px-3 py-1 rounded-lg border border-slate-700 font-mono shadow-md">
                   ₹{monthlyBill.toLocaleString("en-IN")}
                 </span>
               </div>
@@ -293,7 +293,7 @@ export const SavingsCalculator: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right self-end sm:self-auto">
-                    <span className="text-lg font-black text-solar-400">
+                    <span className="text-lg font-black text-solar-400 font-mono">
                       - ₹{calculation.subsidyAmount.toLocaleString("en-IN")}
                     </span>
                   </div>
@@ -308,7 +308,7 @@ export const SavingsCalculator: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-xs text-slate-400 block">25-Year Net Savings</span>
-                    <strong className="text-lg sm:text-xl font-black text-white">
+                    <strong className="text-lg sm:text-xl font-black text-white font-mono">
                       ₹{calculation.lifetimeSavingsLakhs} Lakhs
                     </strong>
                   </div>
@@ -320,7 +320,7 @@ export const SavingsCalculator: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-xs text-slate-400 block">Lifetime CO₂ Offset</span>
-                    <strong className="text-lg sm:text-xl font-black text-white">
+                    <strong className="text-lg sm:text-xl font-black text-white font-mono">
                       {calculation.annualCo2Tons} Tons/yr
                     </strong>
                   </div>
@@ -334,10 +334,10 @@ export const SavingsCalculator: React.FC = () => {
                 </div>
                 <Link
                   to={`/get-a-quote?type=${propertyType}&bill=${monthlyBill}&kw=${calculation.recommendedKw}`}
-                  className="btn-primary w-full sm:w-auto py-3 px-6 text-sm font-bold shrink-0 inline-flex items-center gap-2 group"
+                  className="btn-primary w-full sm:w-auto py-3 px-6 text-sm font-bold shrink-0 inline-flex items-center gap-2 group shimmer-container"
                 >
                   <span>Claim Your Solar Plan</span>
-                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1.5" />
                 </Link>
               </div>
             </div>

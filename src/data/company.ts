@@ -113,40 +113,22 @@ export const companyData: CompanyData = {
   ],
   metrics: [
     {
-      label: "Years of Engineering Experience",
-      value: 10,
+      label: "Happy Customer",
+      value: 6500,
       suffix: "+",
-      description: "Dedicated solar engineering and EPC expertise"
+      description: "Satisfied customers across India"
     },
     {
-      label: "Solar Projects Commissioned",
-      value: 2500,
+      label: "Industrial Solar Solutions",
+      value: 800,
       suffix: "+",
-      description: "Across residential, industrial, and agricultural sectors"
+      description: "Commissioned industrial projects"
     },
     {
-      label: "Installed Solar Capacity",
-      value: 35,
-      suffix: " MW+",
-      description: "Generating clean power across South India"
-    },
-    {
-      label: "Direct Electricity Bill Savings",
-      value: 90,
-      suffix: "%",
-      description: "Average bill reduction achieved for clients"
-    },
-    {
-      label: "Annual CO2 Offset",
-      value: 42000,
-      suffix: " Tons",
-      description: "Contributing to carbon neutrality and clean air"
-    },
-    {
-      label: "Customer Satisfaction",
-      value: 99,
-      suffix: "%",
-      description: "Backed by 25-year panel performance warranties"
+      label: "City Presence",
+      value: 40,
+      suffix: "+",
+      description: "Active locations across the nation"
     }
   ],
   socialLinks: {

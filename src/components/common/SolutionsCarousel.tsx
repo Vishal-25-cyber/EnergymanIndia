@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronLeft,
@@ -14,6 +14,7 @@ import {
   Sparkles
 } from "lucide-react";
 import { solutionsData } from "../../data/solutions";
+import { ScrollReveal } from "./ScrollReveal";
 
 const getIcon = (iconName: string) => {
   switch (iconName) {
@@ -36,6 +37,7 @@ const getIcon = (iconName: string) => {
 
 export const SolutionsCarousel: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const touchStartRef = useRef<number | null>(null);
 
   // Visible cards: Desktop 3, Tablet 2, Mobile 1
@@ -48,6 +50,16 @@ export const SolutionsCarousel: React.FC = () => {
   const prevSlide = () => {
     setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
   };
+
+  // Automatic slide movement
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      nextSlide();
+    }, 4500);
+
+    return () => clearInterval(timer);
+  }, [isPaused, currentIndex]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartRef.current = e.touches[0].clientX;
@@ -62,44 +74,43 @@ export const SolutionsCarousel: React.FC = () => {
   };
 
   return (
-    <section className="section-padding bg-brand-950 relative overflow-hidden" id="solutions">
+    <section
+      className="section-padding bg-brand-950 relative overflow-hidden"
+      id="solutions"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
       {/* Subtle Background Glow */}
       <div className="absolute top-1/2 left-0 w-80 h-80 bg-energy-500/5 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-80 h-80 bg-solar-500/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="site-container relative z-10">
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-          <div className="space-y-3 max-w-2xl">
+        <ScrollReveal animation="slide-up">
+          {/* Section Header */}
+          <div className="max-w-3xl mb-12 space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-energy-500/10 text-energy-400 border border-energy-500/30">
               <Sparkles className="w-3.5 h-3.5" />
               <span>Tailored Renewable Engineering</span>
             </div>
             <h2 className="heading-section">
-              ENERGY SOLUTIONS FOR <span className="bg-gradient-to-r from-energy-400 to-solar-400 bg-clip-text text-transparent">EVERY SCALE</span>
+              OUR <span className="bg-gradient-to-r from-energy-400 to-solar-400 bg-clip-text text-transparent">SERVICES</span>
             </h2>
             <p className="text-subtle">
-              From independent villas and agricultural pump systems to multi-megawatt industrial manufacturing plants, we engineer clean energy systems built for maximum yield and rapid ROI.
+              Energyman Power Technologies (India) Pvt. Ltd., a decade-strong company, delivers comprehensive solar solutions from residential rooftops to large-scale industrial projects, including expertise in agricultural applications. We are a proud MNRE subsidy partner, committed to uncompromising quality throughout every project stage.
             </p>
           </div>
+        </ScrollReveal>
 
-          {/* Carousel Controls */}
-          <div className="flex items-center gap-3 self-start md:self-auto">
-            <button
-              onClick={prevSlide}
-              className="w-12 h-12 rounded-2xl bg-brand-900 hover:bg-brand-850 border border-slate-700/80 text-slate-200 hover:text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg focus:outline-none focus:ring-2 focus:ring-energy-500"
-              aria-label="Previous Solution"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="w-12 h-12 rounded-2xl bg-brand-900 hover:bg-brand-850 border border-slate-700/80 text-slate-200 hover:text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg focus:outline-none focus:ring-2 focus:ring-energy-500"
-              aria-label="Next Solution"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
+        {/* Connected Energy Circuit Track */}
+        <div className="hidden lg:flex items-center justify-between mb-6 px-4">
+          <div className="flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-energy-400 animate-ping" />
+            <span className="text-[11px] font-mono uppercase tracking-widest text-energy-400 font-bold">Grid Solution Stream Active</span>
           </div>
+          <div className="flex-1 mx-6 h-px bg-gradient-to-r from-energy-500/40 via-solar-400/30 to-energy-500/40 relative">
+            <div className="absolute top-0 bottom-0 w-24 bg-gradient-to-r from-transparent via-energy-400 to-transparent animate-[energyTravelHorizontal_4s_ease-in-out_infinite]" />
+          </div>
+          <span className="text-[11px] font-mono text-slate-400">01 — 06 Systems</span>
         </div>
 
         {/* Carousel Viewport */}
@@ -114,25 +125,28 @@ export const SolutionsCarousel: React.FC = () => {
               transform: `translateX(-${currentIndex * (100 / (window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1))}%)`
             }}
           >
-            {solutionsData.map((item) => (
+            {solutionsData.map((item, sIndex) => (
               <div
                 key={item.id}
                 className="w-full sm:w-1/2 lg:w-1/3 px-3 shrink-0"
               >
-                <div className="h-full flex flex-col bg-brand-900/70 backdrop-blur-md border border-slate-800 rounded-3xl overflow-hidden hover:border-energy-500/50 hover:shadow-2xl hover:shadow-energy-500/10 transition-all duration-300 group">
-                  {/* Card Image Container with Zoom */}
-                  <div className="relative h-60 sm:h-64 overflow-hidden">
+                <div className="h-full flex flex-col bg-brand-900/60 backdrop-blur-md border border-slate-800/80 rounded-2xl overflow-hidden transition-all duration-500 ease-out group hover:border-energy-500/50 hover:shadow-2xl hover:shadow-energy-500/[0.12] hover:-translate-y-2 relative">
+                  {/* Active top line accent on hover */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-energy-500 via-solar-400 to-energy-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
+
+                  {/* Card Image Container with Zoom & Shimmer */}
+                  <div className="relative h-60 sm:h-64 overflow-hidden bg-brand-950 shimmer-container">
                     <img
                       src={item.heroImage}
                       alt={item.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-[1.05]"
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-brand-950/40 to-transparent" />
                     
                     {/* Tag Badge */}
                     <div className="absolute top-4 left-4">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-brand-950/80 backdrop-blur-md text-slate-200 border border-slate-700">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-brand-950/90 backdrop-blur-md text-slate-200 border border-slate-700 shadow-md">
                         {getIcon(item.icon)}
                         <span>{item.tag}</span>
                       </span>
@@ -149,10 +163,10 @@ export const SolutionsCarousel: React.FC = () => {
 
                     {/* Typical ROI Tag */}
                     <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between text-xs text-slate-300">
-                      <span className="bg-brand-900/90 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-700 font-semibold">
+                      <span className="bg-brand-900/90 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-700 font-semibold shadow-md">
                         ROI: <span className="text-energy-400 font-bold">{item.typicalRoi}</span>
                       </span>
-                      <span className="bg-brand-900/90 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-700 font-semibold text-slate-300">
+                      <span className="bg-brand-900/90 backdrop-blur-md px-2.5 py-1 rounded-lg border border-slate-700 font-semibold text-slate-300 shadow-md">
                         Capacity: {item.systemSizes.split("(")[0]}
                       </span>
                     </div>
@@ -169,7 +183,7 @@ export const SolutionsCarousel: React.FC = () => {
                       </p>
 
                       {/* Key highlights list */}
-                      <ul className="space-y-2 pt-2 border-t border-slate-800">
+                      <ul className="space-y-2 pt-2 border-t border-slate-800/80">
                         {item.keyBenefits.slice(0, 3).map((benefit, bIdx) => (
                           <li key={bIdx} className="flex items-start gap-2 text-xs text-slate-300">
                             <CheckCircle2 className="w-3.5 h-3.5 text-energy-400 shrink-0 mt-0.5" />
@@ -183,10 +197,10 @@ export const SolutionsCarousel: React.FC = () => {
                     <div className="pt-2">
                       <Link
                         to={`/solutions/${item.slug}`}
-                        className="inline-flex items-center justify-between w-full px-4 py-3 rounded-xl bg-brand-850 hover:bg-energy-500 text-slate-200 hover:text-brand-950 font-semibold text-xs sm:text-sm transition-all duration-300 border border-slate-700/80 hover:border-energy-400 group/btn"
+                        className="inline-flex items-center justify-between w-full px-4 py-3 rounded-xl bg-brand-850/80 hover:bg-energy-500 text-slate-200 hover:text-brand-950 font-bold text-xs sm:text-sm transition-all duration-300 border border-slate-700/80 hover:border-energy-400 group/btn shadow-md"
                       >
                         <span>Explore {item.shortTitle}</span>
-                        <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
+                        <ArrowRight className="w-4 h-4 transition-transform duration-300 group-hover/btn:translate-x-1.5" />
                       </Link>
                     </div>
                   </div>

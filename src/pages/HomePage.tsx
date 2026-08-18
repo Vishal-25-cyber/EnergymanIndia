@@ -37,6 +37,7 @@ import { productsData } from "../data/products";
 import { blogsData } from "../data/blogs";
 import { subsidyProcessTimeline } from "../data/subsidies";
 import { companyData } from "../data/company";
+import { ScrollReveal } from "../components/common/ScrollReveal";
 
 export const HomePage: React.FC = () => {
   return (
@@ -64,23 +65,36 @@ export const HomePage: React.FC = () => {
       {/* 04C. ZERO UPFRONT EMI & SOLAR FINANCING CALCULATOR */}
       <EMIFinanceCalculator />
 
-      {/* 05. WHY ENERGY MAN INDIA (6 Feature Cards) */}
+      {/* 05. WHY ENERGY MAN INDIA (6 Feature Cards with Central Energy Core) */}
       <section className="section-padding bg-brand-950 relative overflow-hidden">
+        {/* Background Grid and Central Subtle Energy Core */}
+        <div className="absolute inset-0 bg-tech-grid opacity-35 pointer-events-none" />
+        
+        {/* Central Energy Core Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] rounded-full pointer-events-none animate-sun-glow"
+          style={{
+            background: "radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(245, 158, 11, 0.05) 50%, transparent 75%)"
+          }}
+        />
+
         <div className="site-container relative z-10">
-          <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-energy-500/10 text-energy-400 border border-energy-500/30">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>The Energy Man Advantage</span>
+          <ScrollReveal animation="slide-up">
+            <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-energy-500/10 text-energy-400 border border-energy-500/30">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>The Energy Man Advantage</span>
+              </div>
+              <h2 className="heading-section">
+                WHY <span className="bg-gradient-to-r from-energy-400 to-solar-400 bg-clip-text text-transparent">ENERGY MAN?</span>
+              </h2>
+              <p className="text-subtle">
+                At Energyman, we understand that going solar is a big decision. You need a partner you can trust, one who will be with you every step of the way, from initial consultation to long-term support. Here's why choosing us is the smart choice.
+              </p>
             </div>
-            <h2 className="heading-section">
-              WHY <span className="bg-gradient-to-r from-energy-400 to-solar-400 bg-clip-text text-transparent">ENERGY MAN?</span>
-            </h2>
-            <p className="text-subtle">
-              Solar is a 25-year structural and electrical investment. Here is why homeowners, farmers, and industrial conglomerates trust us with their critical energy infrastructure.
-            </p>
-          </div>
+          </ScrollReveal>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            {/* Feature Cards Mapping */}
             {[
               {
                 step: "01",
@@ -118,35 +132,39 @@ export const HomePage: React.FC = () => {
                 desc: "Dedicated post-commissioning Operations & Maintenance (O&M) teams, rapid breakdown response SLAs, and scheduled panel cleaning.",
                 icon: <ShieldCheck className="w-6 h-6 text-purple-400" />
               }
-            ].map((feature) => (
-              <div
-                key={feature.step}
-                className="bg-brand-900/60 backdrop-blur-md border border-slate-800 rounded-3xl p-7 hover:border-energy-500/40 hover:bg-brand-850/80 hover:shadow-2xl hover:shadow-energy-500/5 transition-all duration-300 group flex flex-col justify-between space-y-4"
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="p-3 rounded-2xl bg-brand-850 border border-slate-700/80 group-hover:scale-110 transition-transform">
-                      {feature.icon}
+            ].map((feature, index) => (
+              <ScrollReveal key={feature.step} delay={index * 90} animation="slide-up">
+                <div
+                  className="h-full bg-brand-900/70 backdrop-blur-xl border border-slate-800/80 rounded-3xl p-7 hover:border-energy-500/50 hover:bg-brand-850/90 hover:-translate-y-2 hover:shadow-2xl hover:shadow-energy-500/[0.1] transition-all duration-500 group flex flex-col justify-between space-y-4 relative overflow-hidden"
+                >
+                  {/* Subtle energy line on top of card on hover */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-energy-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="p-3 rounded-2xl bg-brand-850 border border-slate-700/80 group-hover:scale-110 group-hover:border-energy-500/40 transition-transform shadow-md">
+                        {feature.icon}
+                      </div>
+                      <span className="text-xs font-mono font-bold text-slate-400 bg-brand-950 px-2.5 py-1 rounded-lg border border-slate-800 group-hover:text-energy-400 transition-colors">
+                        {feature.step}
+                      </span>
                     </div>
-                    <span className="text-xs font-mono font-bold text-slate-400 bg-brand-950 px-2.5 py-1 rounded-lg border border-slate-800">
-                      {feature.step}
-                    </span>
+
+                    <h3 className="text-lg font-bold text-white group-hover:text-energy-400 transition-colors">
+                      {feature.title}
+                    </h3>
+
+                    <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                      {feature.desc}
+                    </p>
                   </div>
 
-                  <h3 className="text-lg font-bold text-white group-hover:text-energy-400 transition-colors">
-                    {feature.title}
-                  </h3>
-
-                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-                    {feature.desc}
-                  </p>
+                  <div className="pt-3 border-t border-slate-800/80 flex items-center gap-1.5 text-xs text-energy-400 font-semibold opacity-80 group-hover:opacity-100 transition-opacity">
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Verified EPC Benchmark</span>
+                  </div>
                 </div>
-
-                <div className="pt-2 border-t border-slate-800/80 flex items-center gap-1.5 text-xs text-energy-400 font-semibold">
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Verified EPC Benchmark</span>
-                </div>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
         </div>
@@ -188,53 +206,54 @@ export const HomePage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {productsData.slice(0, 3).map((prod) => (
-              <div
-                key={prod.id}
-                className="bg-brand-900/70 border border-slate-800 rounded-3xl overflow-hidden hover:border-solar-500/40 hover:shadow-2xl hover:shadow-solar-500/10 transition-all duration-300 group flex flex-col justify-between"
-              >
-                <div>
-                  <div className="relative h-56 overflow-hidden bg-brand-950">
-                    <img
-                      src={prod.mainImage}
-                      alt={prod.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                      loading="lazy"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-transparent to-transparent" />
-                    <span className="absolute top-4 left-4 badge-emerald text-xs font-semibold">
-                      {prod.categoryLabel}
-                    </span>
-                  </div>
+            {productsData.slice(0, 3).map((prod, index) => (
+              <ScrollReveal key={prod.id} delay={index * 100} animation="slide-up">
+                <div
+                  className="bg-brand-900/70 border border-slate-800 rounded-3xl overflow-hidden hover:border-solar-500/50 hover:-translate-y-2 hover:shadow-2xl hover:shadow-solar-500/10 transition-all duration-500 group flex flex-col justify-between h-full"
+                >
+                  <div>
+                    <div className="relative h-56 overflow-hidden bg-brand-950">
+                      <img
+                        src={prod.mainImage}
+                        alt={prod.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                        loading="lazy"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-transparent to-transparent" />
+                      <span className="absolute top-4 left-4 badge-emerald text-xs font-semibold backdrop-blur-md shadow-lg">
+                        {prod.categoryLabel}
+                      </span>
+                    </div>
 
-                  <div className="p-6 space-y-3">
-                    <h3 className="text-lg font-bold text-white group-hover:text-solar-400 transition-colors line-clamp-2">
-                      {prod.name}
-                    </h3>
-                    <p className="text-xs text-slate-400 line-clamp-2">
-                      {prod.tagline}
-                    </p>
+                    <div className="p-6 space-y-3">
+                      <h3 className="text-lg font-bold text-white group-hover:text-solar-400 transition-colors line-clamp-2">
+                        {prod.name}
+                      </h3>
+                      <p className="text-xs text-slate-400 line-clamp-2">
+                        {prod.tagline}
+                      </p>
 
-                    <div className="space-y-1.5 pt-3 border-t border-slate-800">
-                      {prod.features.slice(0, 2).map((f, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-xs text-slate-300">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-solar-400 shrink-0" />
-                          <span className="line-clamp-1">{f}</span>
-                        </div>
-                      ))}
+                      <div className="space-y-1.5 pt-3 border-t border-slate-800">
+                        {prod.features.slice(0, 2).map((f, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-xs text-slate-300">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-solar-400 shrink-0" />
+                            <span className="line-clamp-1">{f}</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="p-6 pt-0">
-                  <Link
-                    to={`/products/${prod.category}?item=${prod.slug}`}
-                    className="btn-primary w-full py-2.5 text-xs font-bold text-center justify-center"
-                  >
-                    View Technical Specifications →
-                  </Link>
+                  <div className="p-6 pt-0">
+                    <Link
+                      to={`/products/${prod.category}?item=${prod.slug}`}
+                      className="btn-primary w-full py-2.5 text-xs font-bold text-center justify-center transition-transform hover:scale-[1.02]"
+                    >
+                      View Technical Specifications →
+                    </Link>
+                  </div>
                 </div>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
         </div>
@@ -264,12 +283,15 @@ export const HomePage: React.FC = () => {
                 </p>
               </div>
 
-              <Link
-                to="/government-subsidy"
-                className="btn-solar py-3.5 px-6 font-bold text-xs sm:text-sm whitespace-nowrap self-start lg:self-auto"
-              >
-                <span>Read Full Subsidy Guide →</span>
-              </Link>
+              <ScrollReveal animation="fade-in" delay={100}>
+                <Link
+                  to="/government-subsidy"
+                  className="btn-solar py-3.5 px-6 font-bold text-xs sm:text-sm whitespace-nowrap self-start lg:self-auto group inline-flex items-center gap-2"
+                >
+                  <span>Read Full Subsidy Guide</span>
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </ScrollReveal>
             </div>
 
             {/* 5-Step Process Timeline */}
@@ -430,16 +452,24 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* 15. LARGE DARK FINAL CTA */}
+      {/* 15. LARGE DARK FINAL CTA — CLIMAX */}
       <section className="py-20 sm:py-28 bg-brand-950 relative overflow-hidden border-t border-slate-800">
         <div className="absolute inset-0 z-0">
           <img
             src="https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=1920&q=80"
             alt="Solar installation at sunrise"
-            className="w-full h-full object-cover opacity-20"
+            className="w-full h-full object-cover opacity-20 transform scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-brand-950 via-brand-950/95 to-brand-950/80" />
+          <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-transparent to-brand-950" />
         </div>
+
+        {/* Central Ambient Energy Climax Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full pointer-events-none animate-energy-pulse"
+          style={{
+            background: "radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(245, 158, 11, 0.08) 40%, transparent 70%)"
+          }}
+        />
 
         <div className="site-container relative z-10 text-center max-w-3xl mx-auto space-y-8">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold bg-energy-500/15 text-energy-400 border border-energy-500/40 shadow-xl">
@@ -458,15 +488,15 @@ export const HomePage: React.FC = () => {
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <Link
               to="/get-a-quote"
-              className="btn-primary py-4 px-8 text-sm sm:text-base font-bold shadow-2xl group inline-flex items-center gap-2"
+              className="btn-primary py-4 px-8 text-sm sm:text-base font-bold shadow-2xl group inline-flex items-center gap-2 shimmer-container"
             >
               <span>Get Your Solar Plan</span>
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1.5" />
             </Link>
 
             <a
               href={`tel:${companyData.phones.primary.replace(/\s+/g, '')}`}
-              className="btn-secondary py-4 px-8 text-sm sm:text-base font-semibold"
+              className="btn-secondary py-4 px-8 text-sm sm:text-base font-semibold shadow-lg hover:border-energy-500/40"
             >
               <span>Talk to an Energy Expert: {companyData.phones.primary}</span>
             </a>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronLeft,
@@ -89,6 +89,7 @@ const techItems: TechItem[] = [
 
 export const TechnologyCarousel: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
 
   const maxIndex = techItems.length - 1;
 
@@ -100,41 +101,35 @@ export const TechnologyCarousel: React.FC = () => {
     setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
   };
 
+  // Automatic slide movement
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      nextSlide();
+    }, 4500);
+
+    return () => clearInterval(timer);
+  }, [isPaused, currentIndex]);
+
   return (
-    <section className="section-padding bg-brand-950/60 relative overflow-hidden">
+    <section
+      className="section-padding bg-brand-950/60 relative overflow-hidden"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
       <div className="site-container relative z-10">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-          <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-energy-500/10 text-energy-400 border border-energy-500/30">
-              <Cpu className="w-3.5 h-3.5" />
-              <span>Engineering Hardware Standards</span>
-            </div>
-            <h2 className="heading-section">
-              THE HARDWARE <span className="bg-gradient-to-r from-solar-400 to-energy-400 bg-clip-text text-transparent">POWERING YOUR PLANT</span>
-            </h2>
-            <p className="text-subtle">
-              We exclusively deploy Tier-1, MNRE-approved, and ALMM-enlisted equipment designed for extreme Indian climatic conditions and 25+ years of trouble-free operation.
-            </p>
+        <div className="max-w-3xl mb-12 space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-energy-500/10 text-energy-400 border border-energy-500/30">
+            <Cpu className="w-3.5 h-3.5" />
+            <span>Engineering Hardware Standards</span>
           </div>
-
-          {/* Controls */}
-          <div className="flex items-center gap-3 self-start md:self-auto">
-            <button
-              onClick={prevSlide}
-              className="w-12 h-12 rounded-2xl bg-brand-900 hover:bg-brand-850 border border-slate-700/80 text-slate-200 hover:text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg"
-              aria-label="Previous Tech"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="w-12 h-12 rounded-2xl bg-brand-900 hover:bg-brand-850 border border-slate-700/80 text-slate-200 hover:text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg"
-              aria-label="Next Tech"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </button>
-          </div>
+          <h2 className="heading-section">
+            THE HARDWARE <span className="bg-gradient-to-r from-solar-400 to-energy-400 bg-clip-text text-transparent">POWERING YOUR PLANT</span>
+          </h2>
+          <p className="text-subtle">
+            We exclusively deploy Tier-1, MNRE-approved, and ALMM-enlisted equipment designed for extreme Indian climatic conditions and 25+ years of trouble-free operation.
+          </p>
         </div>
 
         {/* Carousel Grid Viewport */}

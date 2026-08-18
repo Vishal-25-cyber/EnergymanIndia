@@ -81,10 +81,21 @@ const steps: FlowStep[] = [
 export const EnergyFlowDiagram: React.FC = () => {
   const [activeStep, setActiveStep] = useState(1);
 
+  // Auto-pulse through the energy chain periodically
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveStep((prev) => (prev >= 6 ? 1 : prev + 1));
+    }, 4500);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <section className="section-padding bg-brand-950 relative overflow-hidden">
       {/* Background Grid Pattern */}
-      <div className="absolute inset-0 bg-grid-pattern opacity-30 pointer-events-none" />
+      <div className="absolute inset-0 bg-tech-grid opacity-40 pointer-events-none" />
+
+      {/* Ambient background glow */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-energy-500/5 rounded-full blur-[100px] pointer-events-none" />
 
       <div className="site-container relative z-10">
         {/* Section Header */}
@@ -101,6 +112,38 @@ export const EnergyFlowDiagram: React.FC = () => {
           </p>
         </div>
 
+        {/* Global Energy Flow Circuit Bar (Sun -> Grid) */}
+        <div className="hidden lg:flex items-center justify-between bg-brand-900/60 backdrop-blur-md p-4 rounded-2xl border border-slate-800 mb-8">
+          {steps.map((step, idx) => (
+            <React.Fragment key={step.id}>
+              <button
+                onClick={() => setActiveStep(step.id)}
+                className={`flex items-center gap-2.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                  activeStep === step.id
+                    ? "bg-energy-500 text-brand-950 shadow-lg shadow-energy-500/20 scale-105"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <span>{step.id}.</span>
+                <span>{step.subtitle.split(" ")[0]}</span>
+              </button>
+              {idx < steps.length - 1 && (
+                <div className="flex-1 mx-2 h-0.5 bg-slate-800 relative overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-700 ${
+                      activeStep > step.id
+                        ? "bg-energy-500 w-full"
+                        : activeStep === step.id
+                        ? "bg-gradient-to-r from-energy-500 to-solar-400 w-full animate-pulse"
+                        : "w-0"
+                    }`}
+                  />
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+
         {/* Step-by-Step Interactive Flow Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {steps.map((step) => {
@@ -109,13 +152,13 @@ export const EnergyFlowDiagram: React.FC = () => {
               <div
                 key={step.id}
                 onClick={() => setActiveStep(step.id)}
-                className={`cursor-pointer rounded-3xl p-6 sm:p-7 border transition-all duration-300 relative overflow-hidden group ${
+                className={`cursor-pointer rounded-3xl p-6 sm:p-7 border transition-all duration-500 relative overflow-hidden group ${
                   isActive
-                    ? "bg-brand-900 border-energy-500/60 shadow-2xl shadow-energy-500/10 scale-[1.02]"
-                    : "bg-brand-900/60 border-slate-800 hover:border-slate-700 hover:bg-brand-850"
+                    ? "bg-brand-900/90 border-energy-500/60 shadow-2xl shadow-energy-500/15 -translate-y-1"
+                    : "bg-brand-900/50 border-slate-800/80 hover:border-slate-700 hover:bg-brand-850/80"
                 }`}
               >
-                {/* Active Indicator Glow */}
+                {/* Active Indicator Glow Top Line */}
                 {isActive && (
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-energy-500 via-solar-400 to-energy-400" />
                 )}
@@ -124,9 +167,17 @@ export const EnergyFlowDiagram: React.FC = () => {
                   <div className={`p-3 rounded-2xl bg-gradient-to-br border ${step.color} shadow-lg group-hover:scale-110 transition-transform`}>
                     {step.icon}
                   </div>
-                  <span className="text-xs font-mono font-bold text-slate-400 bg-brand-950 px-2.5 py-1 rounded-lg border border-slate-800">
-                    Step 0{step.id}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {isActive && (
+                      <span className="flex h-2 w-2 relative">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-energy-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-energy-500"></span>
+                      </span>
+                    )}
+                    <span className="text-xs font-mono font-bold text-slate-400 bg-brand-950 px-2.5 py-1 rounded-lg border border-slate-800">
+                      Step 0{step.id}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -143,7 +194,7 @@ export const EnergyFlowDiagram: React.FC = () => {
 
                 <div className="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
                   <span className="text-slate-400 font-medium">Metric:</span>
-                  <span className="text-energy-400 font-bold bg-brand-950 px-2 py-0.5 rounded border border-slate-800">
+                  <span className="text-energy-400 font-bold bg-brand-950 px-2.5 py-1 rounded border border-slate-800 font-mono">
                     {step.metrics}
                   </span>
                 </div>
@@ -153,7 +204,7 @@ export const EnergyFlowDiagram: React.FC = () => {
         </div>
 
         {/* Bottom Energy Flow Diagram Summary Bar */}
-        <div className="mt-12 p-6 rounded-3xl bg-brand-900/80 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="mt-12 p-6 sm:p-8 rounded-3xl bg-brand-900/80 backdrop-blur-xl border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6 shadow-xl">
           <div className="flex items-center gap-4 text-left">
             <div className="p-3 rounded-2xl bg-energy-500/10 text-energy-400 border border-energy-500/20 shrink-0">
               <ShieldCheck className="w-6 h-6" />
@@ -167,7 +218,7 @@ export const EnergyFlowDiagram: React.FC = () => {
           <div className="flex items-center gap-3 w-full md:w-auto">
             <a
               href="/#calculator"
-              className="btn-primary w-full md:w-auto py-3 px-6 text-xs font-bold whitespace-nowrap"
+              className="btn-primary w-full md:w-auto py-3.5 px-6 text-xs sm:text-sm font-bold whitespace-nowrap shimmer-container"
             >
               <span>Calculate Your System Sizing →</span>
             </a>

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   ChevronLeft,
@@ -14,6 +14,7 @@ import { projectsData } from "../../data/projects";
 
 export const ProjectCarousel: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
   const touchStartRef = useRef<number | null>(null);
 
   const maxIndex = projectsData.length - 1;
@@ -25,6 +26,16 @@ export const ProjectCarousel: React.FC = () => {
   const prevSlide = () => {
     setCurrentIndex((prev) => (prev <= 0 ? maxIndex : prev - 1));
   };
+
+  // Automatic slide movement
+  useEffect(() => {
+    if (isPaused) return;
+    const timer = setInterval(() => {
+      nextSlide();
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [isPaused, currentIndex]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartRef.current = e.touches[0].clientX;
@@ -39,9 +50,14 @@ export const ProjectCarousel: React.FC = () => {
   };
 
   return (
-    <section className="section-padding bg-brand-950 relative overflow-hidden" id="projects">
+    <section
+      className="section-padding bg-brand-950 relative overflow-hidden"
+      id="projects"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
       <div className="site-container relative z-10">
-        {/* Header with 01 / 08 counter and controls */}
+        {/* Header with 01 / 08 counter */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-energy-500/10 text-energy-400 border border-energy-500/30">
@@ -56,29 +72,24 @@ export const ProjectCarousel: React.FC = () => {
             </p>
           </div>
 
-          {/* Controls & Pagination Counter */}
+          {/* Pagination Counter */}
           <div className="flex items-center gap-4 self-start md:self-auto">
             <div className="text-sm font-mono text-slate-300 bg-brand-900 px-4 py-2.5 rounded-2xl border border-slate-800 font-bold">
               <span className="text-energy-400">0{currentIndex + 1}</span> / 0{projectsData.length}
             </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={prevSlide}
-                className="w-12 h-12 rounded-2xl bg-brand-900 hover:bg-brand-850 border border-slate-700/80 text-slate-200 hover:text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg"
-                aria-label="Previous Project"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <button
-                onClick={nextSlide}
-                className="w-12 h-12 rounded-2xl bg-brand-900 hover:bg-brand-850 border border-slate-700/80 text-slate-200 hover:text-white flex items-center justify-center transition-all hover:scale-105 active:scale-95 shadow-lg"
-                aria-label="Next Project"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-            </div>
           </div>
+        </div>
+
+        {/* Connected Energy Transmission Track */}
+        <div className="hidden lg:flex items-center justify-between mb-6 px-4">
+          <div className="flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-solar-400 animate-ping" />
+            <span className="text-[11px] font-mono uppercase tracking-widest text-solar-400 font-bold">Commissioned Mega-Watt Grid Stream</span>
+          </div>
+          <div className="flex-1 mx-6 h-px bg-gradient-to-r from-solar-500/40 via-energy-400/30 to-solar-500/40 relative">
+            <div className="absolute top-0 bottom-0 w-24 bg-gradient-to-r from-transparent via-solar-400 to-transparent animate-[energyTravelHorizontal_5s_ease-in-out_infinite]" />
+          </div>
+          <span className="text-[11px] font-mono text-slate-400">South India High-Yield Portfolio</span>
         </div>
 
         {/* Horizontal Carousel Viewport */}
@@ -98,25 +109,28 @@ export const ProjectCarousel: React.FC = () => {
                 key={project.id}
                 className="w-full lg:w-1/2 px-3 sm:px-4 shrink-0"
               >
-                <div className="bg-brand-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl overflow-hidden hover:border-energy-500/50 hover:shadow-2xl hover:shadow-energy-500/10 transition-all duration-300 group flex flex-col md:flex-row h-full">
+                <div className="bg-brand-900/80 backdrop-blur-xl border border-slate-800/80 rounded-3xl overflow-hidden hover:border-energy-500/50 hover:shadow-2xl hover:shadow-energy-500/[0.12] transition-all duration-300 group flex flex-col md:flex-row h-full relative">
+                  {/* Active Top Line Accent */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-solar-400 via-energy-400 to-solar-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
+
                   {/* Left Half: Image */}
-                  <div className="relative md:w-1/2 h-64 md:h-auto min-h-[260px] overflow-hidden">
+                  <div className="relative md:w-1/2 h-64 md:h-auto min-h-[260px] overflow-hidden shimmer-container">
                     <img
                       src={project.image}
                       alt={project.title}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
                       loading="lazy"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-brand-950/80 via-brand-950/20 to-transparent" />
 
-                    <div className="absolute top-4 left-4">
+                    <div className="absolute top-4 left-4 z-10">
                       <span className="badge-emerald text-xs font-bold shadow-md">
                         {project.categoryLabel}
                       </span>
                     </div>
 
-                    <div className="absolute bottom-4 left-4">
-                      <span className="badge-amber text-xs font-black shadow-md">
+                    <div className="absolute bottom-4 left-4 z-10">
+                      <span className="badge-amber text-xs font-black shadow-md group-hover:shadow-[0_0_12px_rgba(245,158,11,0.5)] transition-all">
                         {project.capacity}
                       </span>
                     </div>
@@ -134,14 +148,14 @@ export const ProjectCarousel: React.FC = () => {
                         {project.title}
                       </h3>
 
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
-                        <div className="p-3 rounded-2xl bg-brand-950/60 border border-slate-800">
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/80">
+                        <div className="p-3 rounded-2xl bg-brand-950/70 border border-slate-800/80">
                           <span className="text-[10px] text-slate-400 block">Annual Savings</span>
                           <strong className="text-xs sm:text-sm font-black text-solar-400 block truncate">
                             {project.annualSavings}
                           </strong>
                         </div>
-                        <div className="p-3 rounded-2xl bg-brand-950/60 border border-slate-800">
+                        <div className="p-3 rounded-2xl bg-brand-950/70 border border-slate-800/80">
                           <span className="text-[10px] text-slate-400 block">Annual Generation</span>
                           <strong className="text-xs sm:text-sm font-black text-energy-400 block truncate">
                             {project.annualGeneration}
@@ -157,7 +171,7 @@ export const ProjectCarousel: React.FC = () => {
                     <div className="pt-2">
                       <Link
                         to={`/projects/${project.id}`}
-                        className="inline-flex items-center justify-between w-full px-4 py-3 rounded-xl bg-brand-850 hover:bg-energy-500 text-slate-200 hover:text-brand-950 font-bold text-xs sm:text-sm transition-all duration-300 border border-slate-700/80 hover:border-energy-400 group/btn"
+                        className="inline-flex items-center justify-between w-full px-4 py-3 rounded-xl bg-brand-850/80 hover:bg-energy-500 text-slate-200 hover:text-brand-950 font-bold text-xs sm:text-sm transition-all duration-300 border border-slate-700/80 hover:border-energy-400 group/btn shadow-md"
                       >
                         <span>Explore Case Study</span>
                         <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />

@@ -40,7 +40,7 @@ const slides: HeroSlide[] = [
     primaryBtnLink: "/get-a-quote",
     secondaryBtnText: "Explore Solutions",
     secondaryBtnLink: "/solutions",
-    image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=1920&q=85",
+    image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=1600&q=80",
     statBadge: {
       value: "35 MW+",
       label: "Installed Capacity"
@@ -57,7 +57,7 @@ const slides: HeroSlide[] = [
     primaryBtnLink: "/#calculator",
     secondaryBtnText: "Government Subsidy Guide",
     secondaryBtnLink: "/government-subsidy",
-    image: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1920&q=85",
+    image: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1600&q=80",
     statBadge: {
       value: "₹78,000",
       label: "Max Subsidy Support"
@@ -74,7 +74,7 @@ const slides: HeroSlide[] = [
     primaryBtnLink: "/solutions/commercial",
     secondaryBtnText: "View Case Studies",
     secondaryBtnLink: "/projects/commercial",
-    image: "https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=1920&q=85",
+    image: "https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=1600&q=80",
     statBadge: {
       value: "< 3.5 Yrs",
       label: "Typical ROI Payback"
@@ -91,7 +91,7 @@ const slides: HeroSlide[] = [
     primaryBtnLink: "/solutions/industrial",
     secondaryBtnText: "Industrial Portfolio",
     secondaryBtnLink: "/projects/industrial",
-    image: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=1920&q=85",
+    image: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=1600&q=80",
     statBadge: {
       value: "2,500+",
       label: "Commissioned Projects"
@@ -104,10 +104,21 @@ export const HeroCarousel: React.FC = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
+  const [cinematicStage, setCinematicStage] = useState(0);
   const slideInterval = useRef<any>(null);
   const progressInterval = useRef<any>(null);
 
-  const SLIDE_DURATION = 5500; // 5.5 seconds per slide
+  const SLIDE_DURATION = 6000; // 6 seconds per slide
+
+  // Instantaneous mount & Parallel Image Preload
+  useEffect(() => {
+    setCinematicStage(10);
+    // Preload all slide images into browser cache immediately
+    slides.forEach((s) => {
+      const img = new Image();
+      img.src = s.image;
+    });
+  }, []);
 
   const nextSlide = () => {
     setCurrentSlide((prev) => (prev + 1) % slides.length);
@@ -173,51 +184,131 @@ export const HeroCarousel: React.FC = () => {
 
   return (
     <section
-      className="relative w-full min-h-[680px] lg:min-h-[800px] flex items-center justify-center overflow-hidden bg-brand-950 select-none pt-24 sm:pt-28 pb-16"
+      className="relative w-full min-h-[720px] lg:min-h-[860px] flex items-center justify-center overflow-hidden bg-brand-950 select-none pt-24 sm:pt-28 pb-16"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       aria-label="Renewable Energy Hero Showcase"
     >
-      {/* Background Images with Crossfade & Slow Zoom */}
-      {slides.map((s, index) => (
-        <div
-          key={s.id}
-          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-            index === currentSlide ? "opacity-100 z-0" : "opacity-0 -z-10"
-          }`}
-        >
-          <img
-            src={s.image}
-            alt={s.headingHighlight}
-            className={`w-full h-full object-cover object-center transform transition-transform duration-7000 ease-out ${
-              index === currentSlide ? "scale-105" : "scale-100"
-            }`}
-            loading={index === 0 ? "eager" : "lazy"}
-          />
-          {/* Layered cinematic dark gradient overlay for optimal readability */}
-          <div className="absolute inset-0 bg-gradient-to-r from-brand-950 via-brand-950/85 to-brand-950/40" />
-          <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-transparent to-brand-950/60" />
-          <div className="absolute inset-0 bg-brand-950/30 backdrop-brightness-75" />
-        </div>
-      ))}
+      {/* ── STEP 1 & 2: Warm Sunlight Radial Glow & Deep Navy Ambient Core ── */}
+      <div
+        className={`absolute top-1/4 left-1/3 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full pointer-events-none transition-all duration-1000 ${
+          cinematicStage >= 2 ? "opacity-40 scale-100" : "opacity-0 scale-75"
+        }`}
+        style={{
+          background: "radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(16, 185, 129, 0.15) 45%, transparent 70%)",
+          filter: "blur(70px)"
+        }}
+      />
+      <div
+        className={`absolute top-10 right-10 w-[500px] h-[500px] rounded-full pointer-events-none transition-all duration-1000 delay-300 ${
+          cinematicStage >= 1 ? "opacity-30 scale-100" : "opacity-0 scale-50"
+        }`}
+        style={{
+          background: "radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 60%)",
+          filter: "blur(90px)"
+        }}
+      />
 
-      {/* Main Hero Content */}
-      <div className="site-container relative z-10 w-full py-8">
-        <div className="max-w-3xl space-y-6">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold tracking-wide bg-brand-900/90 border border-slate-700 shadow-xl backdrop-blur-md animate-fade-in">
-            {slide.badgeType === "emerald" && <Zap className="w-4 h-4 text-energy-400 fill-energy-400" />}
-            {slide.badgeType === "amber" && <Sparkles className="w-4 h-4 text-solar-400" />}
-            {slide.badgeType === "blue" && <ShieldCheck className="w-4 h-4 text-blue-400" />}
-            {slide.badgeType === "purple" && <Zap className="w-4 h-4 text-purple-400" />}
-            <span className="text-slate-200">{slide.badge}</span>
+      {/* ── STEP 3: Technical Engineering Grid Overlay ── */}
+      <div
+        className={`absolute inset-0 bg-tech-grid transition-opacity duration-1000 pointer-events-none z-10 ${
+          cinematicStage >= 3 ? "opacity-70" : "opacity-0"
+        }`}
+      />
+
+      {/* ── STEP 4: Solar Imagery Reveal with Smooth Mask & Camera Pan/Zoom ── */}
+      {slides.map((s, index) => {
+        const isActive = index === currentSlide;
+        return (
+          <div
+            key={s.id}
+            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+              isActive ? "opacity-100 z-0" : "opacity-0 -z-10"
+            }`}
+          >
+            <img
+              src={s.image}
+              alt={s.headingHighlight}
+              className={`w-full h-full object-cover object-center transform transition-all duration-[6000ms] ease-out will-change-transform ${
+                cinematicStage >= 4 && isActive ? "scale-105 translate-x-0" : "scale-110 translate-x-2"
+              }`}
+              loading="eager"
+              decoding="async"
+              fetchPriority={index === 0 ? "high" : "low"}
+            />
+            {/* Cinematic Multi-Layer Gradients for Premium Contrast */}
+            <div className="absolute inset-0 bg-gradient-to-r from-brand-950 via-brand-950/85 to-brand-950/45" />
+            <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-brand-950/40 to-brand-950/70" />
+            <div className="absolute inset-0 bg-brand-950/20 backdrop-brightness-90" />
+          </div>
+        );
+      })}
+
+      {/* ── STEP 5 & 6: Cinematic SVG Energy Lines Traveling Across/Toward Content ── */}
+      <div
+        className={`absolute inset-0 z-10 pointer-events-none transition-opacity duration-1000 ${
+          cinematicStage >= 5 ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <svg className="w-full h-full" viewBox="0 0 1440 900" fill="none" preserveAspectRatio="none">
+          {/* Upper flowing energy conduit */}
+          <path
+            d="M -100,220 Q 350,180 700,240 T 1540,200"
+            stroke="url(#hero-energy-gradient)"
+            strokeWidth="1.5"
+            strokeDasharray="10 20"
+            className="energy-conduit-line opacity-40"
+          />
+          {/* Lower diagonal solar path */}
+          <path
+            d="M 100,750 Q 500,680 950,720 T 1600,650"
+            stroke="url(#hero-solar-gradient)"
+            strokeWidth="1.5"
+            strokeDasharray="8 16"
+            className="energy-conduit-line opacity-30"
+          />
+          <defs>
+            <linearGradient id="hero-energy-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#10B981" stopOpacity="0.1" />
+              <stop offset="50%" stopColor="#34D399" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#F59E0B" stopOpacity="0.2" />
+            </linearGradient>
+            <linearGradient id="hero-solar-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.1" />
+              <stop offset="50%" stopColor="#FCD34D" stopOpacity="0.7" />
+              <stop offset="100%" stopColor="#10B981" stopOpacity="0.2" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+
+      {/* ── STEP 7, 8, 9, 10: Staggered Hero Content Presentation ── */}
+      <div className="site-container relative z-20 w-full py-8">
+        <div key={currentSlide} className="max-w-3xl space-y-6">
+          {/* STEP 7: Badge & EnergyMan Branding Indicator */}
+          <div
+            className={`transition-all duration-700 ${
+              cinematicStage >= 7 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
+            }`}
+          >
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-semibold tracking-wide bg-brand-900/90 border border-slate-700 shadow-xl backdrop-blur-md">
+              {slide.badgeType === "emerald" && <Zap className="w-4 h-4 text-energy-400 fill-energy-400 animate-pulse" />}
+              {slide.badgeType === "amber" && <Sparkles className="w-4 h-4 text-solar-400" />}
+              {slide.badgeType === "blue" && <ShieldCheck className="w-4 h-4 text-blue-400" />}
+              {slide.badgeType === "purple" && <Zap className="w-4 h-4 text-purple-400" />}
+              <span className="text-slate-200">{slide.badge}</span>
+            </div>
           </div>
 
-          {/* Large Confident Heading */}
-          <div className="space-y-1 sm:space-y-2">
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
+          {/* STEP 8: Confident Heading Reveal */}
+          <div
+            className={`space-y-1 sm:space-y-2 transition-all duration-700 delay-100 ${
+              cinematicStage >= 8 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
+          >
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
               <span>{slide.heading}</span>
               <br />
               <span className="bg-gradient-to-r from-energy-400 via-solar-400 to-energy-300 bg-clip-text text-transparent">
@@ -226,19 +317,27 @@ export const HeroCarousel: React.FC = () => {
             </h1>
           </div>
 
-          {/* Description */}
-          <p className="text-slate-300 text-base sm:text-lg md:text-xl font-normal leading-relaxed max-w-2xl">
+          {/* STEP 9: Description Reveal */}
+          <p
+            className={`text-slate-300 text-base sm:text-lg md:text-xl font-normal leading-relaxed max-w-2xl transition-all duration-700 delay-200 ${
+              cinematicStage >= 9 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
+          >
             {slide.description}
           </p>
 
-          {/* Call-To-Action Buttons */}
-          <div className="flex flex-wrap items-center gap-4 pt-2">
+          {/* STEP 10: Call-To-Action Buttons & Interactive Elements */}
+          <div
+            className={`flex flex-wrap items-center gap-4 pt-2 transition-all duration-700 delay-300 ${
+              cinematicStage >= 10 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+            }`}
+          >
             <Link
               to={slide.primaryBtnLink}
-              className="btn-primary py-3.5 px-7 font-bold text-sm sm:text-base group"
+              className="btn-primary py-3.5 px-7 font-bold text-sm sm:text-base group shimmer-container"
             >
               <span>{slide.primaryBtnText}</span>
-              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />
+              <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1.5" />
             </Link>
 
             {slide.secondaryBtnText && slide.secondaryBtnLink && (
@@ -261,9 +360,13 @@ export const HeroCarousel: React.FC = () => {
             )}
           </div>
 
-          {/* Optional Metric Highlight Card on Desktop */}
+          {/* Metric Highlight Card on Desktop */}
           {slide.statBadge && (
-            <div className="hidden sm:inline-flex items-center gap-4 px-4 py-3 rounded-2xl bg-brand-900/80 border border-slate-700/80 backdrop-blur-md shadow-2xl">
+            <div
+              className={`hidden sm:inline-flex items-center gap-4 px-4 py-3 rounded-2xl bg-brand-900/80 border border-slate-700/80 backdrop-blur-md shadow-2xl transition-all duration-700 delay-400 ${
+                cinematicStage >= 10 ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+              }`}
+            >
               <div className="text-2xl font-extrabold text-white tracking-tight bg-gradient-to-r from-energy-400 to-solar-400 bg-clip-text text-transparent">
                 {slide.statBadge.value}
               </div>
@@ -275,23 +378,6 @@ export const HeroCarousel: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Manual Arrow Controls */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-brand-900/80 hover:bg-brand-850 border border-slate-700/80 text-white flex items-center justify-center backdrop-blur-md shadow-xl transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-energy-500 hidden sm:flex"
-        aria-label="Previous Slide"
-      >
-        <ChevronLeft className="w-6 h-6" />
-      </button>
-
-      <button
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 rounded-full bg-brand-900/80 hover:bg-brand-850 border border-slate-700/80 text-white flex items-center justify-center backdrop-blur-md shadow-xl transition-all hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-energy-500 hidden sm:flex"
-        aria-label="Next Slide"
-      >
-        <ChevronRight className="w-6 h-6" />
-      </button>
 
       {/* Bottom Bar: Progress Indicator & Slide Indicators */}
       <div className="absolute bottom-6 left-0 right-0 z-20">
