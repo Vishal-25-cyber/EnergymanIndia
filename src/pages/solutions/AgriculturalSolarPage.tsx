@@ -3,17 +3,16 @@ import { Link } from "react-router-dom";
 import {
   Tractor,
   ShieldCheck,
-  CheckCircle2,
   ArrowRight,
   Droplets,
-  Sun,
-  Sprout,
   Zap,
+  MapPin,
+  Wrench,
+  Award,
   Sparkles
 } from "lucide-react";
 import { SEOHead } from "../../components/common/SEOHead";
 import { solutionsData } from "../../data/solutions";
-import { FAQAccordion } from "../../components/common/FAQAccordion";
 
 export const AgriculturalSolarPage: React.FC = () => {
   const data = solutionsData.find((s) => s.id === "agricultural") || solutionsData[3];
@@ -26,13 +25,12 @@ export const AgriculturalSolarPage: React.FC = () => {
       />
 
       {/* Hero Header */}
-      <section className="pt-32 pb-16 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
+      <section className="pt-28 pb-10 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
         <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="site-container relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            
             <div className="lg:col-span-7 space-y-5">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs font-mono">
                 <Tractor className="w-3.5 h-3.5 text-red-400" />
@@ -47,37 +45,19 @@ export const AgriculturalSolarPage: React.FC = () => {
                 Eliminate diesel fuel costs and midnight power supply struggles. Our high-efficiency stainless steel solar submersible and surface pumps deliver reliable water flow from sunrise to sunset.
               </p>
 
-              {/* ── Signature Concept Strip: SUN -> FIELD -> WATER -> ENERGY -> GROWTH ── */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-red-950/80 via-[#1C1625] to-slate-900 border border-red-500/40 space-y-1">
-                <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-widest block">
-                  THE AGRARIAN ENERGY CYCLE
-                </span>
-                <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs sm:text-sm font-black text-white font-mono">
-                  <span className="text-amber-400">SUN</span>
-                  <span className="text-red-500">→</span>
-                  <span>FIELD</span>
-                  <span className="text-red-500">→</span>
-                  <span className="text-rose-300">WATER</span>
-                  <span className="text-red-500">→</span>
-                  <span className="text-amber-400">ENERGY</span>
-                  <span className="text-red-500">→</span>
-                  <span className="text-emerald-400">GROWTH</span>
-                </div>
-              </div>
-
               <div className="flex flex-wrap items-center gap-4 pt-2">
                 <Link
                   to="/get-a-quote?solution=Agricultural%20Solar%20Pump"
                   className="btn-primary py-3.5 px-7 text-sm font-bold inline-flex items-center gap-2"
                 >
-                  <span>Inquire for PM-KUSUM Pump Subsidy</span>
+                  <span>Inquire for PM-KUSUM Subsidy</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
-                  to="/products/solar-pumps"
+                  to="/products"
                   className="py-3.5 px-6 text-sm font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-red-950/60 transition-all"
                 >
-                  <span>View Solar Pump Models</span>
+                  <span>View Solar Pump Range</span>
                 </Link>
               </div>
 
@@ -96,118 +76,122 @@ export const AgriculturalSolarPage: React.FC = () => {
 
             {/* Hero Image */}
             <div className="lg:col-span-5">
-              <div className="rounded-3xl overflow-hidden border border-red-900/40 shadow-2xl relative bg-slate-900">
+              <div className="rounded-3xl overflow-hidden border border-red-950/60 shadow-2xl relative bg-slate-900 aspect-4/3 sm:aspect-auto sm:h-96">
                 <img
                   src={data.heroImage}
-                  alt="Agricultural solar farm pump"
-                  className="w-full h-80 sm:h-[400px] object-cover"
+                  alt="Agricultural solar water pump"
+                  className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0E] via-transparent to-transparent" />
-                
-                <div className="absolute bottom-6 left-6 right-6 bg-[#14101A]/90 backdrop-blur-md p-4 rounded-2xl border border-red-900/40 shadow-xl space-y-1">
-                  <span className="text-xs font-mono font-bold text-amber-400 block">
-                    PM-KUSUM COMPONENT-B & C
-                  </span>
-                  <p className="text-xs text-slate-200">
-                    Daylight irrigation from 3 HP to 20 HP with smart MPPT Variable Frequency Drives.
-                  </p>
-                </div>
               </div>
             </div>
-
           </div>
         </div>
       </section>
 
-      {/* 4 Core Agricultural Applications from Source */}
-      <section className="section-padding bg-[#0A0A0E] border-b border-red-950/60">
-        <div className="site-container space-y-12">
-          <div className="text-center max-w-2xl mx-auto space-y-3">
-            <h2 className="text-3xl font-black text-white tracking-tight">
-              APPLICATIONS POWERED BY <span className="text-red-500">ENERGYMAN</span>
+      {/* ── 02. SECTION: AGRICULTURAL VALUE PILLARS (CARDLESS EDITORIAL DESIGN) ── */}
+      <section className="py-12 sm:py-16 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
+        {/* Full-bleed Ambient Glows */}
+        <div className="absolute top-1/4 left-1/5 w-[500px] h-[500px] bg-red-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/5 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
+          
+          {/* Grand Section Header */}
+          <div className="text-center max-w-4xl mx-auto space-y-3">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-red-950/80 text-rose-300 border border-red-500/40 font-mono shadow-xs">
+              <Zap className="w-3 h-3 text-amber-400" />
+              <span>AGRICULTURAL ADVANTAGES</span>
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white uppercase tracking-tight leading-[1.12]">
+              WHY SOLAR WATER PUMPS{" "}
+              <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">
+                MAKE SENSE
+              </span>
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300">
-              Transforming farming productivity across Tamil Nadu's agrarian districts.
+            <p className="text-slate-300 text-xs sm:text-sm max-w-2xl mx-auto font-normal">
+              Eliminate erratic night-time irrigation, cut diesel pump expenses to zero, and secure 60% PM-KUSUM central subsidies.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              {
-                title: "Irrigation Pumps",
-                desc: "High-discharge deep borewell & open well water pumping from 100ft to 600ft+ depth.",
-                icon: <Droplets className="w-6 h-6 text-red-400" />
-              },
-              {
-                title: "Cold Storage",
-                desc: "Continuous solar power for horticultural perishables, fruits & vegetable preservation.",
-                icon: <ShieldCheck className="w-6 h-6 text-amber-400" />
-              },
-              {
-                title: "Greenhouses",
-                desc: "Automated climate control, drip irrigation valves, and micro-sprinkler misting systems.",
-                icon: <Sprout className="w-6 h-6 text-rose-400" />
-              },
-              {
-                title: "Farm Lighting",
-                desc: "All-in-one solar LED security perimeters, livestock sheds, and farmhouse electrification.",
-                icon: <Sun className="w-6 h-6 text-amber-400" />
-              }
-            ].map((app, idx) => (
-              <div
-                key={idx}
-                className="p-6 rounded-3xl bg-[#14101A]/95 border border-red-900/30 space-y-3 hover:border-red-500/50 transition-all shadow-md"
-              >
-                <div className="p-3 rounded-2xl bg-slate-900 border border-red-950/60 w-fit">
-                  {app.icon}
-                </div>
-                <h3 className="text-lg font-black text-white">{app.title}</h3>
-                <p className="text-xs text-slate-300 leading-relaxed font-normal">{app.desc}</p>
+          {/* 3 Full-Width Cardless Open Editorial Pillars */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+            {/* Pillar 01 */}
+            <div className="space-y-3 pb-6 border-b border-red-500/30">
+              <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-red-500/80 font-mono block leading-none">01</span>
+              <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
+                60% PM-KUSUM Subsidy
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                Direct central and state government subsidy assistance under PM-KUSUM Component B &amp; C.
+              </p>
+            </div>
+
+            {/* Pillar 02 */}
+            <div className="space-y-3 pb-6 border-b border-amber-500/30">
+              <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-amber-400/80 font-mono block leading-none">02</span>
+              <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
+                Zero Diesel Overhead
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                Automatic daylight pumping from sunrise to sunset with high-torque MPPT variable frequency drives.
+              </p>
+            </div>
+
+            {/* Pillar 03 */}
+            <div className="space-y-3 pb-6 border-b border-red-500/30">
+              <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-rose-400/80 font-mono block leading-none">03</span>
+              <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
+                High-Head Deep Discharge
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                Stainless steel SS304/SS316 submersible pumps engineered to lift water reliably from 600+ feet depths.
+              </p>
+            </div>
+          </div>
+
+          {/* ── 5-Step Connected Turnkey Pipeline ── */}
+          <div className="space-y-10 pt-4">
+            <div className="text-center max-w-2xl mx-auto space-y-2">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-amber-950/80 text-amber-300 border border-amber-500/40 font-mono">
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                <span>TURNKEY AGRICULTURAL PIPELINE</span>
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
+                OUR 5-STAGE EXECUTION JOURNEY
+              </h3>
+            </div>
+
+            {/* Connected Track */}
+            <div className="relative">
+              {/* Horizontal Connecting Glow Line */}
+              <div className="hidden lg:block absolute top-6 left-12 right-12 h-0.5 bg-gradient-to-r from-red-500 via-orange-400 to-amber-300 opacity-40 z-0" />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 relative z-10">
+                {[
+                  { num: "01", title: "Borewell Survey", desc: "Hydrogeological audit, static water table & dynamic head appraisal", icon: MapPin, color: "text-red-400 border-red-500/60 bg-red-950/90" },
+                  { num: "02", title: "Pump Selection", desc: "Optimal motor HP, discharge capacity & PV string voltage matching", icon: Zap, color: "text-orange-400 border-orange-500/60 bg-orange-950/90" },
+                  { num: "03", title: "KUSUM Liaison", desc: "Government portal registration, documentation & subsidy assistance", icon: ShieldCheck, color: "text-amber-400 border-amber-500/60 bg-amber-950/90" },
+                  { num: "04", title: "On-Farm Setup", desc: "Heavy-gauge HDG structure, pump lowering & chemical earthing installation", icon: Wrench, color: "text-rose-400 border-rose-500/60 bg-rose-950/90" },
+                  { num: "05", title: "Water Flow Testing", desc: "Discharge validation, controller training & farmer handover", icon: Award, color: "text-emerald-400 border-emerald-500/60 bg-emerald-950/90" }
+                ].map((s, i) => {
+                  const Icon = s.icon;
+                  return (
+                    <div key={i} className="flex flex-col items-center text-center space-y-3 group">
+                      <div className={`w-12 h-12 rounded-full border-2 ${s.color} flex items-center justify-center shadow-lg shadow-black/60 shrink-0 group-hover:scale-110 group-hover:border-white transition-all duration-300`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider block">STAGE {s.num}</span>
+                        <h4 className="text-sm font-bold text-white uppercase tracking-tight">{s.title}</h4>
+                        <p className="text-xs text-slate-300 leading-relaxed font-normal">{s.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Specifications & Process Table */}
-      <section className="section-padding bg-[#0A0A0E] border-b border-red-950/60">
-        <div className="site-container max-w-4xl space-y-8">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-black text-white">Technical Pump Sizing & Capabilities</h2>
-            <p className="text-xs text-slate-400">Manufactured with food-grade SS304/SS316 multi-stage impellers.</p>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            {[
-              { label: "Power Range", value: "3 HP, 5 HP, 7.5 HP, 10 HP to 20 HP" },
-              { label: "Head Range", value: "30 Meters to 220 Meters (Up to 600+ Feet)" },
-              { label: "Daily Discharge", value: "20,000 to 350,000 Litres / Day" },
-              { label: "Motor Type", value: "Permanent Magnet BLDC / Water-Filled AC" },
-              { label: "Controller Tech", value: "> 98% Vector MPPT VFD with Dry-Run Sensor" },
-              { label: "Government Subsidy", value: "Up to 60% under PM-KUSUM Scheme" },
-              { label: "Pump Material", value: "Food-Grade SS304 / SS316 Stainless Steel" },
-              { label: "Remote Starter", value: "GSM Mobile Mobile App ON/OFF & SMS Alerts" }
-            ].map((spec, sIdx) => (
-              <div
-                key={sIdx}
-                className="p-4 rounded-2xl bg-[#14101A]/95 border border-red-900/30 flex items-center justify-between"
-              >
-                <span className="text-slate-400 font-bold font-mono">{spec.label}</span>
-                <strong className="text-white font-mono">{spec.value}</strong>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="section-padding bg-[#0A0A0E]">
-        <div className="site-container max-w-3xl space-y-8">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-black text-white">Agricultural Solar FAQs</h2>
-            <p className="text-xs text-slate-400">Everything you need to know regarding PM-KUSUM pump subsidies.</p>
-          </div>
-          <FAQAccordion defaultCategory="Agricultural Solar" />
         </div>
       </section>
     </div>

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { SEOHead } from "../../components/common/SEOHead";
 import { ProductImageCarousel } from "../../components/common/ProductImageCarousel";
+import { SolarWaterHeaterInteractive } from "../../components/common/SolarWaterHeaterInteractive";
 import { productsData } from "../../data/products";
 
 export const ProductDetailPage: React.FC = () => {
@@ -141,6 +142,11 @@ export const ProductDetailPage: React.FC = () => {
               ))}
             </div>
           </div>
+
+          {/* Interactive Water Heater Engineering Visualizer if viewing Water Heater */}
+          {product.category === "solar-water-heaters" && (
+            <SolarWaterHeaterInteractive />
+          )}
 
           {/* Related Products */}
           <div className="space-y-6">

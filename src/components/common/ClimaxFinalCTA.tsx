@@ -18,16 +18,6 @@ export const ClimaxFinalCTA: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-[#0A0A0E]/80 via-[#4A070D]/90 to-[#1A0306]" />
       </div>
 
-      {/* Enormous Background Geometric Solar Array (SVG) */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[850px] h-[850px] opacity-10 pointer-events-none select-none">
-        <svg viewBox="0 0 400 400" className="w-full h-full animate-spin-slow" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="200" cy="200" r="180" stroke="#FFFFFF" strokeWidth="2" strokeDasharray="8 8" />
-          <circle cx="200" cy="200" r="130" stroke="#E63946" strokeWidth="1.5" strokeDasharray="12 12" />
-          <polygon points="200,40 338,280 62,280" stroke="#FFFFFF" strokeWidth="2" />
-          <polygon points="200,360 62,120 338,120" stroke="#E63946" strokeWidth="1.5" />
-        </svg>
-      </div>
-
       {/* Central Ambient Energy Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[450px] bg-red-500/20 rounded-full blur-3xl pointer-events-none" />
 

@@ -37,7 +37,7 @@ export const galleryData: GalleryImage[] = [
     categoryLabel: "Commercial",
     location: "Salem, Tamil Nadu",
     capacity: "350 kWp",
-    image: "https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1548337138-e87d889cc369?auto=format&fit=crop&w=1200&q=80",
     description: "Walkable elevated HDG structure providing clean power for medical equipment."
   },
   {

@@ -148,40 +148,18 @@ export const Navbar: React.FC = () => {
                           <Factory className="w-4 h-4 text-red-400 shrink-0" />
                           <div>
                             <p className="font-bold text-slate-100">Our Industrial Solar Projects</p>
-                            <p className="text-[11px] text-slate-400 font-normal">Spinning Mills & MW Captive Plants</p>
+                            <p className="text-[11px] text-slate-400 font-normal">Textile mills & captive MW rooftop systems</p>
                           </div>
                         </Link>
 
                         <Link
-                          to="/solutions/agricultural"
+                          to="/projects/commercial"
                           className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
                         >
-                          <Tractor className="w-4 h-4 text-rose-400 shrink-0" />
+                          <Building2 className="w-4 h-4 text-amber-400 shrink-0" />
                           <div>
-                            <p className="font-bold text-slate-100">Agricultural Solar Solutions</p>
-                            <p className="text-[11px] text-slate-400 font-normal">PM-KUSUM Irrigation & Pumping</p>
-                          </div>
-                        </Link>
-
-                        <Link
-                          to="/solutions/residential"
-                          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
-                        >
-                          <HomeIcon className="w-4 h-4 text-amber-400 shrink-0" />
-                          <div>
-                            <p className="font-bold text-slate-100">Residential Solar Solutions</p>
-                            <p className="text-[11px] text-slate-400 font-normal">Home Rooftop Net-Metering Systems</p>
-                          </div>
-                        </Link>
-
-                        <Link
-                          to="/solutions/industrial"
-                          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
-                        >
-                          <Building2 className="w-4 h-4 text-red-400 shrink-0" />
-                          <div>
-                            <p className="font-bold text-slate-100">Industrial Solar Solutions</p>
-                            <p className="text-[11px] text-slate-400 font-normal">Turnkey Commercial & Industrial EPC</p>
+                            <p className="font-bold text-slate-100">Our Commercial Solar Projects</p>
+                            <p className="text-[11px] text-slate-400 font-normal">Export units & commercial rooftops</p>
                           </div>
                         </Link>
 
@@ -363,14 +341,11 @@ export const Navbar: React.FC = () => {
                   <Link to="/projects/industrial" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
                     • Our Industrial Solar Projects
                   </Link>
-                  <Link to="/solutions/agricultural" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
-                    • Agricultural Solar Solutions
+                  <Link to="/projects/commercial" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
+                    • Our Commercial Solar Projects
                   </Link>
-                  <Link to="/solutions/residential" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
-                    • Residential Solar Solutions
-                  </Link>
-                  <Link to="/solutions/industrial" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
-                    • Industrial Solar Solutions
+                  <Link to="/projects" className="block px-4 py-2 text-sm text-red-400 hover:text-red-300">
+                    • View All Projects & Case Studies
                   </Link>
                 </div>
               </div>

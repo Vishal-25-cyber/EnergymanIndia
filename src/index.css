@@ -8,14 +8,14 @@
   --color-brand-burgundy: #6A0D15;
   --color-brand-dark-burgundy: #4A070D;
   --color-brand-obsidian: #0A0A0E;
-  
+
   --color-brand-charcoal: #0F172A;
   --color-brand-slate-dark: #1E293B;
   --color-brand-slate-body: #334155;
   --color-brand-slate-muted: #64748B;
   --color-brand-warm-gray: #F8F9FA;
   --color-brand-warm-light: #F1F5F9;
-  
+
   --color-solar-50: #FFFBEB;
   --color-solar-100: #FEF3C7;
   --color-solar-200: #FDE68A;
@@ -36,8 +36,8 @@
   }
 
   body {
-    background-color: #FFFFFF;
-    color: #0F172A;
+    background-color: #0A0A0E;
+    color: #F1F5F9;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -48,13 +48,31 @@
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
+
+/* Marquee / ticker animation */
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  animation: marquee 28s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
@@ -114,7 +132,7 @@
 /* Geometric Patterns & Backgrounds */
 .geometric-grid-dark {
   background-color: #0A0A0E;
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(230, 57, 70, 0.06) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(230, 57, 70, 0.06) 1px, transparent 1px);
   background-size: 40px 40px;
@@ -122,7 +140,7 @@
 
 .geometric-grid-light {
   background-color: #FFFFFF;
-  background-image: 
+  background-image:
     linear-gradient(to right, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
   background-size: 40px 40px;
@@ -130,7 +148,7 @@
 
 .geometric-triangles-bg {
   background-image: radial-gradient(circle at 20% 30%, rgba(185, 28, 28, 0.05) 0%, transparent 50%),
-                    radial-gradient(circle at 80% 70%, rgba(245, 158, 11, 0.04) 0%, transparent 50%);
+    radial-gradient(circle at 80% 70%, rgba(245, 158, 11, 0.04) 0%, transparent 50%);
 }
 
 .geometric-circuit-overlay {
@@ -138,7 +156,8 @@
 }
 
 /* Corporate Buttons */
-.btn-primary, .btn-crimson {
+.btn-primary,
+.btn-crimson {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -152,13 +171,15 @@
   cursor: pointer;
 }
 
-.btn-primary:hover, .btn-crimson:hover {
+.btn-primary:hover,
+.btn-crimson:hover {
   background: linear-gradient(135deg, #D91E36 0%, #9B111E 100%);
   box-shadow: 0 6px 20px rgba(185, 28, 28, 0.5);
   transform: translateY(-1px);
 }
 
-.btn-primary:active, .btn-crimson:active {
+.btn-primary:active,
+.btn-crimson:active {
   transform: translateY(0);
   box-shadow: 0 2px 8px rgba(185, 28, 28, 0.3);
 }
@@ -325,8 +346,15 @@
 
 /* Animations */
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 .animate-float {
@@ -334,10 +362,38 @@
 }
 
 @keyframes pulseGlow {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
+
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+
+  50% {
+    opacity: 0.8;
+  }
 }
 
 .animate-pulse-glow {
   animation: pulseGlow 3s ease-in-out infinite;
+}
+
+/* Continuous Smooth Infinite Marquee */
+@keyframes smoothMarquee {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.animate-smooth-marquee {
+  display: flex;
+  width: max-content;
+  animation: smoothMarquee 32s linear infinite;
+  will-change: transform;
+}
+
+.animate-smooth-marquee:hover {
+  animation-play-state: paused;
 }

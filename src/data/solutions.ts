@@ -28,7 +28,7 @@ export const solutionsData: SolutionItem[] = [
     subtitle: "Transform your home roof into a self-powering green powerhouse with zero electricity bills and direct government subsidy.",
     tag: "Homes & Villas",
     icon: "Home",
-    heroImage: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1600&q=80",
+    heroImage: "https://images.unsplash.com/photo-1613665813446-82a78c468a1d?auto=format&fit=crop&w=1600&q=80",
     overview: "Energy Man India's residential solar systems are custom-engineered for independent houses, villas, and housing societies. By harnessing high-efficiency Mono PERC & TOPCon bi-facial solar panels with smart on-grid string inverters, our rooftop systems slash monthly utility bills by up to 90% while adding value to your property. We handle the complete process including structural engineering, DISCOM net-metering liaison, and PM Surya Ghar: Muft Bijli Yojana subsidy disbursement.",
     keyBenefits: [
       "Up to 90% reduction on your monthly electricity bill",
@@ -73,7 +73,7 @@ export const solutionsData: SolutionItem[] = [
     subtitle: "Cut operating overheads, hedge against rising commercial power tariffs, and meet ESG sustainability goals with high-yield solar.",
     tag: "Offices & Institutions",
     icon: "Building2",
-    heroImage: "https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=1600&q=80",
+    heroImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=1600&q=80",
     overview: "Commercial electricity tariffs in India often range from ₹8 to ₹12 per unit. Energy Man India delivers high-performance commercial rooftop and carport solar installations that generate clean electricity at less than ₹2.50 per unit over 25 years. Benefit from 40% accelerated tax depreciation under Section 32 of the Income Tax Act, lower demand charges, and enhance your corporate sustainability credentials.",
     keyBenefits: [
       "Hedge against commercial tariff hikes for the next 25 years",
@@ -254,7 +254,7 @@ export const solutionsData: SolutionItem[] = [
     subtitle: "Next-generation Lithium Iron Phosphate (LiFePO4) energy storage for true 24/7 round-the-clock solar independence.",
     tag: "Storage & Microgrids",
     icon: "BatteryCharging",
-    heroImage: "https://images.unsplash.com/photo-1558441719-8b489c6340c4?auto=format&fit=crop&w=1600&q=80",
+    heroImage: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1600&q=80",
     overview: "Pair your solar system with intelligent Battery Energy Storage Systems (BESS). Energy Man India integrates Tier-1 LiFePO4 rack-mount and modular high-voltage energy storage with intelligent Hybrid inverters. Enable peak shaving, time-of-day tariff arbitrage, and clean silent backup power that outperforms polluting diesel generators.",
     keyBenefits: [
       "Continuous power during grid outages without noise or diesel fumes",

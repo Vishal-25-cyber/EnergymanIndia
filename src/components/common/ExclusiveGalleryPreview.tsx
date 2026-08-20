@@ -9,12 +9,6 @@ export const ExclusiveGalleryPreview: React.FC = () => {
 
   return (
     <section className="section-padding bg-[#0A0A0E] relative overflow-hidden border-t border-red-950/60" id="gallery-preview">
-      
-      {/* Background Watermark */}
-      <div className="absolute top-1/4 right-0 text-[12vw] font-black text-white/[0.015] tracking-widest pointer-events-none select-none uppercase font-sans">
-        GALLERY
-      </div>
-
       <div className="site-container relative z-10 space-y-12">
         
         {/* Section Header */}

@@ -2,15 +2,16 @@ import React from "react";
 import { Link } from "react-router-dom";
 import {
   ShieldCheck,
-  CheckCircle2,
   ArrowRight,
   Zap,
   Percent,
+  MapPin,
+  Wrench,
+  Award,
+  Sparkles
 } from "lucide-react";
 import { SEOHead } from "../../components/common/SEOHead";
 import { solutionsData } from "../../data/solutions";
-import { SavingsCalculator } from "../../components/common/SavingsCalculator";
-import { FAQAccordion } from "../../components/common/FAQAccordion";
 
 export const CommercialSolarPage: React.FC = () => {
   const data = solutionsData.find((s) => s.id === "commercial") || solutionsData[1];
@@ -23,7 +24,7 @@ export const CommercialSolarPage: React.FC = () => {
       />
 
       {/* Hero Header */}
-      <section className="pt-32 pb-16 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
+      <section className="pt-28 pb-10 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
         <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -38,7 +39,7 @@ export const CommercialSolarPage: React.FC = () => {
                 SMART ENERGY FOR <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">MODERN BUSINESS</span>
               </h1>
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl font-normal">
-                Commercial electricity tariffs in India average ₹8 to ₹12/unit. Power your offices, hospitals, educational campuses, and hotels with high-yield rooftop solar producing clean electricity at less than ₹2.50/unit over 25 years.
+                Commercial electricity tariffs average ₹8 to ₹12/unit. Power your offices, hospitals, educational campuses, and hotels with high-yield rooftop solar producing clean electricity at under ₹2.50/unit over 25 years.
               </p>
 
               <div className="flex flex-wrap items-center gap-4 pt-2">
@@ -46,12 +47,12 @@ export const CommercialSolarPage: React.FC = () => {
                   to="/get-a-quote?solution=Commercial%20Solar"
                   className="btn-primary py-3.5 px-7 text-sm font-bold inline-flex items-center gap-2"
                 >
-                  <span>Request Commercial Energy Feasibility</span>
+                  <span>Request Commercial Feasibility</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
                   to="/projects"
-                  className="py-3.5 px-6 text-sm font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-red-950/60 transition-all"
+                  className="py-3.5 px-6 text-sm font-bold inline-flex items-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-red-950/60 transition-all"
                 >
                   <span>View Commercial Projects</span>
                 </Link>
@@ -72,115 +73,122 @@ export const CommercialSolarPage: React.FC = () => {
 
             {/* Hero Image */}
             <div className="lg:col-span-5">
-              <div className="rounded-3xl overflow-hidden border border-red-950/60 shadow-xl relative bg-slate-900">
+              <div className="rounded-3xl overflow-hidden border border-red-950/60 shadow-2xl relative bg-slate-900 aspect-4/3 sm:aspect-auto sm:h-96">
                 <img
                   src={data.heroImage}
                   alt="Commercial solar building"
-                  className="w-full h-80 sm:h-96 object-cover"
+                  className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0E] via-transparent to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 bg-[#14101A]/95 backdrop-blur-md p-4 rounded-2xl border border-red-900/30 text-xs shadow-md">
-                  <span className="text-slate-400 block font-bold">Typical Capital Payback:</span>
-                  <strong className="text-base text-amber-300 font-black">{data.typicalRoi}</strong>
-                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Overview & Key Highlights */}
-      <section className="section-padding bg-[#0A0A0E]">
-        <div className="site-container space-y-16">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-            <div className="lg:col-span-7 space-y-6">
-              <h2 className="text-2xl sm:text-3xl font-black text-white">
-                Strategic Cost Reduction &amp; Corporate Sustainability
-              </h2>
-              <p className="text-sm text-slate-300 leading-relaxed font-normal">
-                {data.overview}
-              </p>
+      {/* ── 02. SECTION: COMMERCIAL VALUE PILLARS (CARDLESS EDITORIAL DESIGN) ── */}
+      <section className="py-12 sm:py-16 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
+        {/* Full-bleed Ambient Glows */}
+        <div className="absolute top-1/4 left-1/5 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/5 w-[500px] h-[500px] bg-red-600/10 rounded-full blur-[120px] pointer-events-none" />
 
-              <div className="space-y-3 pt-4">
-                <h3 className="text-base font-black text-white">Commercial System Advantages:</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {data.keyBenefits.map((b, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 p-3 rounded-xl bg-[#14101A]/95 border border-red-900/30 text-xs text-slate-200 font-medium shadow-xs">
-                      <CheckCircle2 className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                      <span>{b}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Technical Specs Card */}
-            <div className="lg:col-span-5 bg-[#14101A]/95 border border-red-900/30 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
-              <h3 className="text-lg font-black text-white flex items-center gap-2">
-                <Zap className="w-5 h-5 text-amber-400" />
-                <span>Commercial System Specifications</span>
-              </h3>
-
-              <div className="space-y-3 divide-y divide-slate-800 text-xs">
-                {data.technicalSpecs.map((spec, sIdx) => (
-                  <div key={sIdx} className="pt-2.5 flex justify-between gap-4">
-                    <span className="text-slate-400 font-medium">{spec.label}</span>
-                    <span className="text-white font-bold text-right">{spec.value}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-900 border border-red-950/60 space-y-2 shadow-xs">
-                <p className="text-xs font-black text-amber-400">Suitable Commercial Facilities:</p>
-                <ul className="text-xs text-slate-300 space-y-1">
-                  {data.suitableFor.map((item, idx) => (
-                    <li key={idx} className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* 5-Step Process */}
-          <div className="bg-[#14101A]/95 border border-red-900/30 rounded-3xl p-8 sm:p-12 space-y-8 shadow-xl">
-            <div className="text-center max-w-2xl mx-auto space-y-2">
-              <h3 className="text-2xl font-black text-white">
-                Our 5-Step Commercial EPC Execution Model
-              </h3>
-              <p className="text-xs text-slate-300 font-normal">
-                Engineered for rapid delivery with zero operational interruption to your business.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {data.processSteps.map((p) => (
-                <div key={p.step} className="p-5 rounded-2xl bg-slate-900 border border-red-950/60 space-y-2 shadow-xs hover:border-red-500/50 transition-colors">
-                  <span className="text-xl font-black text-red-500 font-mono">{p.step}</span>
-                  <h4 className="text-sm font-bold text-white">{p.title}</h4>
-                  <p className="text-xs text-slate-300 leading-relaxed font-normal">{p.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Savings Calculator */}
-      <SavingsCalculator />
-
-      {/* FAQs */}
-      <section className="section-padding bg-[#0A0A0E] border-t border-red-950/60">
-        <div className="site-container max-w-4xl space-y-8">
-          <div className="text-center space-y-2">
-            <h2 className="heading-section text-white">
-              COMMERCIAL SOLAR <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">FAQS</span>
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
+          
+          {/* Grand Section Header */}
+          <div className="text-center max-w-4xl mx-auto space-y-3">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-amber-950/80 text-amber-300 border border-amber-500/40 font-mono shadow-xs">
+              <Zap className="w-3 h-3 text-amber-400" />
+              <span>COMMERCIAL ADVANTAGES</span>
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white uppercase tracking-tight leading-[1.12]">
+              WHY COMMERCIAL SOLAR{" "}
+              <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">
+                MAKES SENSE
+              </span>
             </h2>
-            <p className="text-slate-300 text-sm">Learn about tax depreciation, CEIG clearances, and payback calculations.</p>
+            <p className="text-slate-300 text-xs sm:text-sm max-w-2xl mx-auto font-normal">
+              Cut high commercial demand tariffs, lock in 25-year levelized electricity costs, and claim 40% accelerated tax depreciation.
+            </p>
           </div>
-          <FAQAccordion defaultCategory="commercial" />
+
+          {/* 3 Full-Width Cardless Open Editorial Pillars */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+            {/* Pillar 01 */}
+            <div className="space-y-3 pb-6 border-b border-red-500/30">
+              <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-red-500/80 font-mono block leading-none">01</span>
+              <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
+                40% Tax Depreciation
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                Claim Section 32 Accelerated Depreciation in Year 1 along with full 100% GST input tax credit.
+              </p>
+            </div>
+
+            {/* Pillar 02 */}
+            <div className="space-y-3 pb-6 border-b border-amber-500/30">
+              <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-amber-400/80 font-mono block leading-none">02</span>
+              <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
+                70%+ Tariff Reduction
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                Generate clean captive electricity at under ₹2.50/unit compared to ₹10+/unit commercial utility rates.
+              </p>
+            </div>
+
+            {/* Pillar 03 */}
+            <div className="space-y-3 pb-6 border-b border-red-500/30">
+              <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-rose-400/80 font-mono block leading-none">03</span>
+              <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
+                25-Year ESG Security
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                Tier-1 TOPCon Bi-facial modules engineered with Zero-Export and smart SCADA cloud monitoring.
+              </p>
+            </div>
+          </div>
+
+          {/* ── 5-Step Connected Turnkey Pipeline ── */}
+          <div className="space-y-10 pt-4">
+            <div className="text-center max-w-2xl mx-auto space-y-2">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-amber-950/80 text-amber-300 border border-amber-500/40 font-mono">
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                <span>TURNKEY COMMERCIAL PIPELINE</span>
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
+                OUR 5-STAGE EXECUTION JOURNEY
+              </h3>
+            </div>
+
+            {/* Connected Track */}
+            <div className="relative">
+              {/* Horizontal Connecting Glow Line */}
+              <div className="hidden lg:block absolute top-6 left-12 right-12 h-0.5 bg-gradient-to-r from-red-500 via-orange-400 to-amber-300 opacity-40 z-0" />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 relative z-10">
+                {[
+                  { num: "01", title: "Energy Audit", desc: "15-minute interval demand profiling & roof structural integrity", icon: MapPin, color: "text-red-400 border-red-500/60 bg-red-950/90" },
+                  { num: "02", title: "Techno-Commercial", desc: "PVSyst yield simulation, cash flow modeling & IRR calculation", icon: Zap, color: "text-orange-400 border-orange-500/60 bg-orange-950/90" },
+                  { num: "03", title: "CEIG Clearances", desc: "Chief Electrical Inspector approvals & grid connectivity liaison", icon: ShieldCheck, color: "text-amber-400 border-amber-500/60 bg-amber-950/90" },
+                  { num: "04", title: "Zero-Downtime EPC", desc: "Fast-track installation without disrupting daily business operations", icon: Wrench, color: "text-rose-400 border-rose-500/60 bg-rose-950/90" },
+                  { num: "05", title: "SCADA & PR Testing", desc: "Performance ratio validation, grid synchronization & cloud monitoring", icon: Award, color: "text-emerald-400 border-emerald-500/60 bg-emerald-950/90" }
+                ].map((s, i) => {
+                  const Icon = s.icon;
+                  return (
+                    <div key={i} className="flex flex-col items-center text-center space-y-3 group">
+                      <div className={`w-12 h-12 rounded-full border-2 ${s.color} flex items-center justify-center shadow-lg shadow-black/60 shrink-0 group-hover:scale-110 group-hover:border-white transition-all duration-300`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider block">STAGE {s.num}</span>
+                        <h4 className="text-sm font-bold text-white uppercase tracking-tight">{s.title}</h4>
+                        <p className="text-xs text-slate-300 leading-relaxed font-normal">{s.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
     </div>

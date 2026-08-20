@@ -9,9 +9,7 @@ interface ProjectCardProps {
 
 export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   return (
-    <div className="flex flex-col bg-[#14101A]/95 border border-red-900/30 rounded-2xl overflow-hidden transition-all duration-400 ease-out group h-full hover:border-red-500/50 hover:shadow-2xl hover:shadow-black/70 hover:-translate-y-2 relative shadow-md">
-      {/* Connected Top Circuit Accent on hover */}
-      <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-500 via-rose-400 to-amber-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20" />
+    <div className="flex flex-col bg-[#14101A]/95 border border-red-900/30 rounded-2xl overflow-hidden transition-all duration-300 ease-out group h-full hover:border-red-500/40 hover:shadow-2xl hover:shadow-black/70 hover:-translate-y-1 relative shadow-md">
 
       {/* ═══ Project Image ═══ */}
       <div className="relative h-60 sm:h-64 overflow-hidden bg-slate-900">

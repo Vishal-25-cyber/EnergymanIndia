@@ -35,7 +35,7 @@ export const App: React.FC = () => {
   return (
     <Router>
       <ScrollToTop />
-      <div className="flex flex-col min-h-screen bg-brand-950 text-slate-100 antialiased selection:bg-energy-500 selection:text-white">
+      <div className="flex flex-col min-h-screen bg-[#0A0A0E] text-slate-100 antialiased selection:bg-red-500 selection:text-white">
         {/* Global Sticky Glass Header */}
         <Navbar />
 
@@ -60,9 +60,7 @@ export const App: React.FC = () => {
             {/* Projects Routes */}
             <Route path="/projects" element={<ProjectsPage />} />
             <Route path="/projects/industrial" element={<ProjectsPage categoryFilter="industrial" />} />
-            <Route path="/projects/agricultural" element={<ProjectsPage categoryFilter="agricultural" />} />
             <Route path="/projects/commercial" element={<ProjectsPage categoryFilter="commercial" />} />
-            <Route path="/projects/residential" element={<ProjectsPage categoryFilter="residential" />} />
             <Route path="/projects/:id" element={<ProjectDetailPage />} />
 
             {/* Government Subsidy Hub */}

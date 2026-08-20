@@ -1,151 +1,103 @@
 import React, { useState } from "react";
-import {
-  ChevronDown,
-  HelpCircle,
-  Search,
-} from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 import { faqsData } from "../../data/faqs";
 
+const CATEGORIES = [
+  { id: "all", label: "All" },
+  { id: "residential", label: "Residential" },
+  { id: "commercial", label: "Commercial" },
+  { id: "agricultural", label: "Agricultural" },
+  { id: "technical", label: "Technical" },
+];
+
 export const FAQAccordion: React.FC<{ defaultCategory?: string }> = ({ defaultCategory = "all" }) => {
-  const [activeCategory, setActiveCategory] = useState<string>(defaultCategory);
-  const [openIds, setOpenIds] = useState<string[]>([faqsData[0]?.id || "faq-1"]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [activeCat, setActiveCat] = useState(defaultCategory);
+  const [openId, setOpenId] = useState<string>(faqsData[0]?.id || "");
 
-  const toggleFAQ = (id: string) => {
-    setOpenIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
+  const filtered = faqsData.filter(
+    (f) => activeCat === "all" || f.category === activeCat
+  );
 
-  const filteredFaqs = faqsData.filter((item) => {
-    const matchesCategory = activeCategory === "all" || item.category === activeCategory;
-    const matchesSearch =
-      item.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.answer.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const toggle = (id: string) => setOpenId((prev) => (prev === id ? "" : id));
 
   return (
-    <div className="space-y-8">
-      {/* Category Pills & Search */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-        {/* Category Pills */}
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            onClick={() => setActiveCategory("all")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              activeCategory === "all"
-                ? "bg-red-600 text-white shadow-xs"
-                : "bg-slate-900 border border-red-950/60 text-slate-300 hover:border-red-900"
-            }`}
-          >
-            All Questions
-          </button>
-          <button
-            onClick={() => setActiveCategory("residential")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              activeCategory === "residential"
-                ? "bg-red-600 text-white shadow-xs"
-                : "bg-slate-900 border border-red-950/60 text-slate-300 hover:border-red-900"
-            }`}
-          >
-            Residential &amp; Subsidy
-          </button>
-          <button
-            onClick={() => setActiveCategory("commercial")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              activeCategory === "commercial"
-                ? "bg-amber-600 text-white shadow-xs"
-                : "bg-slate-900 border border-red-950/60 text-slate-300 hover:border-red-900"
-            }`}
-          >
-            Commercial &amp; Industrial
-          </button>
-          <button
-            onClick={() => setActiveCategory("agricultural")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              activeCategory === "agricultural"
-                ? "bg-rose-600 text-white shadow-xs"
-                : "bg-slate-900 border border-red-950/60 text-slate-300 hover:border-red-900"
-            }`}
-          >
-            Agricultural Pumps
-          </button>
-          <button
-            onClick={() => setActiveCategory("technical")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-              activeCategory === "technical"
-                ? "bg-red-800 text-white shadow-xs"
-                : "bg-slate-900 border border-red-950/60 text-slate-300 hover:border-red-900"
-            }`}
-          >
-            Technical &amp; Maintenance
-          </button>
-        </div>
+    <div className="w-full space-y-8">
 
-        {/* Search Bar */}
-        <div className="relative w-full sm:w-64">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search FAQs..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-red-950/60 text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs"
-          />
-        </div>
+      {/* ── Category tabs — left-aligned underline style ── */}
+      <div className="flex flex-wrap gap-x-6 gap-y-2 border-b border-red-900/30 pb-3">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => { setActiveCat(cat.id); setOpenId(""); }}
+            className={`pb-3 -mb-3 text-xs font-black uppercase tracking-widest transition-all border-b-2 ${activeCat === cat.id
+                ? "border-red-500 text-white"
+                : "border-transparent text-slate-500 hover:text-slate-300"
+              }`}
+          >
+            {cat.label}
+          </button>
+        ))}
       </div>
 
-      {/* Accordion List */}
-      <div className="space-y-3">
-        {filteredFaqs.map((faq) => {
-          const isOpen = openIds.includes(faq.id);
+      {/* ── Full-width accordion rows — no cards ── */}
+      <div className="w-full divide-y divide-red-900/20">
+        {filtered.map((faq, idx) => {
+          const isOpen = openId === faq.id;
           return (
-            <div
-              key={faq.id}
-              className={`rounded-2xl border transition-all duration-200 overflow-hidden shadow-sm ${
-                isOpen
-                  ? "bg-[#1C1625] border-red-500/50 shadow-md"
-                  : "bg-[#14101A]/95 border-red-950/60 hover:border-red-900"
-              }`}
-            >
+            <div key={faq.id} className="group">
+              {/* Question row */}
               <button
-                type="button"
-                onClick={() => toggleFAQ(faq.id)}
-                className="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 focus:outline-none cursor-pointer"
+                onClick={() => toggle(faq.id)}
+                className="w-full flex items-start gap-5 py-5 text-left focus:outline-none"
                 aria-expanded={isOpen}
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-red-950/80 text-rose-300 border border-red-500/40 shrink-0">
-                    <HelpCircle className="w-4 h-4" />
-                  </div>
-                  <span className="text-sm sm:text-base font-bold text-white leading-snug">
-                    {faq.question}
-                  </span>
-                </div>
+                {/* Index number */}
+                <span className={`shrink-0 text-xs font-black font-mono w-7 pt-0.5 transition-colors ${isOpen ? "text-red-500" : "text-slate-600 group-hover:text-slate-400"
+                  }`}>
+                  {String(idx + 1).padStart(2, "0")}
+                </span>
 
-                <div className="p-1 rounded-lg bg-slate-800 text-slate-300 shrink-0">
-                  <ChevronDown
-                    className={`w-5 h-5 transition-transform duration-200 ${
-                      isOpen ? "rotate-180 text-red-400" : ""
-                    }`}
-                  />
-                </div>
+                {/* Question text */}
+                <span className={`flex-1 text-sm sm:text-base font-bold leading-snug transition-colors ${isOpen ? "text-white" : "text-slate-300 group-hover:text-white"
+                  }`}>
+                  {faq.question}
+                </span>
+
+                {/* +/- icon */}
+                <span className={`shrink-0 mt-0.5 transition-all duration-200 ${isOpen ? "text-red-500" : "text-slate-500 group-hover:text-slate-300"
+                  }`}>
+                  {isOpen
+                    ? <Minus className="w-4 h-4" />
+                    : <Plus className="w-4 h-4" />
+                  }
+                </span>
               </button>
 
-              {isOpen && (
-                <div className="px-5 pb-6 sm:px-6 pt-1 text-xs sm:text-sm text-slate-300 leading-relaxed border-t border-red-950/60 animate-fade-in font-normal">
-                  <p>{faq.answer}</p>
+              {/* Answer — inline, no box */}
+              <div
+                className={`overflow-hidden transition-all duration-300 ease-out ${isOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+                  }`}
+              >
+                <div className="pl-12 pb-6 pr-8">
+                  {/* Red accent bar */}
+                  <div className="w-8 h-0.5 bg-red-500 mb-3 rounded-full" />
+                  <p className="text-sm text-slate-400 leading-relaxed">
+                    {faq.answer}
+                  </p>
+                  {/* Category tag */}
+                  <span className="inline-block mt-4 text-[9px] font-mono font-black uppercase tracking-widest text-red-400 bg-red-950/40 border border-red-900/40 px-2.5 py-0.5 rounded-full">
+                    {faq.category}
+                  </span>
                 </div>
-              )}
+              </div>
             </div>
           );
         })}
 
-        {filteredFaqs.length === 0 && (
-          <div className="text-center py-12 bg-slate-900 rounded-2xl border border-red-950/60 text-slate-400 text-sm">
-            No matching questions found. Try adjusting your search or category filter.
-          </div>
+        {filtered.length === 0 && (
+          <p className="py-12 text-center text-sm text-slate-500">
+            No questions in this category.
+          </p>
         )}
       </div>
     </div>

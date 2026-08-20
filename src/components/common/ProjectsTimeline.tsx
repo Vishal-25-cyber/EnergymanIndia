@@ -1,219 +1,225 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { projectsData } from "../../data/projects";
-import { Zap, MapPin, ShieldCheck, ArrowRight, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  Zap,
+  MapPin,
+  ArrowRight,
+  Sparkles,
+  TrendingUp,
+  Leaf
+} from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
 
+// Fallback image in case of network issues
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=800&q=80";
+
 export const ProjectsTimeline: React.FC = () => {
-  const [activeProjectIdx, setActiveProjectIdx] = useState<number>(0);
-  const currentProject = projectsData[activeProjectIdx] || projectsData[0];
-
-  const handleNext = () => {
-    setActiveProjectIdx((prev) => (prev + 1) % projectsData.length);
-  };
-
-  const handlePrev = () => {
-    setActiveProjectIdx((prev) => (prev - 1 + projectsData.length) % projectsData.length);
-  };
+  // Duplicate projects array to create an infinite seamless loop
+  const marqueeProjects = [...projectsData, ...projectsData];
 
   return (
-    <section className="section-padding bg-[#0A0A0E] relative overflow-hidden border-t border-red-950/60" id="projects">
-      
-      {/* Background Watermark */}
-      <div className="absolute top-1/4 left-0 text-[12vw] font-black text-white/[0.015] tracking-widest pointer-events-none select-none uppercase font-sans">
-        PROJECTS
-      </div>
+    <section
+      className="py-16 sm:py-24 bg-[#0A0A0E] relative overflow-hidden border-t border-red-950/60"
+      id="projects"
+    >
+      {/* Background Subtle Glows */}
+      <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 right-1/3 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="site-container relative z-10 space-y-14">
-        
-        {/* Section Header */}
-        <ScrollReveal animation="slide-up">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="space-y-3 max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs font-mono">
+      <div className="space-y-12 relative z-10">
+
+        {/* ── Centered, Enlarged Section Header ── */}
+        <div className="site-container">
+          <ScrollReveal animation="slide-up">
+            <div className="text-center max-w-4xl mx-auto space-y-4">
+              
+              {/* Badge */}
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs font-mono mx-auto">
                 <Sparkles className="w-3.5 h-3.5 text-red-400" />
                 <span>COMMISSIONED CASE STUDIES</span>
               </div>
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
-                OUR INDUSTRIAL & COMMERCIAL <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">SOLAR PROJECTS</span>
+
+              {/* Title in center & big size */}
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1] uppercase">
+                OUR INDUSTRIAL & COMMERCIAL{" "}
+                <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent block sm:inline">
+                  SOLAR PROJECTS
+                </span>
               </h2>
-              <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-                Real-world engineering case studies delivering guaranteed high-yield generation and millions in utility savings.
+
+              {/* Subtitle */}
+              <p className="text-slate-300 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+                Real-world engineering case studies delivering guaranteed high-yield generation and millions in utility savings across Tamil Nadu.
               </p>
-            </div>
 
-            <Link
-              to="/projects"
-              className="bg-slate-900 hover:bg-slate-800 text-white border border-red-950/60 py-3 px-6 text-xs sm:text-sm font-bold inline-flex items-center gap-2 self-start md:self-auto rounded-xl transition-all"
-            >
-              <span>Explore All Projects</span>
-              <ArrowRight className="w-4 h-4 text-red-500" />
-            </Link>
-          </div>
-        </ScrollReveal>
-
-        {/* ── Project Step Selector Strip ── */}
-        <div className="flex items-center gap-3 overflow-x-auto pb-2 border-b border-red-950/60">
-          {projectsData.map((proj, pIdx) => {
-            const isSelected = activeProjectIdx === pIdx;
-            return (
-              <button
-                key={proj.id}
-                onClick={() => setActiveProjectIdx(pIdx)}
-                className={`px-5 py-3 rounded-2xl border text-left shrink-0 transition-all cursor-pointer ${
-                  isSelected
-                    ? "bg-red-950/90 border-red-500/80 text-white shadow-md shadow-red-500/20 scale-105"
-                    : "bg-[#14101A]/70 border-red-950/60 text-slate-400 hover:text-slate-200 hover:border-red-500/40"
-                }`}
-              >
-                <span className="text-[10px] font-mono font-bold text-red-400 block">
-                  {proj.projectNumber}
-                </span>
-                <span className="text-xs sm:text-sm font-black block line-clamp-1">
-                  {proj.clientName}
-                </span>
-                <span className="text-[11px] font-mono text-amber-400/90 font-bold block">
-                  {proj.capacity}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* ── Active Case Study Technical Viewport ── */}
-        <div className="bg-[#14101A]/95 border border-red-900/40 rounded-3xl p-6 sm:p-10 shadow-2xl relative overflow-hidden group">
-          
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            
-            {/* Left Column: Image with Red Badge & Controls (6 Cols) */}
-            <div className="lg:col-span-6 space-y-4">
-              <div className="relative h-72 sm:h-96 rounded-2xl overflow-hidden bg-slate-900 border border-red-950/60 shadow-xl">
-                <img
-                  src={currentProject.image}
-                  alt={currentProject.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#14101A] via-transparent to-transparent" />
-
-                {/* Capacity Callout Banner */}
-                <div className="absolute top-4 left-4 bg-gradient-to-r from-red-600 to-rose-600 text-white p-3 rounded-2xl shadow-lg space-y-0.5">
-                  <span className="text-[10px] font-mono font-bold block tracking-wider uppercase opacity-90">
-                    Solar Capacity
-                  </span>
-                  <strong className="text-xl sm:text-2xl font-black font-mono block">
-                    {currentProject.capacity}
-                  </strong>
-                </div>
-
-                {/* Location Badge */}
-                <div className="absolute bottom-4 left-4 flex items-center gap-1.5 bg-black/80 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/20 text-xs font-bold text-slate-200">
-                  <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                  <span>{currentProject.location}</span>
-                </div>
-              </div>
-
-              {/* Prev / Next Controls */}
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-xs font-mono text-slate-400 font-bold">
-                  {activeProjectIdx + 1} OF {projectsData.length} COMMISSIONED SITES
+              {/* Centered Actions / Status Bar */}
+              <div className="flex flex-wrap items-center justify-center gap-3 pt-3">
+                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 shadow-xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  Continuous Feed • Hover Card to Inspect
                 </span>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handlePrev}
-                    className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-red-950/60 text-white transition-all cursor-pointer"
-                    aria-label="Previous project"
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleNext}
-                    className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-red-950/60 text-white transition-all cursor-pointer"
-                    aria-label="Next project"
-                  >
-                    <ChevronRight className="w-4 h-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Column: Technical Case Study Details (6 Cols) */}
-            <div className="lg:col-span-6 space-y-5">
-              
-              <div className="space-y-2">
-                <span className="badge-crimson text-xs font-bold">
-                  {currentProject.categoryLabel} • {currentProject.projectNumber}
-                </span>
-                <h3 className="text-2xl sm:text-3xl font-black text-white leading-tight">
-                  {currentProject.title}
-                </h3>
-                <p className="text-xs font-bold text-amber-400 font-mono">
-                  Client: {currentProject.clientName} ({currentProject.location})
-                </p>
-              </div>
-
-              {/* Technical Specifications Callout */}
-              <div className="p-4 rounded-2xl bg-slate-900/90 border border-red-950/60 space-y-2 text-xs">
-                <div className="flex items-start gap-2">
-                  <strong className="text-slate-400 font-mono shrink-0">Inverter Tech:</strong>
-                  <span className="text-slate-200 font-bold">{currentProject.inverterType}</span>
-                </div>
-                {currentProject.mountingStructure && (
-                  <div className="flex items-start gap-2">
-                    <strong className="text-slate-400 font-mono shrink-0">Structure:</strong>
-                    <span className="text-slate-200 font-bold">{currentProject.mountingStructure}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Annual Metrics Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-red-950/60 text-center">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase font-mono">Annual Yield</span>
-                  <strong className="text-sm font-black text-amber-400 font-mono block mt-0.5">
-                    {currentProject.annualGeneration}
-                  </strong>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-red-950/60 text-center">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase font-mono">CO₂ Offset</span>
-                  <strong className="text-sm font-black text-rose-300 font-mono block mt-0.5">
-                    {currentProject.co2Offset}
-                  </strong>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-slate-900/80 border border-red-950/60 text-center col-span-2 sm:col-span-1">
-                  <span className="text-[10px] font-bold text-slate-400 block uppercase font-mono">Status</span>
-                  <strong className="text-sm font-black text-emerald-400 font-mono block mt-0.5">
-                    {currentProject.completionDate}
-                  </strong>
-                </div>
-              </div>
-
-              {/* Results & Link */}
-              <div className="space-y-2 pt-2 border-t border-red-950/60">
-                {currentProject.results.slice(0, 2).map((res, rIdx) => (
-                  <div key={rIdx} className="flex items-center gap-2 text-xs text-slate-300 font-medium">
-                    <ShieldCheck className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                    <span>{res}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="pt-2">
                 <Link
-                  to={`/projects/${currentProject.slug}`}
-                  className="btn-primary py-3 px-6 text-xs sm:text-sm font-bold inline-flex items-center gap-2"
+                  to="/projects"
+                  className="bg-slate-900 hover:bg-slate-800 text-white border border-red-950/60 py-2 px-4 text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 rounded-xl transition-all hover:border-red-500/40 shadow-xs"
                 >
-                  <span>View Complete Case Study</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>Explore All Projects</span>
+                  <ArrowRight className="w-4 h-4 text-red-500" />
                 </Link>
               </div>
 
             </div>
+          </ScrollReveal>
+        </div>
 
+        {/* ── Continuous Moving Infinite Marquee Track ── */}
+        <div className="relative w-full overflow-hidden py-3">
+          
+          {/* Left Gradient Fade Mask */}
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-32 bg-gradient-to-r from-[#0A0A0E] via-[#0A0A0E]/80 to-transparent z-20" />
+          
+          {/* Right Gradient Fade Mask */}
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-32 bg-gradient-to-l from-[#0A0A0E] via-[#0A0A0E]/80 to-transparent z-20" />
+
+          {/* Scrolling Container */}
+          <div className="animate-smooth-marquee gap-6 px-4">
+            {marqueeProjects.map((project, idx) => (
+              <div
+                key={`${project.id}-${idx}`}
+                className="w-[320px] sm:w-[360px] lg:w-[380px] shrink-0"
+              >
+                <div className="h-[430px] flex flex-col justify-between bg-[#14101A]/95 border border-red-900/30 rounded-2xl overflow-hidden hover:border-red-500/60 hover:shadow-2xl hover:shadow-red-950/50 hover:-translate-y-1.5 transition-all duration-300 group relative shadow-lg">
+                  
+                  {/* Top Glowing Accent Line on Hover */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-rose-400 to-amber-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30" />
+
+                  {/* ── Card Image Container (Fixed Height 165px) ── */}
+                  <div className="relative h-42 w-full overflow-hidden bg-slate-900 shrink-0">
+                    <img
+                      src={project.image}
+                      alt={project.title}
+                      className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                      loading="lazy"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (target.src !== FALLBACK_IMAGE) {
+                          target.src = FALLBACK_IMAGE;
+                        }
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#14101A] via-black/20 to-black/40" />
+
+                    {/* Solar Capacity Floating Badge */}
+                    <div className="absolute top-3 left-3 z-20">
+                      <div className="bg-gradient-to-r from-red-600 to-rose-600 text-white px-2.5 py-1 rounded-lg shadow-md border border-red-400/40">
+                        <span className="text-xs font-black font-mono block leading-none">
+                          {project.capacity}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Project Index Badge */}
+                    <div className="absolute top-3 right-3 z-20">
+                      <span className="px-2 py-0.5 rounded-md text-[9px] font-mono font-black tracking-wider bg-black/75 backdrop-blur-md text-amber-400 border border-amber-500/30 shadow-xs">
+                        {project.projectNumber}
+                      </span>
+                    </div>
+
+                    {/* Location & Status Strip */}
+                    <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between z-20 text-[10px]">
+                      <div className="inline-flex items-center gap-1 bg-black/80 backdrop-blur-md px-2 py-1 rounded-md border border-white/15 font-bold text-slate-200 truncate max-w-[70%]">
+                        <MapPin className="w-3 h-3 text-amber-400 shrink-0" />
+                        <span className="truncate">{project.location}</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md bg-emerald-950/90 text-emerald-300 font-mono font-bold border border-emerald-500/40 backdrop-blur-xs">
+                        ● {project.completionDate}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* ── Perfectly Aligned Card Body ── */}
+                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
+                    
+                    {/* Top Row: Category + State */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-[10px]">
+                        <span className="badge-crimson font-bold px-2 py-0.5 rounded-full">
+                          {project.categoryLabel}
+                        </span>
+                        <span className="font-mono font-bold text-slate-400">
+                          {project.state}
+                        </span>
+                      </div>
+
+                      {/* Title: Fixed 2-Line Height for perfect alignment */}
+                      <div className="h-11 flex items-center">
+                        <h3 className="text-sm sm:text-base font-black text-white group-hover:text-red-400 transition-colors line-clamp-2 leading-snug">
+                          {project.title}
+                        </h3>
+                      </div>
+
+                      {/* Client Name: Fixed 1-Line Height */}
+                      <p className="text-[11px] font-bold text-amber-400/90 font-mono truncate">
+                        Client: {project.clientName}
+                      </p>
+                    </div>
+
+                    {/* Compact Key Metrics (Yield & Savings) */}
+                    <div className="grid grid-cols-2 gap-2 pt-1">
+                      <div className="p-2.5 rounded-xl bg-slate-900/90 border border-red-950/60 shadow-xs">
+                        <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold uppercase font-mono">
+                          <Zap className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+                          <span className="truncate">Annual Yield</span>
+                        </div>
+                        <strong className="text-xs font-black text-amber-400 font-mono block mt-0.5 truncate">
+                          {project.annualGeneration.split("/")[0]}
+                        </strong>
+                      </div>
+
+                      <div className="p-2.5 rounded-xl bg-slate-900/90 border border-red-950/60 shadow-xs">
+                        <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold uppercase font-mono">
+                          <TrendingUp className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
+                          <span className="truncate">Annual Savings</span>
+                        </div>
+                        <strong className="text-xs font-black text-emerald-400 font-mono block mt-0.5 truncate">
+                          {project.annualSavings.split("/")[0]}
+                        </strong>
+                      </div>
+                    </div>
+
+                    {/* Bottom CTA Button */}
+                    <div className="pt-2 border-t border-red-950/60">
+                      <Link
+                        to={`/projects/${project.slug}`}
+                        className="inline-flex items-center justify-between w-full px-3.5 py-2 rounded-xl bg-slate-900 group-hover:bg-red-600 text-slate-200 group-hover:text-white font-bold text-xs transition-all duration-300 border border-red-950/60 group-hover:border-red-500 shadow-xs group/btn"
+                      >
+                        <span>Explore Case Study</span>
+                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />
+                      </Link>
+                    </div>
+
+                  </div>
+
+                </div>
+              </div>
+            ))}
           </div>
 
+        </div>
+
+        {/* ── Footer Environmental Stat (Centered) ── */}
+        <div className="site-container">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-2 text-center text-xs text-slate-400 font-mono pt-2">
+            <div className="flex items-center gap-1.5">
+              <Leaf className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Over 2,400+ Tons Lifetime CO₂ Displaced across 5 Commissioned Sites</span>
+            </div>
+            <span className="hidden sm:inline text-slate-600">•</span>
+            <span className="text-[11px] text-slate-500">
+              Hover over any case study card to pause continuous movement
+            </span>
+          </div>
         </div>
 
       </div>

@@ -3,14 +3,15 @@ import { Link } from "react-router-dom";
 import {
   Wrench,
   ShieldCheck,
-  CheckCircle2,
   ArrowRight,
   Activity,
+  Zap,
+  MapPin,
+  Award,
+  Sparkles
 } from "lucide-react";
 import { SEOHead } from "../../components/common/SEOHead";
 import { solutionsData } from "../../data/solutions";
-import { SolarHealthAudit } from "../../components/common/SolarHealthAudit";
-import { FAQAccordion } from "../../components/common/FAQAccordion";
 
 export const SolarEPCMaintenancePage: React.FC = () => {
   const data = solutionsData.find((s) => s.id === "epc-maintenance") || solutionsData[4];
@@ -23,7 +24,7 @@ export const SolarEPCMaintenancePage: React.FC = () => {
       />
 
       {/* Hero Header */}
-      <section className="pt-32 pb-16 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
+      <section className="pt-28 pb-10 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
         <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -72,93 +73,122 @@ export const SolarEPCMaintenancePage: React.FC = () => {
 
             {/* Hero Image */}
             <div className="lg:col-span-5">
-              <div className="rounded-3xl overflow-hidden border border-red-950/60 shadow-xl relative bg-slate-900">
+              <div className="rounded-3xl overflow-hidden border border-red-950/60 shadow-2xl relative bg-slate-900 aspect-4/3 sm:aspect-auto sm:h-96">
                 <img
                   src={data.heroImage}
                   alt="Solar EPC engineering maintenance"
-                  className="w-full h-80 sm:h-96 object-cover"
+                  className="w-full h-full object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0E] via-transparent to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 bg-[#14101A]/95 backdrop-blur-md p-4 rounded-2xl border border-red-900/30 text-xs shadow-md">
-                  <span className="text-slate-400 block font-bold">Plant Availability SLA:</span>
-                  <strong className="text-base text-red-400 font-black">&gt; 99% Guaranteed Generation Uptime</strong>
-                </div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Overview & Key Highlights */}
-      <section className="section-padding bg-[#0A0A0E]">
-        <div className="site-container space-y-16">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-            <div className="lg:col-span-7 space-y-6">
-              <h2 className="text-2xl sm:text-3xl font-black text-white">
-                Maximizing 25-Year Plant Performance &amp; Asset Longevity
-              </h2>
-              <p className="text-sm text-slate-300 leading-relaxed font-normal">
-                {data.overview}
-              </p>
+      {/* ── 02. SECTION: EPC & O&M VALUE PILLARS (CARDLESS EDITORIAL DESIGN) ── */}
+      <section className="py-12 sm:py-16 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
+        {/* Full-bleed Ambient Glows */}
+        <div className="absolute top-1/4 left-1/5 w-[500px] h-[500px] bg-red-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/5 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
 
-              <div className="space-y-3 pt-4">
-                <h3 className="text-base font-black text-white">EPC &amp; O&amp;M Deliverables:</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {data.keyBenefits.map((b, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 p-3 rounded-xl bg-[#14101A]/95 border border-red-900/30 text-xs text-slate-200 font-medium shadow-xs">
-                      <CheckCircle2 className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                      <span>{b}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Technical Specs Card */}
-            <div className="lg:col-span-5 bg-[#14101A]/95 border border-red-900/30 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
-              <h3 className="text-lg font-black text-white flex items-center gap-2">
-                <Activity className="w-5 h-5 text-rose-400" />
-                <span>O&amp;M Service Protocols</span>
-              </h3>
-
-              <div className="space-y-3 divide-y divide-slate-800 text-xs">
-                {data.technicalSpecs.map((spec, sIdx) => (
-                  <div key={sIdx} className="pt-2.5 flex justify-between gap-4">
-                    <span className="text-slate-400 font-medium">{spec.label}</span>
-                    <span className="text-white font-bold text-right">{spec.value}</span>
-                  </div>
-                ))}
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-900 border border-red-950/60 space-y-2 shadow-xs">
-                <p className="text-xs font-black text-rose-400">Target Solar Assets:</p>
-                <ul className="text-xs text-slate-300 space-y-1">
-                  {data.suitableFor.map((item, idx) => (
-                    <li key={idx} className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Interactive Solar Health Audit */}
-          <SolarHealthAudit />
-        </div>
-      </section>
-
-      {/* EPC FAQs */}
-      <section className="section-padding bg-[#0A0A0E] border-t border-red-950/60">
-        <div className="site-container max-w-4xl space-y-8">
-          <div className="text-center space-y-2">
-            <h2 className="heading-section text-white">
-              SOLAR EPC &amp; O&amp;M <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">FAQS</span>
+        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
+          
+          {/* Grand Section Header */}
+          <div className="text-center max-w-4xl mx-auto space-y-3">
+            <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-red-950/80 text-rose-300 border border-red-500/40 font-mono shadow-xs">
+              <Zap className="w-3 h-3 text-amber-400" />
+              <span>EPC &amp; O&amp;M ADVANTAGES</span>
+            </span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white uppercase tracking-tight leading-[1.12]">
+              WHY PROFESSIONAL O&amp;M{" "}
+              <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">
+                MATTERS
+              </span>
             </h2>
-            <p className="text-slate-300 text-sm">Response time SLAs, module degradation diagnostics, and AMC terms.</p>
+            <p className="text-slate-300 text-xs sm:text-sm max-w-2xl mx-auto font-normal">
+              Prevent generational yield losses, detect invisible cell hotspots early, and maintain 99%+ uptime commitments.
+            </p>
           </div>
-          <FAQAccordion defaultCategory="technical" />
+
+          {/* 3 Full-Width Cardless Open Editorial Pillars */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-12">
+            {/* Pillar 01 */}
+            <div className="space-y-3 pb-6 border-b border-red-500/30">
+              <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-red-500/80 font-mono block leading-none">01</span>
+              <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
+                99%+ Guaranteed Uptime
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                Comprehensive performance ratio commitments backed by rapid sub-4 hour field breakdown response teams.
+              </p>
+            </div>
+
+            {/* Pillar 02 */}
+            <div className="space-y-3 pb-6 border-b border-amber-500/30">
+              <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-amber-400/80 font-mono block leading-none">02</span>
+              <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
+                FLIR Thermal Drones
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                Aerial infrared thermal imaging to detect micro-cracks, faulty bypass diodes, and localized module hot-spots.
+              </p>
+            </div>
+
+            {/* Pillar 03 */}
+            <div className="space-y-3 pb-6 border-b border-red-500/30">
+              <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-rose-400/80 font-mono block leading-none">03</span>
+              <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight">
+                24/7 AI Cloud SCADA
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                Continuous telemetry, string-level current tracking, automated anomaly triggers, and monthly PR reporting.
+              </p>
+            </div>
+          </div>
+
+          {/* ── 5-Step Connected Turnkey Pipeline ── */}
+          <div className="space-y-10 pt-4">
+            <div className="text-center max-w-2xl mx-auto space-y-2">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-amber-950/80 text-amber-300 border border-amber-500/40 font-mono">
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                <span>TURNKEY EPC &amp; O&amp;M PIPELINE</span>
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
+                OUR 5-STAGE EXECUTION JOURNEY
+              </h3>
+            </div>
+
+            {/* Connected Track */}
+            <div className="relative">
+              {/* Horizontal Connecting Glow Line */}
+              <div className="hidden lg:block absolute top-6 left-12 right-12 h-0.5 bg-gradient-to-r from-red-500 via-orange-400 to-amber-300 opacity-40 z-0" />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 relative z-10">
+                {[
+                  { num: "01", title: "Plant Health Audit", desc: "Baseline IV curve tracing, insulation testing & earthing resistance audit", icon: MapPin, color: "text-red-400 border-red-500/60 bg-red-950/90" },
+                  { num: "02", title: "O&M Protocol", desc: "Establishing preventive maintenance schedules, cleaning cycles & spares buffer", icon: Zap, color: "text-orange-400 border-orange-500/60 bg-orange-950/90" },
+                  { num: "03", title: "SCADA Telemetry", desc: "Connecting inverters, pyranometers & weather sensors to 24/7 monitoring desk", icon: ShieldCheck, color: "text-amber-400 border-amber-500/60 bg-amber-950/90" },
+                  { num: "04", title: "Field Interventions", desc: "Torque checks, de-mineralized pressure washing & inverter firmware updates", icon: Wrench, color: "text-rose-400 border-rose-500/60 bg-rose-950/90" },
+                  { num: "05", title: "Yield Analytics", desc: "Monthly performance ratio validation, degradation analysis & optimization reports", icon: Award, color: "text-emerald-400 border-emerald-500/60 bg-emerald-950/90" }
+                ].map((s, i) => {
+                  const Icon = s.icon;
+                  return (
+                    <div key={i} className="flex flex-col items-center text-center space-y-3 group">
+                      <div className={`w-12 h-12 rounded-full border-2 ${s.color} flex items-center justify-center shadow-lg shadow-black/60 shrink-0 group-hover:scale-110 group-hover:border-white transition-all duration-300`}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-wider block">STAGE {s.num}</span>
+                        <h4 className="text-sm font-bold text-white uppercase tracking-tight">{s.title}</h4>
+                        <p className="text-xs text-slate-300 leading-relaxed font-normal">{s.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
     </div>

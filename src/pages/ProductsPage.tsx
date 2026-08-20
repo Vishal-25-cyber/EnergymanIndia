@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { SEOHead } from "../components/common/SEOHead";
 import { ProductCard } from "../components/common/ProductCard";
+import { SolarWaterHeaterInteractive } from "../components/common/SolarWaterHeaterInteractive";
 import { productsData } from "../data/products";
 
 export const ProductsPage: React.FC<{ categoryFilter?: string }> = ({ categoryFilter }) => {
@@ -116,6 +117,11 @@ export const ProductsPage: React.FC<{ categoryFilter?: string }> = ({ categoryFi
           )}
         </div>
       </section>
+
+      {/* Interactive Water Heater Engineering Visualizer (Shown under Water Heaters or when browsing) */}
+      {(selectedCategory === "solar-water-heaters" || selectedCategory === "all") && (
+        <SolarWaterHeaterInteractive />
+      )}
     </div>
   );
 };
