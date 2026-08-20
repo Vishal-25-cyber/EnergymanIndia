@@ -3,26 +3,20 @@ import { useParams, Link, useSearchParams } from "react-router-dom";
 import {
   ShieldCheck,
   CheckCircle2,
-  Download,
   ArrowRight,
-  Zap,
   Cpu,
-  Layers,
   Phone,
-  Award,
   ChevronRight
 } from "lucide-react";
 import { SEOHead } from "../../components/common/SEOHead";
 import { ProductImageCarousel } from "../../components/common/ProductImageCarousel";
 import { productsData } from "../../data/products";
-import { companyData } from "../../data/company";
 
 export const ProductDetailPage: React.FC = () => {
   const { category } = useParams<{ category: string }>();
   const [searchParams] = useSearchParams();
   const itemSlug = searchParams.get("item");
 
-  // Find product by slug or category
   const product =
     productsData.find((p) => p.slug === itemSlug) ||
     productsData.find((p) => p.category === category) ||
@@ -31,25 +25,25 @@ export const ProductDetailPage: React.FC = () => {
   const relatedProducts = productsData.filter((p) => p.id !== product.id).slice(0, 3);
 
   return (
-    <>
+    <div className="bg-[#0A0A0E] text-slate-100 min-h-screen">
       <SEOHead
         title={`${product.name} - Technical Specifications`}
         description={product.description}
       />
 
       {/* Breadcrumb Bar */}
-      <section className="pt-28 pb-4 bg-brand-950 border-b border-slate-800/80">
+      <section className="pt-28 pb-4 bg-[#0A0A0E] border-b border-red-950/60">
         <div className="site-container flex items-center gap-2 text-xs text-slate-400">
-          <Link to="/" className="hover:text-white transition-colors">Home</Link>
-          <ChevronRight className="w-3.5 h-3.5" />
-          <Link to="/products" className="hover:text-white transition-colors">Products</Link>
-          <ChevronRight className="w-3.5 h-3.5" />
-          <span className="text-slate-200 font-semibold truncate max-w-xs">{product.name}</span>
+          <Link to="/" className="hover:text-red-400 transition-colors font-medium">Home</Link>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+          <Link to="/products" className="hover:text-red-400 transition-colors font-medium">Products</Link>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+          <span className="text-white font-bold truncate max-w-xs">{product.name}</span>
         </div>
       </section>
 
       {/* Product Detail Section */}
-      <section className="section-padding bg-brand-950">
+      <section className="section-padding bg-[#0A0A0E]">
         <div className="site-container space-y-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-start">
             {/* Left: Product Images with Thumbnails & Zoom (6 Cols on LG) */}
@@ -63,32 +57,32 @@ export const ProductDetailPage: React.FC = () => {
             {/* Right: Product Info & Actions (6 Cols on LG) */}
             <div className="lg:col-span-6 space-y-6">
               <div className="space-y-3">
-                <span className="badge-emerald text-xs font-semibold">
+                <span className="badge-crimson text-xs font-bold px-3 py-1 rounded-full shadow-md">
                   {product.categoryLabel}
                 </span>
 
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white leading-tight">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-white leading-tight">
                   {product.name}
                 </h1>
 
-                <p className="text-sm font-semibold text-energy-400">
+                <p className="text-sm font-bold text-red-400">
                   {product.tagline}
                 </p>
 
-                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
                   {product.description}
                 </p>
               </div>
 
               {/* Warranty & Certification Badges */}
-              <div className="p-4 rounded-2xl bg-brand-900/80 border border-slate-800 space-y-2">
+              <div className="p-4 rounded-2xl bg-[#14101A]/95 border border-red-900/30 space-y-2 shadow-md">
                 <div className="flex items-center gap-2 text-xs text-white font-bold">
-                  <ShieldCheck className="w-4 h-4 text-energy-400 shrink-0" />
+                  <ShieldCheck className="w-4 h-4 text-red-400 shrink-0" />
                   <span>Warranty: {product.warranty}</span>
                 </div>
                 <div className="flex flex-wrap items-center gap-1.5 pt-1">
                   {product.certifications.map((cert, cIdx) => (
-                    <span key={cIdx} className="badge-slate text-[10px]">
+                    <span key={cIdx} className="bg-slate-900 border border-red-950/60 text-slate-300 text-[10px] font-semibold px-2.5 py-0.5 rounded-md">
                       {cert}
                     </span>
                   ))}
@@ -96,85 +90,91 @@ export const ProductDetailPage: React.FC = () => {
               </div>
 
               {/* Key Features List */}
-              <div className="space-y-2 pt-2 border-t border-slate-800">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Engineering Highlights:</p>
+              <div className="space-y-2 pt-2 border-t border-red-950/60">
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">Engineering Highlights:</p>
                 <div className="space-y-1.5">
                   {product.features.map((feat, fIdx) => (
-                    <div key={fIdx} className="flex items-start gap-2 text-xs text-slate-200">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-energy-400 shrink-0 mt-0.5" />
+                    <div key={fIdx} className="flex items-start gap-2 text-xs text-slate-300 font-medium">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
                       <span>{feat}</span>
                     </div>
                   ))}
                 </div>
               </div>
 
-              {/* CTAs */}
-              <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-slate-800">
-                <Link
-                  to={`/get-a-quote?product=${encodeURIComponent(product.name)}`}
-                  className="btn-primary py-3.5 px-7 font-bold text-xs sm:text-sm flex-1 justify-center"
-                >
-                  Request Quotation / Pricing →
-                </Link>
+              {/* CTA Action Buttons */}
+              <div className="space-y-3 pt-4 border-t border-red-950/60">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Link
+                    to={`/get-a-quote?product=${encodeURIComponent(product.name)}`}
+                    className="btn-primary py-3.5 px-8 text-sm font-bold inline-flex items-center gap-2 flex-1 justify-center"
+                  >
+                    <span>Request Quotation</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
 
-                <a
-                  href={`https://wa.me/919443312890?text=Hello%20Energy%20Man%20India%2C%20I%20am%20interested%20in%20technical%20specs%20for%20${encodeURIComponent(product.name)}.`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="btn-secondary py-3.5 px-6 font-semibold text-xs sm:text-sm inline-flex items-center gap-2"
-                >
-                  <Phone className="w-4 h-4 text-energy-400" />
-                  <span>WhatsApp Inquire</span>
-                </a>
+                  <a
+                    href="tel:+919842211910"
+                    className="py-3.5 px-6 text-sm font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-red-950/60 inline-flex items-center gap-2 transition-all"
+                  >
+                    <Phone className="w-4 h-4 text-red-400" />
+                    <span>Talk to Engineer</span>
+                  </a>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Technical Specifications Table */}
-          <div className="bg-brand-900/80 backdrop-blur-md border border-slate-800 rounded-3xl p-6 sm:p-10 space-y-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-              <Cpu className="w-6 h-6 text-energy-400" />
-              <span>Full Electrical & Mechanical Specifications</span>
+          <div className="bg-[#14101A]/95 border border-red-900/30 rounded-3xl p-6 sm:p-10 space-y-6 shadow-xl">
+            <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+              <Cpu className="w-6 h-6 text-red-400" />
+              <span>Full Technical Specifications</span>
             </h2>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs sm:text-sm text-left divide-y divide-slate-800">
-                <thead>
-                  <tr className="text-slate-400 bg-brand-950/60 font-mono uppercase text-[11px]">
-                    <th className="py-3.5 px-4 rounded-l-xl font-bold">Parameter / Test Condition</th>
-                    <th className="py-3.5 px-4 rounded-r-xl font-bold">Factory Rating / Specification Value</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {product.specifications.map((spec, sIdx) => (
-                    <tr key={sIdx} className="hover:bg-brand-850/60 transition-colors">
-                      <td className="py-3 px-4 font-semibold text-slate-300">{spec.name}</td>
-                      <td className="py-3 px-4 font-mono font-bold text-energy-400">{spec.value}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-3 divide-y md:divide-y-0 divide-slate-800 text-xs">
+              {product.specifications.map((spec, idx) => (
+                <div key={idx} className="flex justify-between py-2 border-b border-red-950/60">
+                  <span className="text-slate-400 font-medium">{spec.name}:</span>
+                  <span className="text-white font-bold text-right">{spec.value}</span>
+                </div>
+              ))}
             </div>
           </div>
 
           {/* Related Products */}
           <div className="space-y-6">
-            <h3 className="text-xl font-bold text-white">Related Renewable Energy Products</h3>
+            <h3 className="text-xl sm:text-2xl font-black text-white">
+              Complementary Solar Hardware
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedProducts.map((p) => (
-                <div key={p.id} className="p-5 rounded-3xl bg-brand-900/60 border border-slate-800 space-y-3">
-                  <img src={p.mainImage} alt={p.name} className="w-full h-40 object-cover rounded-2xl" />
-                  <h4 className="text-sm font-bold text-white line-clamp-1">{p.name}</h4>
-                  <p className="text-xs text-slate-400 line-clamp-2">{p.tagline}</p>
-                  <Link to={`/products/${p.category}?item=${p.slug}`} className="text-xs font-bold text-energy-400 hover:underline inline-flex items-center gap-1">
-                    View Specs <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
+              {relatedProducts.map((rel) => (
+                <Link
+                  key={rel.id}
+                  to={`/products/${rel.category}?item=${rel.slug}`}
+                  className="p-5 rounded-2xl bg-[#14101A]/95 border border-red-900/30 hover:border-red-500/50 hover:shadow-xl transition-all duration-300 group block"
+                >
+                  <div className="h-40 rounded-xl overflow-hidden mb-3 bg-slate-900">
+                    <img
+                      src={rel.mainImage}
+                      alt={rel.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                  </div>
+                  <h4 className="text-sm font-bold text-white group-hover:text-red-400 transition-colors line-clamp-1">
+                    {rel.name}
+                  </h4>
+                  <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">
+                    {rel.tagline}
+                  </p>
+                </Link>
               ))}
             </div>
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 };
+
+export default ProductDetailPage;

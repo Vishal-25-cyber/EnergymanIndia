@@ -1,15 +1,13 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Sun,
   Compass,
   Gauge,
   Thermometer,
-  Zap,
   Activity,
   Sparkles,
   MapPin,
   RefreshCw,
-  Info
 } from "lucide-react";
 
 interface CityTelemetry {
@@ -101,23 +99,23 @@ export const LiveSolarTelemetry: React.FC = () => {
   };
 
   return (
-    <section className="section-padding bg-brand-950/80 relative overflow-hidden border-t border-slate-800" id="telemetry">
+    <section className="section-padding bg-[#0A0A0E] relative overflow-hidden border-t border-red-950/60" id="telemetry">
       {/* Background ambient light */}
-      <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-solar-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-energy-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="site-container relative z-10 space-y-12">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-solar-500/10 text-solar-400 border border-solar-500/30">
-              <Activity className="w-3.5 h-3.5 animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wider uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs">
+              <Activity className="w-3.5 h-3.5 text-red-400 animate-pulse" />
               <span>Live Regional Solar Intelligence</span>
             </div>
-            <h2 className="heading-section">
-              SOLAR IRRADIANCE & <span className="bg-gradient-to-r from-solar-400 via-energy-400 to-solar-300 bg-clip-text text-transparent">YIELD OPTIMIZER</span>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+              SOLAR IRRADIANCE & <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">YIELD OPTIMIZER</span>
             </h2>
-            <p className="text-subtle">
+            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
               South India enjoys over 300+ days of abundant solar radiation. Explore live regional irradiance telemetry and simulate how roof tilt and orientation maximize your solar generation.
             </p>
           </div>
@@ -131,7 +129,7 @@ export const LiveSolarTelemetry: React.FC = () => {
                   setSelectedCityKey(e.target.value);
                   setUserTilt(citiesData[e.target.value]?.optimalTilt || 11);
                 }}
-                className="px-4 py-2.5 rounded-2xl bg-brand-900 border border-slate-700 text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-energy-500 cursor-pointer shadow-lg pr-8"
+                className="px-4 py-2.5 rounded-2xl bg-slate-900 border border-red-950/60 text-xs font-bold text-slate-200 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer shadow-sm pr-8"
               >
                 <option value="coimbatore">Coimbatore (Hub)</option>
                 <option value="palani">Palani (Registered Hub)</option>
@@ -143,8 +141,8 @@ export const LiveSolarTelemetry: React.FC = () => {
 
             <button
               onClick={handleRefresh}
-              className={`p-2.5 rounded-2xl bg-brand-900 border border-slate-700 text-slate-300 hover:text-white transition-all ${
-                isRefreshing ? "animate-spin text-energy-400" : ""
+              className={`p-2.5 rounded-2xl bg-slate-900 border border-red-950/60 text-slate-300 hover:text-red-400 transition-all shadow-sm cursor-pointer ${
+                isRefreshing ? "animate-spin text-red-400" : ""
               }`}
               title="Refresh Telemetry"
             >
@@ -156,158 +154,139 @@ export const LiveSolarTelemetry: React.FC = () => {
         {/* Telemetry Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left: Live Station Weather & Irradiance (5 Cols) */}
-          <div className="lg:col-span-5 bg-gradient-to-br from-brand-900 via-brand-900/90 to-brand-850 border border-slate-700/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div className="lg:col-span-5 bg-[#14101A]/95 border border-red-900/30 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+            <div className="flex items-center justify-between pb-4 border-b border-red-950/60">
               <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-energy-400" />
+                <MapPin className="w-4 h-4 text-red-400" />
                 <div>
                   <h3 className="text-sm font-bold text-white">{city.city}, {city.state}</h3>
-                  <span className="text-[11px] text-slate-400 font-mono">Live Ground Telemetry</span>
+                  <span className="text-[11px] text-slate-400 font-mono">Live Ground Station Data</span>
                 </div>
               </div>
-              <span className="badge-emerald text-[10px] font-bold">Station Online</span>
+              <span className="bg-red-950/80 text-rose-300 border border-red-500/40 text-[10px] font-extrabold px-2.5 py-1 rounded-full">Station Online</span>
             </div>
 
             {/* Main Irradiance Gauge */}
-            <div className="p-5 rounded-2xl bg-brand-950/80 border border-slate-800 flex items-center justify-between">
+            <div className="p-5 rounded-2xl bg-slate-900 border border-red-950/60 flex items-center justify-between">
               <div className="space-y-1">
-                <span className="text-xs text-slate-400 font-medium">Solar Irradiance (GHI)</span>
-                <div className="text-3xl font-black text-solar-400 font-mono flex items-baseline gap-1">
+                <span className="text-xs text-slate-400 font-bold">Solar Irradiance (GHI)</span>
+                <div className="text-3xl font-black text-white font-mono flex items-baseline gap-1">
                   <span>{city.irradiance}</span>
-                  <span className="text-xs text-slate-400 font-normal">W/m²</span>
+                  <span className="text-xs text-slate-400 font-medium">W/m²</span>
                 </div>
-                <p className="text-[11px] text-energy-400 font-semibold">Excellent Solar Resource</p>
+                <p className="text-[11px] text-rose-300 font-extrabold">Excellent Solar Harvest Zone</p>
               </div>
-              <div className="p-3.5 rounded-2xl bg-solar-500/10 border border-solar-500/30 text-solar-400">
+              <div className="p-3.5 rounded-2xl bg-amber-950/80 border border-amber-500/40 text-amber-400 shadow-xs">
                 <Sun className="w-8 h-8 animate-spin-slow" />
               </div>
             </div>
 
             {/* Environmental Metric Sub-Cards */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-4 rounded-2xl bg-brand-950/60 border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Thermometer className="w-3.5 h-3.5 text-red-400" />
+              <div className="p-4 rounded-2xl bg-slate-900 border border-red-950/60 space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold">
+                  <Thermometer className="w-3.5 h-3.5 text-rose-400" />
                   <span>Ambient Temp</span>
                 </div>
-                <div className="text-xl font-bold text-white font-mono">{city.temp}°C</div>
+                <div className="text-xl font-black text-white font-mono">{city.temp}°C</div>
                 <span className="text-[10px] text-slate-400">Panel Temp: ~{city.temp + 22}°C</span>
               </div>
 
-              <div className="p-4 rounded-2xl bg-brand-950/60 border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Gauge className="w-3.5 h-3.5 text-energy-400" />
+              <div className="p-4 rounded-2xl bg-slate-900 border border-red-950/60 space-y-1">
+                <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold">
+                  <Gauge className="w-3.5 h-3.5 text-red-400" />
                   <span>Peak Sun Hours</span>
                 </div>
-                <div className="text-xl font-bold text-energy-400 font-mono">{city.peakSunHours} hrs</div>
+                <div className="text-xl font-black text-red-400 font-mono">{city.peakSunHours} hrs</div>
                 <span className="text-[10px] text-slate-400">Daily Average Yield</span>
               </div>
 
-              <div className="p-4 rounded-2xl bg-brand-950/60 border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Compass className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Optimal Azimuth</span>
+              <div className="grid col-span-2 grid-cols-2 gap-3">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-red-950/60 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold">
+                    <Compass className="w-3.5 h-3.5 text-rose-400" />
+                    <span>Optimal Azimuth</span>
+                  </div>
+                  <div className="text-xs font-extrabold text-white font-mono truncate">{city.optimalAzimuth}</div>
+                  <span className="text-[10px] text-slate-400">Zero Azimuth Error</span>
                 </div>
-                <div className="text-xs font-bold text-white font-mono truncate">{city.optimalAzimuth}</div>
-                <span className="text-[10px] text-slate-400">Zero Azimuth Error</span>
-              </div>
 
-              <div className="p-4 rounded-2xl bg-brand-950/60 border border-slate-800 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs text-slate-400">
-                  <Sparkles className="w-3.5 h-3.5 text-solar-400" />
-                  <span>Optimal Tilt</span>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-red-950/60 space-y-1">
+                  <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Optimal Tilt</span>
+                  </div>
+                  <div className="text-xl font-black text-amber-400 font-mono">{city.optimalTilt}°</div>
+                  <span className="text-[10px] text-slate-400">Latitude Matched</span>
                 </div>
-                <div className="text-xl font-bold text-solar-400 font-mono">{city.optimalTilt}°</div>
-                <span className="text-[10px] text-slate-400">Latitude Matched</span>
               </div>
             </div>
           </div>
 
-          {/* Right: Interactive 3D Roof Tilt & Azimuth Simulator (7 Cols) */}
-          <div className="lg:col-span-7 bg-brand-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+          {/* Right: Tilt & Orientation Simulator (7 Cols) */}
+          <div className="lg:col-span-7 bg-[#14101A]/95 border border-red-900/30 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
             <div className="space-y-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-energy-400 font-mono">
-                Interactive Engineering Simulation
-              </span>
-              <h3 className="text-xl sm:text-2xl font-bold text-white">
-                Roof Tilt & Orientation Yield Calculator
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-400">
-                Adjust roof mounting tilt and directional facing to evaluate generation efficiency retention.
+              <span className="text-xs font-bold text-red-400 uppercase font-mono tracking-wider">3D Array Simulation</span>
+              <h3 className="text-xl font-black text-white">Rooftop Angle &amp; Orientation Simulator</h3>
+              <p className="text-xs text-slate-300">
+                Adjust the rooftop tilt angle and facing orientation to see the real-time simulation of photovoltaic generation efficiency for {city.city}.
               </p>
             </div>
 
-            {/* Tilt Angle Slider */}
-            <div className="space-y-3 p-5 rounded-2xl bg-brand-950/70 border border-slate-800">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  Panel Tilt Angle: <strong className="text-solar-400 font-mono text-sm">{userTilt}°</strong>
-                </label>
-                <span className="text-[11px] text-energy-400 bg-energy-500/10 px-2.5 py-0.5 rounded-full border border-energy-500/30">
-                  Optimal for {city.city}: {city.optimalTilt}°
-                </span>
+            {/* Tilt Slider */}
+            <div className="space-y-3 p-5 rounded-2xl bg-slate-900 border border-red-950/60">
+              <div className="flex justify-between items-center text-xs font-bold">
+                <span className="text-slate-300">Adjust Panel Tilt Angle:</span>
+                <span className="text-red-400 font-mono font-black text-base">{userTilt}°</span>
               </div>
               <input
                 type="range"
-                min={0}
-                max={45}
-                step={1}
+                min="0"
+                max="45"
+                step="0.5"
                 value={userTilt}
                 onChange={(e) => setUserTilt(Number(e.target.value))}
-                className="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-solar-400 focus:outline-none"
+                className="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500"
               />
-              <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                <span>0° (Flat Horizontal)</span>
-                <span>11° (Recommended South India)</span>
-                <span>45° (High Slope)</span>
+              <div className="flex justify-between text-[11px] text-slate-400 font-mono">
+                <span>0° (Flat Roof)</span>
+                <span className="text-amber-300 font-bold">Optimal: {city.optimalTilt}°</span>
+                <span>45° (Steep Roof)</span>
               </div>
             </div>
 
-            {/* Azimuth Facing Direction */}
-            <div className="space-y-3">
-              <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block">
-                Roof Azimuth Facing Direction
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {[
-                  { id: "South", label: "South (180°)", desc: "100% Ideal" },
-                  { id: "South-East", label: "South-East (135°)", desc: "~94% Yield" },
-                  { id: "South-West", label: "South-West (225°)", desc: "~94% Yield" },
-                  { id: "East-West", label: "East / West", desc: "~82% Yield" }
-                ].map((item) => (
+            {/* Orientation Selector */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-300">Rooftop Compass Direction:</label>
+              <div className="grid grid-cols-4 gap-2">
+                {["South", "South-East", "South-West", "East/West"].map((dir) => (
                   <button
-                    key={item.id}
+                    key={dir}
                     type="button"
-                    onClick={() => setUserAzimuth(item.id)}
-                    className={`p-3 rounded-xl border text-left transition-all ${
-                      userAzimuth === item.id
-                        ? "bg-energy-500/20 border-energy-500 text-white shadow-md ring-1 ring-energy-500"
-                        : "bg-brand-850 border-slate-800 text-slate-300 hover:border-slate-700"
+                    onClick={() => setUserAzimuth(dir)}
+                    className={`py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      userAzimuth === dir
+                        ? "bg-red-600 text-white shadow-md"
+                        : "bg-slate-900 border border-red-950/60 text-slate-300 hover:border-red-900"
                     }`}
                   >
-                    <div className="text-xs font-bold">{item.label}</div>
-                    <div className="text-[10px] text-slate-400 mt-0.5">{item.desc}</div>
+                    {dir}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Calculated Simulation Output */}
-            <div className="p-6 rounded-2xl bg-gradient-to-r from-brand-950 via-brand-900 to-brand-950 border border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="space-y-1 text-center sm:text-left">
-                <span className="text-xs text-slate-400 font-medium">Estimated Generation Efficiency</span>
-                <div className="text-3xl font-black text-white font-mono flex items-center justify-center sm:justify-start gap-2">
-                  <span className={estimatedYieldEfficiency > 95 ? "text-energy-400" : estimatedYieldEfficiency > 85 ? "text-solar-400" : "text-amber-400"}>
-                    {estimatedYieldEfficiency}%
-                  </span>
-                  <span className="text-xs text-slate-400 font-normal">of Max Theoretical Capacity</span>
+            {/* Generation Yield Gauge Result */}
+            <div className="p-5 rounded-2xl bg-slate-900 border border-red-950/60 flex items-center justify-between">
+              <div>
+                <span className="text-xs text-slate-400 font-bold block">Estimated Solar Harvest Efficiency:</span>
+                <div className="text-3xl font-black text-white font-mono mt-1">
+                  {estimatedYieldEfficiency}% <span className="text-xs text-slate-400 font-sans font-normal">of Max Potential</span>
                 </div>
               </div>
-
-              <div className="text-center sm:text-right">
-                <span className="text-xs text-slate-400 block mb-1">Energy Man Engineering Fix:</span>
-                <span className="text-xs font-bold text-solar-400 bg-brand-850 px-3 py-1.5 rounded-xl border border-slate-700 inline-block">
-                  Custom HDG Elevated Structure
+              <div className="text-right">
+                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-red-950/80 text-rose-300 border border-red-500/40">
+                  {estimatedYieldEfficiency >= 95 ? "Peak Optimum" : estimatedYieldEfficiency >= 85 ? "Good Yield" : "Acceptable"}
                 </span>
               </div>
             </div>
@@ -317,3 +296,5 @@ export const LiveSolarTelemetry: React.FC = () => {
     </section>
   );
 };
+
+export default LiveSolarTelemetry;

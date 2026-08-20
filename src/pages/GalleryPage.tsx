@@ -3,11 +3,11 @@ import {
   Sparkles,
   MapPin,
   Maximize2,
-  Filter
+  Camera
 } from "lucide-react";
 import { SEOHead } from "../components/common/SEOHead";
 import { LightboxModal } from "../components/common/LightboxModal";
-import { galleryData, GalleryImage } from "../data/gallery";
+import { galleryData } from "../data/gallery";
 
 export const GalleryPage: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>("All");
@@ -20,95 +20,98 @@ export const GalleryPage: React.FC = () => {
   );
 
   return (
-    <>
+    <div className="bg-[#0A0A0E] text-slate-100 min-h-screen">
       <SEOHead
-        title="Project Gallery & Solar Installations Portfolio"
-        description="Visual gallery of commissioned solar projects by Energy Man India across residential villas, textile mills, hospital campuses, and agricultural farms."
+        title="Our Exclusive Client's Project Sites | ENERGYMAN Gallery"
+        description="Visual portfolio of our exclusive client's project sites across spinning mills, hospital campuses, agricultural estates, and residential rooftops."
       />
 
       {/* Hero Header */}
-      <section className="pt-32 pb-16 bg-gradient-to-b from-brand-950 via-brand-900/60 to-brand-950 border-b border-slate-800">
-        <div className="site-container text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-solar-500/10 text-solar-400 border border-solar-500/30">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Visual Installation Portfolio</span>
+      <section className="pt-32 pb-16 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
+        <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="site-container relative z-10 text-center max-w-4xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs font-mono">
+            <Camera className="w-3.5 h-3.5 text-red-400" />
+            <span>VISUAL COMMISSIONING PORTFOLIO</span>
           </div>
-          <h1 className="heading-hero text-white">
-            PROJECT <span className="bg-gradient-to-r from-solar-400 to-energy-400 bg-clip-text text-transparent">GALLERY</span>
+          <h1 className="heading-hero text-white uppercase">
+            OUR EXCLUSIVE <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">CLIENT'S PROJECT SITES</span>
           </h1>
-          <p className="text-subtle">
-            Browse high-resolution photographs of our rooftop solar plants, agricultural pumps, HT substations, and energy storage systems across India.
+          <p className="text-slate-300 max-w-2xl mx-auto text-sm sm:text-base">
+            High-resolution visual documentation of commissioned rooftop solar plants, agricultural pumps, HT substations, and energy storage systems across South India.
           </p>
         </div>
       </section>
 
       {/* Filters Bar */}
-      <section className="py-6 bg-brand-950/90 border-b border-slate-800/80 sticky top-[68px] z-30 backdrop-blur-md">
+      <section className="py-4 bg-[#14101A]/95 border-b border-red-950/60 sticky top-[60px] md:top-[74px] z-30 backdrop-blur-md shadow-lg">
         <div className="site-container flex items-center justify-center">
-          <div className="flex flex-wrap items-center justify-center gap-2">
+          <div className="flex flex-wrap items-center justify-center gap-2 bg-slate-900 p-1.5 rounded-2xl border border-red-950/60">
             {categories.map((cat) => (
               <button
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   activeCategory === cat
-                    ? "bg-solar-500 text-brand-950 font-bold shadow-md shadow-solar-500/20"
-                    : "bg-brand-900 border border-slate-800 text-slate-300 hover:border-slate-700"
+                    ? "bg-red-600 text-white shadow-md"
+                    : "text-slate-300 hover:text-red-400 hover:bg-slate-800"
                 }`}
               >
-                {cat}
+                {cat === "All" ? "All Project Sites" : cat}
               </button>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Masonry Image Grid */}
-      <section className="section-padding bg-brand-950">
+      {/* Image Gallery Masonry Grid */}
+      <section className="section-padding bg-[#0A0A0E]">
         <div className="site-container">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {filteredImages.map((img, index) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredImages.map((img, idx) => (
               <div
                 key={img.id}
-                onClick={() => setLightboxIndex(index)}
-                className="group relative rounded-3xl overflow-hidden bg-brand-900 border border-slate-800 shadow-xl cursor-pointer hover:border-solar-500/50 hover:shadow-2xl hover:shadow-solar-500/10 transition-all duration-300 h-80"
+                onClick={() => setLightboxIndex(idx)}
+                className="group relative rounded-3xl overflow-hidden bg-slate-900 border border-red-900/30 hover:border-red-500/50 transition-all duration-300 cursor-pointer shadow-lg hover:-translate-y-1 hover:shadow-2xl"
               >
-                <img
-                  src={img.image}
-                  alt={img.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-brand-950/30 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
+                <div className="aspect-4/3 overflow-hidden">
+                  <img
+                    src={img.image}
+                    alt={img.title}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
 
-                {/* Top Badge */}
-                <div className="absolute top-4 left-4">
-                  <span className="badge-emerald text-xs font-bold shadow-md">
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0E]/90 via-[#0A0A0E]/30 to-transparent opacity-80 group-hover:opacity-95 transition-opacity" />
+
+                {/* Badges */}
+                <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+                  <span className="badge-crimson text-[11px] font-bold">
                     {img.categoryLabel}
                   </span>
+                  {img.capacity && (
+                    <span className="badge-amber text-[10px] font-bold">
+                      {img.capacity}
+                    </span>
+                  )}
                 </div>
 
-                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="p-2 rounded-xl bg-brand-900/90 text-white border border-slate-700">
-                    <Maximize2 className="w-4 h-4 text-solar-400" />
-                  </div>
-                </div>
-
-                {/* Bottom Details Overlay */}
+                {/* Details Footer */}
                 <div className="absolute bottom-4 left-4 right-4 space-y-1">
-                  <h3 className="text-sm sm:text-base font-bold text-white group-hover:text-solar-400 transition-colors line-clamp-1">
+                  <h3 className="text-base font-black text-white group-hover:text-red-400 transition-colors line-clamp-1">
                     {img.title}
                   </h3>
                   <div className="flex items-center justify-between text-xs text-slate-300">
                     <span className="flex items-center gap-1">
-                      <MapPin className="w-3 h-3 text-solar-400" />
+                      <MapPin className="w-3.5 h-3.5 text-amber-400" />
                       {img.location}
                     </span>
-                    {img.capacity && (
-                      <span className="text-energy-400 font-bold font-mono">
-                        {img.capacity}
-                      </span>
-                    )}
+                    <span className="p-1.5 rounded-lg bg-white/10 text-white group-hover:bg-red-600 transition-colors">
+                      <Maximize2 className="w-3.5 h-3.5" />
+                    </span>
                   </div>
                 </div>
               </div>
@@ -117,7 +120,7 @@ export const GalleryPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Fullscreen Lightbox Modal */}
+      {/* Lightbox Modal */}
       {lightboxIndex !== null && (
         <LightboxModal
           images={filteredImages}
@@ -125,6 +128,8 @@ export const GalleryPage: React.FC = () => {
           onClose={() => setLightboxIndex(null)}
         />
       )}
-    </>
+    </div>
   );
 };
+
+export default GalleryPage;

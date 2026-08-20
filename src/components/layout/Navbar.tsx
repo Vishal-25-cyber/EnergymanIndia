@@ -1,47 +1,38 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
-  Sun,
-  Zap,
   ChevronDown,
   Menu,
   X,
   Phone,
-  ArrowRight,
-  Home,
+  Sun,
+  Home as HomeIcon,
   Building2,
   Factory,
   Tractor,
-  Wrench,
   BatteryCharging,
-  Cpu,
+  Zap,
+  Droplets,
   Layers,
-  FileText,
-  HelpCircle,
-  Users,
-  Image as ImageIcon,
-  Sparkles
+  ArrowRight,
+  ShieldCheck
 } from "lucide-react";
+import { BrandLogo } from "../common/BrandLogo";
 import { companyData } from "../../data/company";
 
 export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [scrollProgress, setScrollProgress] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const location = useLocation();
+  const dropdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
+      if (window.scrollY > 15) {
         setIsScrolled(true);
       } else {
         setIsScrolled(false);
-      }
-
-      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
-      if (totalScroll > 0) {
-        setScrollProgress((window.scrollY / totalScroll) * 100);
       }
     };
 
@@ -49,224 +40,276 @@ export const Navbar: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Close menus on route change
+  // Close mobile menu and dropdowns when navigating
   useEffect(() => {
     setMobileMenuOpen(false);
     setActiveDropdown(null);
   }, [location.pathname]);
 
-  const toggleDropdown = (name: string) => {
-    setActiveDropdown(activeDropdown === name ? null : name);
+  const handleMouseEnter = (menuName: string) => {
+    if (dropdownTimeoutRef.current) {
+      clearTimeout(dropdownTimeoutRef.current);
+    }
+    setActiveDropdown(menuName);
+  };
+
+  const handleMouseLeave = () => {
+    dropdownTimeoutRef.current = setTimeout(() => {
+      setActiveDropdown(null);
+    }, 180);
+  };
+
+  const toggleDropdown = (menuName: string) => {
+    setActiveDropdown(activeDropdown === menuName ? null : menuName);
   };
 
   return (
     <>
-      {/* Scroll Progress Energy Line */}
-      <div
-        className="scroll-energy-bar"
-        style={{ width: `${scrollProgress}%` }}
-        aria-hidden="true"
-      />
-
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${
-          isScrolled
-            ? "bg-brand-950/90 backdrop-blur-2xl backdrop-saturate-150 border-b border-slate-800/60 shadow-xl shadow-black/40 py-2.5"
-            : "bg-gradient-to-b from-brand-950/95 via-brand-950/60 to-transparent py-4 sm:py-5"
-        }`}
-      >
-        <div className="site-container">
-          <div className="flex items-center justify-between">
-            {/* BRAND LOGO */}
-            <Link to="/" className="flex items-center group focus:outline-none focus:ring-2 focus:ring-energy-500 rounded-xl p-1 transition-transform duration-300 hover:scale-105">
-              <img 
-                src="/logo.png" 
-                alt="Energy Man India Logo" 
-                className="h-12 sm:h-14 object-contain"
-                onError={(e) => {
-                  // Fallback if logo.png is not yet placed by the user
-                  e.currentTarget.style.display = 'none';
-                  e.currentTarget.parentElement?.insertAdjacentHTML('beforeend', '<span class="font-display font-extrabold text-lg sm:text-xl text-white">ENERGY MAN</span>');
-                }}
-              />
-            </Link>
-
-            {/* DESKTOP NAVIGATION LINKS */}
-            <nav className="hidden lg:flex items-center gap-0.5 xl:gap-2">
-              {/* HOME */}
+      <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        {/* MAIN NAVIGATION BAR */}
+        <div
+          className={`transition-all duration-300 ${
+            isScrolled
+              ? "bg-[#0A0A0E]/95 backdrop-blur-xl border-b border-red-900/30 shadow-lg shadow-black/50 py-3"
+              : "bg-[#0A0A0E]/85 backdrop-blur-md border-b border-red-950/40 shadow-xs py-3.5"
+          }`}
+        >
+          {/* Wide-screen anchored container */}
+          <div className="w-full px-4 sm:px-6 lg:px-8 xl:px-12 max-w-[1700px] mx-auto">
+            <div className="flex items-center justify-between gap-6">
+              
+              {/* LEFT: BRAND LOGO */}
               <Link
                 to="/"
-                className={`px-2 xl:px-3 py-2 rounded-lg text-[13px] xl:text-sm font-semibold tracking-wide transition-all ${
-                  location.pathname === "/"
-                    ? "text-energy-400 bg-brand-850"
-                    : "text-slate-200 hover:text-white hover:bg-slate-800/60"
-                }`}
+                className="flex items-center shrink-0 group focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg p-0.5"
+                title="ENERGYMAN - Renewable Energy Saves Earth"
               >
-                HOME
+                <BrandLogo size="md" />
               </Link>
 
-              {/* GOVERNMENT SUBSIDY */}
-              <Link
-                to="/government-subsidy"
-                className={`flex items-center gap-1.5 px-2 xl:px-3 py-2 rounded-lg text-[13px] xl:text-sm font-semibold tracking-wide transition-all whitespace-nowrap ${
-                  location.pathname === "/government-subsidy"
-                    ? "text-solar-400 bg-solar-500/10 border border-solar-500/30"
-                    : "text-slate-200 hover:text-solar-400 hover:bg-slate-800/60"
-                }`}
-              >
-                <Sparkles className="w-3.5 h-3.5 text-solar-400" />
-                <span>GOVERNMENT SUBSIDY</span>
-              </Link>
-
-              {/* PROJECTS Dropdown */}
-              <div
-                className="relative"
-                onMouseEnter={() => setActiveDropdown("projects")}
-                onMouseLeave={() => setActiveDropdown(null)}
-              >
-                <button
-                  onClick={() => toggleDropdown("projects")}
-                  className={`flex items-center gap-1 px-2 xl:px-3 py-2 rounded-lg text-[13px] xl:text-sm font-semibold tracking-wide transition-all ${
-                    location.pathname.startsWith("/projects")
-                      ? "text-energy-400 bg-brand-850"
-                      : "text-slate-200 hover:text-white hover:bg-slate-800/60"
+              {/* RIGHT: DESKTOP NAVIGATION LINKS (INCLUDING HOME PAGE) */}
+              <nav className="hidden lg:flex items-center gap-6 xl:gap-8">
+                
+                {/* Home */}
+                <Link
+                  to="/"
+                  className={`text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 ${
+                    location.pathname === "/"
+                      ? "text-red-500 font-bold"
+                      : "text-slate-200 hover:text-red-400"
                   }`}
-                  aria-expanded={activeDropdown === "projects"}
                 >
-                  <span>PROJECTS</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${activeDropdown === "projects" ? "rotate-180 text-energy-400" : "text-slate-400"}`} />
-                </button>
+                  Home
+                </Link>
 
-                {activeDropdown === "projects" && (
-                  <div className="absolute top-full left-0 w-64 pt-2 animate-fade-in z-50">
-                    <div className="bg-brand-900/95 backdrop-blur-xl border border-slate-700/80 rounded-xl p-2 shadow-2xl shadow-black/80 space-y-1">
-                      <Link to="/projects" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-brand-800">
-                        All Projects
-                      </Link>
-                      <Link to="/projects/industrial" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-brand-800">
-                        Industrial Solar Projects
-                      </Link>
-                      <Link to="/projects/agricultural" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-brand-800">
-                        Agricultural Solar Solutions
-                      </Link>
-                      <Link to="/projects/commercial" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-brand-800">
-                        Commercial Projects
-                      </Link>
-                      <Link to="/projects/residential" className="block px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-brand-800">
-                        Residential Solar Solutions
-                      </Link>
+                {/* Government Subsidy */}
+                <Link
+                  to="/government-subsidy"
+                  className={`text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 ${
+                    location.pathname === "/government-subsidy"
+                      ? "text-red-500 font-bold"
+                      : "text-slate-200 hover:text-red-400"
+                  }`}
+                >
+                  Government Subsidy
+                </Link>
+
+                {/* Projects (Dropdown) */}
+                <div
+                  className="relative"
+                  onMouseEnter={() => handleMouseEnter("projects")}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <button
+                    onClick={() => toggleDropdown("projects")}
+                    className={`flex items-center gap-1.5 text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 cursor-pointer ${
+                      location.pathname.startsWith("/projects")
+                        ? "text-red-500 font-bold"
+                        : "text-slate-200 hover:text-red-400"
+                    }`}
+                    aria-expanded={activeDropdown === "projects"}
+                  >
+                    <span>Projects</span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        activeDropdown === "projects" ? "rotate-180 text-red-500" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {/* Projects Mega Dropdown Menu */}
+                  {activeDropdown === "projects" && (
+                    <div className="absolute top-full left-0 mt-3 w-80 rounded-2xl bg-[#14101A]/95 backdrop-blur-2xl border border-red-900/40 p-3 shadow-2xl shadow-black/80 animate-fade-in z-50">
+                      <div className="space-y-1">
+                        <Link
+                          to="/projects/industrial"
+                          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
+                        >
+                          <Factory className="w-4 h-4 text-red-400 shrink-0" />
+                          <div>
+                            <p className="font-bold text-slate-100">Our Industrial Solar Projects</p>
+                            <p className="text-[11px] text-slate-400 font-normal">Spinning Mills & MW Captive Plants</p>
+                          </div>
+                        </Link>
+
+                        <Link
+                          to="/solutions/agricultural"
+                          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
+                        >
+                          <Tractor className="w-4 h-4 text-rose-400 shrink-0" />
+                          <div>
+                            <p className="font-bold text-slate-100">Agricultural Solar Solutions</p>
+                            <p className="text-[11px] text-slate-400 font-normal">PM-KUSUM Irrigation & Pumping</p>
+                          </div>
+                        </Link>
+
+                        <Link
+                          to="/solutions/residential"
+                          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
+                        >
+                          <HomeIcon className="w-4 h-4 text-amber-400 shrink-0" />
+                          <div>
+                            <p className="font-bold text-slate-100">Residential Solar Solutions</p>
+                            <p className="text-[11px] text-slate-400 font-normal">Home Rooftop Net-Metering Systems</p>
+                          </div>
+                        </Link>
+
+                        <Link
+                          to="/solutions/industrial"
+                          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
+                        >
+                          <Building2 className="w-4 h-4 text-red-400 shrink-0" />
+                          <div>
+                            <p className="font-bold text-slate-100">Industrial Solar Solutions</p>
+                            <p className="text-[11px] text-slate-400 font-normal">Turnkey Commercial & Industrial EPC</p>
+                          </div>
+                        </Link>
+
+                        <div className="pt-2 border-t border-red-950/60 mt-1">
+                          <Link
+                            to="/projects"
+                            className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold text-red-400 hover:text-white hover:bg-red-950/60 transition-colors"
+                          >
+                            <span>View All Projects & Case Studies</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+
+                {/* Product (Dropdown) */}
+                <div
+                  className="relative"
+                  onMouseEnter={() => handleMouseEnter("product")}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <button
+                    onClick={() => toggleDropdown("product")}
+                    className={`flex items-center gap-1.5 text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 cursor-pointer ${
+                      location.pathname.startsWith("/products")
+                        ? "text-red-500 font-bold"
+                        : "text-slate-200 hover:text-red-400"
+                    }`}
+                    aria-expanded={activeDropdown === "product"}
+                  >
+                    <span>Product</span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        activeDropdown === "product" ? "rotate-180 text-red-500" : ""
+                      }`}
+                    />
+                  </button>
+
+                  {/* Product Dropdown Menu */}
+                  {activeDropdown === "product" && (
+                    <div className="absolute top-full left-0 mt-3 w-72 rounded-2xl bg-[#14101A]/95 backdrop-blur-2xl border border-red-900/40 p-3 shadow-2xl shadow-black/80 animate-fade-in z-50">
+                      <div className="space-y-1">
+                        <Link
+                          to="/products/solar-pumps"
+                          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
+                        >
+                          <Droplets className="w-4 h-4 text-rose-400 shrink-0" />
+                          <div>
+                            <p className="font-bold text-slate-100">Solar Pump</p>
+                            <p className="text-[11px] text-slate-400">PM-KUSUM Submersible & Surface</p>
+                          </div>
+                        </Link>
+
+                        <Link
+                          to="/products/solar-water-heaters"
+                          className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
+                        >
+                          <Sun className="w-4 h-4 text-amber-400 shrink-0" />
+                          <div>
+                            <p className="font-bold text-slate-100">Solar Water Heater</p>
+                            <p className="text-[11px] text-slate-400">110L - 330L Domestic & Industrial</p>
+                          </div>
+                        </Link>
+
+                        <div className="pt-2 border-t border-red-950/60 mt-1">
+                          <Link
+                            to="/products"
+                            className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold text-red-400 hover:text-white hover:bg-red-950/60 transition-colors"
+                          >
+                            <span>Explore All Products</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Blog */}
+                <Link
+                  to="/insights"
+                  className={`text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 ${
+                    location.pathname.startsWith("/insights")
+                      ? "text-red-500 font-bold"
+                      : "text-slate-200 hover:text-red-400"
+                  }`}
+                >
+                  Blog
+                </Link>
+
+                {/* Gallery */}
+                <Link
+                  to="/gallery"
+                  className={`text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 ${
+                    location.pathname === "/gallery"
+                      ? "text-red-500 font-bold"
+                      : "text-slate-200 hover:text-red-400"
+                  }`}
+                >
+                  Gallery
+                </Link>
+
+                {/* Contact */}
+                <Link
+                  to="/contact"
+                  className={`text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 ${
+                    location.pathname === "/contact"
+                      ? "text-red-500 font-bold"
+                      : "text-slate-200 hover:text-red-400"
+                  }`}
+                >
+                  Contact
+                </Link>
+              </nav>
+
+              {/* MOBILE MENU TOGGLE */}
+              <div className="flex items-center lg:hidden">
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="p-2 rounded-xl bg-slate-900 border border-red-950/60 text-slate-200 hover:text-red-400 focus:outline-none focus:ring-2 focus:ring-red-500 cursor-pointer"
+                  aria-label="Toggle navigation menu"
+                >
+                  {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
               </div>
 
-              {/* PRODUCT Dropdown */}
-              <div
-                className="relative"
-                onMouseEnter={() => setActiveDropdown("products")}
-                onMouseLeave={() => setActiveDropdown(null)}
-              >
-                <button
-                  onClick={() => toggleDropdown("products")}
-                  className={`flex items-center gap-1 px-2 xl:px-3 py-2 rounded-lg text-[13px] xl:text-sm font-semibold tracking-wide transition-all ${
-                    location.pathname.startsWith("/products")
-                      ? "text-energy-400 bg-brand-850"
-                      : "text-slate-200 hover:text-white hover:bg-slate-800/60"
-                  }`}
-                  aria-expanded={activeDropdown === "products"}
-                >
-                  <span>PRODUCT</span>
-                  <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${activeDropdown === "products" ? "rotate-180 text-energy-400" : "text-slate-400"}`} />
-                </button>
-
-                {activeDropdown === "products" && (
-                  <div className="absolute top-full left-0 w-64 pt-2 animate-fade-in z-50">
-                    <div className="bg-brand-900/95 backdrop-blur-xl border border-slate-700/80 rounded-xl p-2 shadow-2xl shadow-black/80 space-y-1">
-                      <Link to="/products/solar-pumps" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-brand-800">
-                        <Tractor className="w-4 h-4 text-emerald-400" />
-                        <span>SOLAR PUMP</span>
-                      </Link>
-                      <Link to="/products/solar-water-heaters" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-200 hover:text-white hover:bg-brand-800">
-                        <Sun className="w-4 h-4 text-amber-400" />
-                        <span>SOLAR WATER HEATER</span>
-                      </Link>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* BLOG */}
-              <Link
-                to="/insights"
-                className={`px-2 xl:px-3 py-2 rounded-lg text-[13px] xl:text-sm font-semibold tracking-wide transition-all ${
-                  location.pathname.startsWith("/insights")
-                    ? "text-energy-400 bg-brand-850"
-                    : "text-slate-200 hover:text-white hover:bg-slate-800/60"
-                }`}
-              >
-                BLOG
-              </Link>
-
-              {/* GALLERY */}
-              <Link
-                to="/gallery"
-                className={`px-2 xl:px-3 py-2 rounded-lg text-[13px] xl:text-sm font-semibold tracking-wide transition-all ${
-                  location.pathname === "/gallery"
-                    ? "text-energy-400 bg-brand-850"
-                    : "text-slate-200 hover:text-white hover:bg-slate-800/60"
-                }`}
-              >
-                GALLERY
-              </Link>
-
-              {/* CONTACT */}
-              <Link
-                to="/contact"
-                className={`px-2 xl:px-3 py-2 rounded-lg text-[13px] xl:text-sm font-semibold tracking-wide transition-all ${
-                  location.pathname === "/contact"
-                    ? "text-energy-400 bg-brand-850"
-                    : "text-slate-200 hover:text-white hover:bg-slate-800/60"
-                }`}
-              >
-                CONTACT
-              </Link>
-            </nav>
-
-            {/* DESKTOP RIGHT ACTIONS */}
-            <div className="hidden lg:flex items-center gap-2 xl:gap-3">
-              <a
-                href={`tel:${companyData.phones.primary.replace(/\s+/g, '')}`}
-                className="hidden xl:flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white px-2 xl:px-3 py-2 rounded-lg bg-slate-800/60 border border-slate-700/60 transition-colors whitespace-nowrap"
-                title="Call Sales & Support"
-              >
-                <Phone className="w-3.5 h-3.5 text-energy-400" />
-                <span>{companyData.phones.primary}</span>
-              </a>
-
-              <Link
-                to="/get-a-quote"
-                className="btn-primary py-2.5 px-4 xl:px-5 text-xs sm:text-sm font-bold shadow-lg group whitespace-nowrap"
-              >
-                <span>Get a Quote</span>
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-              </Link>
-            </div>
-
-            {/* MOBILE MENU TOGGLE */}
-            <div className="flex items-center gap-2 lg:hidden">
-              <Link
-                to="/get-a-quote"
-                className="btn-primary py-2 px-3 text-xs font-bold"
-              >
-                <span>Get Quote</span>
-              </Link>
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="p-2 rounded-xl bg-brand-850 border border-slate-700 text-slate-200 hover:text-white focus:outline-none focus:ring-2 focus:ring-energy-500"
-                aria-label="Toggle navigation menu"
-              >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
             </div>
           </div>
         </div>
@@ -274,75 +317,105 @@ export const Navbar: React.FC = () => {
 
       {/* MOBILE MENU DRAWER */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 top-[68px] z-40 bg-brand-950/95 backdrop-blur-xl lg:hidden overflow-y-auto border-t border-slate-800 animate-fade-in p-5 pb-24">
-          <div className="space-y-4">
+        <div className="fixed inset-0 top-[62px] md:top-[68px] z-40 bg-[#0A0A0E]/98 backdrop-blur-2xl lg:hidden overflow-y-auto border-t border-red-950/60 animate-fade-in p-5 pb-24 shadow-2xl">
+          <div className="space-y-4 max-w-lg mx-auto">
             {/* Direct Contact Bar */}
-            <div className="flex items-center justify-between p-3 rounded-xl bg-brand-900 border border-slate-800 text-xs">
-              <a href={`tel:${companyData.phones.primary.replace(/\s+/g, '')}`} className="flex items-center gap-2 text-energy-400 font-semibold">
-                <Phone className="w-4 h-4" />
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-900 border border-red-950/60 text-xs">
+              <a href={`tel:${companyData.phones.primary.replace(/\s+/g, '')}`} className="flex items-center gap-2 text-red-400 font-bold">
+                <Phone className="w-4 h-4 text-red-500" />
                 <span>{companyData.phones.primary}</span>
               </a>
-              <a href={companyData.socialLinks.whatsapp} target="_blank" rel="noreferrer" className="text-solar-400 font-semibold">
+              <a href={companyData.socialLinks.whatsapp} target="_blank" rel="noreferrer" className="text-red-400 font-bold hover:underline">
                 WhatsApp Chat →
               </a>
             </div>
 
-            {/* Menu Links */}
+            {/* Mobile Nav Links with Home */}
             <div className="space-y-1">
-              <Link to="/" className="block px-3 py-2.5 rounded-lg text-sm font-semibold tracking-wide text-slate-200 hover:text-white hover:bg-brand-850">
-                HOME
-              </Link>
-              
-              <Link to="/government-subsidy" className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-semibold tracking-wide text-solar-400 bg-solar-500/10">
-                <Sparkles className="w-4 h-4 text-solar-400" />
-                <span>GOVERNMENT SUBSIDY</span>
+              <Link
+                to="/"
+                className={`block px-4 py-3 rounded-2xl text-base font-bold transition-colors ${
+                  location.pathname === "/"
+                    ? "bg-red-950/90 text-red-400 border border-red-500/40"
+                    : "text-slate-200 hover:bg-slate-900 hover:text-white"
+                }`}
+              >
+                Home
               </Link>
 
-              <div className="pt-2 pb-1 px-3">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">PROJECTS</p>
+              <Link
+                to="/government-subsidy"
+                className={`block px-4 py-3 rounded-2xl text-base font-bold transition-colors ${
+                  location.pathname === "/government-subsidy"
+                    ? "bg-red-950/90 text-red-400 border border-red-500/40"
+                    : "text-slate-200 hover:bg-slate-900 hover:text-white"
+                }`}
+              >
+                Government Subsidy
+              </Link>
+
+              {/* Projects Mobile Accordion */}
+              <div className="pt-1">
+                <p className="px-4 py-2 text-xs font-bold font-mono text-red-400 uppercase tracking-wider">
+                  Projects
+                </p>
+                <div className="space-y-1 pl-2">
+                  <Link to="/projects/industrial" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
+                    • Our Industrial Solar Projects
+                  </Link>
+                  <Link to="/solutions/agricultural" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
+                    • Agricultural Solar Solutions
+                  </Link>
+                  <Link to="/solutions/residential" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
+                    • Residential Solar Solutions
+                  </Link>
+                  <Link to="/solutions/industrial" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
+                    • Industrial Solar Solutions
+                  </Link>
+                </div>
               </div>
-              <Link to="/projects/industrial" className="block px-3 py-2 ml-2 rounded-lg text-sm text-slate-200 hover:text-white hover:bg-brand-850">
-                Industrial Projects
-              </Link>
-              <Link to="/projects/agricultural" className="block px-3 py-2 ml-2 rounded-lg text-sm text-slate-200 hover:text-white hover:bg-brand-850">
-                Agricultural Solutions
-              </Link>
-              <Link to="/projects/commercial" className="block px-3 py-2 ml-2 rounded-lg text-sm text-slate-200 hover:text-white hover:bg-brand-850">
-                Commercial Projects
-              </Link>
-              <Link to="/projects/residential" className="block px-3 py-2 ml-2 rounded-lg text-sm text-slate-200 hover:text-white hover:bg-brand-850">
-                Residential Solutions
-              </Link>
 
-              <div className="pt-2 pb-1 px-3 border-t border-slate-800/80 mt-2">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-400">PRODUCT</p>
+              {/* Product Mobile Accordion */}
+              <div className="pt-2">
+                <p className="px-4 py-2 text-xs font-bold font-mono text-red-400 uppercase tracking-wider">
+                  Product
+                </p>
+                <div className="space-y-1 pl-2">
+                  <Link to="/products/solar-pumps" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
+                    • Solar Pump
+                  </Link>
+                  <Link to="/products/solar-water-heaters" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
+                    • Solar Water Heater
+                  </Link>
+                </div>
               </div>
-              <Link to="/products/solar-pumps" className="flex items-center gap-2 px-3 py-2 ml-2 rounded-lg text-sm text-slate-200 hover:text-white hover:bg-brand-850">
-                <Tractor className="w-4 h-4 text-emerald-400" />
-                <span>SOLAR PUMP</span>
-              </Link>
-              <Link to="/products/solar-water-heaters" className="flex items-center gap-2 px-3 py-2 ml-2 rounded-lg text-sm text-slate-200 hover:text-white hover:bg-brand-850">
-                <Sun className="w-4 h-4 text-amber-400" />
-                <span>SOLAR WATER HEATER</span>
-              </Link>
 
-              <div className="pt-2 border-t border-slate-800/80 mt-2">
-                <Link to="/insights" className="block px-3 py-2.5 rounded-lg text-sm font-semibold tracking-wide text-slate-200 hover:text-white hover:bg-brand-850">
-                  BLOG
+              <div className="pt-2 border-t border-red-950/60 mt-2">
+                <Link
+                  to="/insights"
+                  className="block px-4 py-3 rounded-2xl text-base font-bold text-slate-200 hover:bg-slate-900 hover:text-white"
+                >
+                  Blog
                 </Link>
-                <Link to="/gallery" className="block px-3 py-2.5 rounded-lg text-sm font-semibold tracking-wide text-slate-200 hover:text-white hover:bg-brand-850">
-                  GALLERY
+                <Link
+                  to="/gallery"
+                  className="block px-4 py-3 rounded-2xl text-base font-bold text-slate-200 hover:bg-slate-900 hover:text-white"
+                >
+                  Gallery
                 </Link>
-                <Link to="/contact" className="block px-3 py-2.5 rounded-lg text-sm font-semibold tracking-wide text-slate-200 hover:text-white hover:bg-brand-850">
-                  CONTACT
+                <Link
+                  to="/contact"
+                  className="block px-4 py-3 rounded-2xl text-base font-bold text-slate-200 hover:bg-slate-900 hover:text-white"
+                >
+                  Contact
                 </Link>
               </div>
             </div>
 
-            <div className="pt-4">
-              <Link to="/get-a-quote" className="btn-primary w-full py-3.5 font-bold text-center">
-                Get Your Custom Solar Plan →
-              </Link>
+            {/* Address Footer in Mobile Menu */}
+            <div className="text-center pt-4 border-t border-red-950/60 text-xs text-slate-400 space-y-1">
+              <p className="font-mono text-red-400 font-bold">119, Gopal Layout, Coimbatore</p>
+              <p>Approved MNRE Subsidy Partner</p>
             </div>
           </div>
         </div>
@@ -350,3 +423,5 @@ export const Navbar: React.FC = () => {
     </>
   );
 };
+
+export default Navbar;

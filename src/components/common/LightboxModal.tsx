@@ -5,7 +5,6 @@ import {
   X,
   ZoomIn,
   MapPin,
-  Sparkles
 } from "lucide-react";
 import { GalleryImage } from "../../data/gallery";
 
@@ -53,10 +52,10 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
       {/* Top Bar: Slide Counter & Controls */}
       <div className="flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-mono text-slate-300 bg-brand-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-slate-700 font-bold">
-            <span className="text-energy-400">0{currentIndex + 1}</span> / 0{images.length}
+          <span className="text-sm font-mono text-slate-300 bg-[#14101A]/90 backdrop-blur-md px-3.5 py-1.5 rounded-xl border border-red-950/60 font-bold">
+            <span className="text-red-400">0{currentIndex + 1}</span> / 0{images.length}
           </span>
-          <span className="badge-emerald text-xs hidden sm:inline-flex">
+          <span className="badge-crimson text-xs hidden sm:inline-flex">
             {currentImage.categoryLabel}
           </span>
         </div>
@@ -64,14 +63,14 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsZoomed(!isZoomed)}
-            className="p-2.5 rounded-xl bg-brand-900/90 hover:bg-brand-850 border border-slate-700 text-white transition-transform hover:scale-105"
+            className="p-2.5 rounded-xl bg-[#14101A]/90 hover:bg-slate-800 border border-red-950/60 text-white transition-transform hover:scale-105"
             title={isZoomed ? "Zoom Out" : "Zoom In"}
           >
             <ZoomIn className="w-5 h-5" />
           </button>
           <button
             onClick={onClose}
-            className="p-2.5 rounded-xl bg-brand-900/90 hover:bg-red-500/20 border border-slate-700 text-white hover:text-red-400 transition-colors"
+            className="p-2.5 rounded-xl bg-[#14101A]/90 hover:bg-red-500/20 border border-red-950/60 text-white hover:text-red-400 transition-colors"
             title="Close Lightbox (Esc)"
           >
             <X className="w-5 h-5" />
@@ -93,14 +92,14 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
         {/* Navigation Arrows */}
         <button
           onClick={handlePrev}
-          className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 p-3.5 rounded-full bg-brand-900/80 hover:bg-brand-850 border border-slate-700 text-white backdrop-blur-md transition-all hover:scale-110 active:scale-95 shadow-2xl"
+          className="absolute left-2 sm:left-6 top-1/2 -translate-y-1/2 p-3.5 rounded-full bg-[#14101A]/80 hover:bg-slate-800 border border-red-950/60 text-white backdrop-blur-md transition-all hover:scale-110 active:scale-95 shadow-2xl"
           aria-label="Previous image"
         >
           <ChevronLeft className="w-6 h-6" />
         </button>
         <button
           onClick={handleNext}
-          className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 p-3.5 rounded-full bg-brand-900/80 hover:bg-brand-850 border border-slate-700 text-white backdrop-blur-md transition-all hover:scale-110 active:scale-95 shadow-2xl"
+          className="absolute right-2 sm:right-6 top-1/2 -translate-y-1/2 p-3.5 rounded-full bg-[#14101A]/80 hover:bg-slate-800 border border-red-950/60 text-white backdrop-blur-md transition-all hover:scale-110 active:scale-95 shadow-2xl"
           aria-label="Next image"
         >
           <ChevronRight className="w-6 h-6" />
@@ -108,7 +107,7 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
       </div>
 
       {/* Bottom Info Bar */}
-      <div className="max-w-3xl mx-auto w-full bg-brand-900/90 backdrop-blur-md border border-slate-800 rounded-2xl p-4 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-3 z-10">
+      <div className="max-w-3xl mx-auto w-full bg-[#14101A]/90 backdrop-blur-md border border-red-950/60 rounded-2xl p-4 text-center sm:text-left flex flex-col sm:flex-row items-center justify-between gap-3 z-10">
         <div>
           <h3 className="text-sm sm:text-base font-bold text-white">
             {currentImage.title}
@@ -119,7 +118,7 @@ export const LightboxModal: React.FC<LightboxModalProps> = ({
         </div>
 
         <div className="flex items-center gap-2 text-xs text-slate-300 shrink-0">
-          <MapPin className="w-3.5 h-3.5 text-solar-400" />
+          <MapPin className="w-3.5 h-3.5 text-amber-400" />
           <span>{currentImage.location}</span>
           {currentImage.capacity && (
             <span className="badge-amber text-[10px] ml-2">

@@ -2,14 +2,11 @@ import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Calculator,
-  Zap,
   TrendingUp,
-  Clock,
   Sparkles,
   Trees,
   ArrowRight,
   Info,
-  CheckCircle2,
   Building2,
   Home,
   Factory,
@@ -20,9 +17,8 @@ export const SavingsCalculator: React.FC = () => {
   const [propertyType, setPropertyType] = useState<"residential" | "commercial" | "industrial" | "agricultural">("residential");
   const [monthlyBill, setMonthlyBill] = useState<number>(4500);
   const [stateLocation, setStateLocation] = useState<string>("Tamil Nadu");
-  const [roofArea, setRoofArea] = useState<number>(400);
 
-  // Dynamic calculations based on industry tariffs and solar generation averages in South India (approx 4.2 peak sun hours/day = 1500 kWh/kWp/year)
+  // Dynamic calculations based on industry tariffs and solar generation averages
   const calculation = useMemo(() => {
     let tariffPerUnit = 7.0; // Default residential average slab
     if (propertyType === "commercial") tariffPerUnit = 9.5;
@@ -51,23 +47,23 @@ export const SavingsCalculator: React.FC = () => {
 
     const estimatedSystemCost = Math.round(recommendedKw * benchmarkCostPerKw);
 
-    // Central Government Subsidy Deduction (PM Surya Ghar for residential, PM-KUSUM for agricultural)
+    // Central Government Subsidy Deduction
     let subsidyAmount = 0;
     let subsidyName = "";
     if (propertyType === "residential") {
       if (recommendedKw >= 3) {
         subsidyAmount = 78000;
-        subsidyName = "PM Surya Ghar ₹78,000 Subsidy Applied";
+        subsidyName = "PM Surya Ghar ₹78,000 Direct Subsidy Approved";
       } else if (recommendedKw >= 2) {
         subsidyAmount = 60000;
-        subsidyName = "PM Surya Ghar ₹60,000 Subsidy Applied";
+        subsidyName = "PM Surya Ghar ₹60,000 Direct Subsidy Approved";
       } else {
         subsidyAmount = 30000;
-        subsidyName = "PM Surya Ghar ₹30,000 Subsidy Applied";
+        subsidyName = "PM Surya Ghar ₹30,000 Direct Subsidy Approved";
       }
     } else if (propertyType === "agricultural") {
       subsidyAmount = Math.round(estimatedSystemCost * 0.6); // 60% PM-KUSUM subsidy
-      subsidyName = "PM-KUSUM Up to 60% Subsidy Applied";
+      subsidyName = "PM-KUSUM Up to 60% Subsidy Scheme";
     }
 
     const netSystemCost = Math.max(estimatedSystemCost - subsidyAmount, 10000);
@@ -79,7 +75,7 @@ export const SavingsCalculator: React.FC = () => {
     // Payback period (Years)
     const paybackYears = (netSystemCost / annualSavingsRs).toFixed(1);
 
-    // 25-Year Cumulative Savings (assuming modest 3% annual grid tariff escalation)
+    // 25-Year Cumulative Savings
     let lifetimeSavings = 0;
     let currentAnnualSaving = annualSavingsRs;
     for (let yr = 1; yr <= 25; yr++) {
@@ -90,9 +86,6 @@ export const SavingsCalculator: React.FC = () => {
 
     // Environmental Offset
     const annualCo2Tons = (annualGenerationKwh * 0.82 / 1000).toFixed(1);
-    const treesEquivalent = Math.round(Number(annualCo2Tons) * 45);
-
-    // Roof space required (sq.ft)
     const spaceRequiredSqft = Math.round(recommendedKw * 85);
 
     return {
@@ -107,28 +100,27 @@ export const SavingsCalculator: React.FC = () => {
       paybackYears,
       lifetimeSavingsLakhs,
       annualCo2Tons,
-      treesEquivalent,
       spaceRequiredSqft
     };
   }, [monthlyBill, propertyType]);
 
   return (
-    <section className="section-padding bg-brand-950 relative overflow-hidden" id="calculator">
+    <section className="section-padding bg-[#0A0A0E] relative overflow-hidden border-t border-red-950/60" id="calculator">
       {/* Background Gradients */}
-      <div className="absolute top-0 right-1/3 w-96 h-96 bg-energy-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-solar-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 right-1/3 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="site-container relative z-10 space-y-12">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-solar-500/10 text-solar-400 border border-solar-500/30">
-            <Calculator className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wider uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs">
+            <Calculator className="w-3.5 h-3.5 text-red-400" />
             <span>Interactive ROI & Subsidy Estimator</span>
           </div>
-          <h2 className="heading-section">
-            HOW MUCH COULD YOU <span className="bg-gradient-to-r from-solar-400 to-energy-400 bg-clip-text text-transparent">SAVE WITH SOLAR?</span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+            HOW MUCH CAN YOU <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">SAVE WITH SOLAR?</span>
           </h2>
-          <p className="text-subtle">
+          <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-2xl mx-auto">
             Select your property type and monthly electricity expense to forecast your recommended solar system capacity, government subsidy savings, and 25-year financial returns.
           </p>
         </div>
@@ -136,62 +128,62 @@ export const SavingsCalculator: React.FC = () => {
         {/* Main Calculator Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Left Column: Inputs (5 Cols on LG) */}
-          <div className="lg:col-span-5 bg-brand-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-7 shadow-2xl">
+          <div className="lg:col-span-5 bg-[#14101A]/95 border border-red-900/30 rounded-3xl p-6 sm:p-8 space-y-7 shadow-xl">
             {/* Property Type Selection */}
             <div className="space-y-3">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+              <label className="text-xs font-extrabold uppercase tracking-wider text-slate-300">
                 1. Select Property Type
               </label>
               <div className="grid grid-cols-2 gap-2.5">
                 <button
                   type="button"
                   onClick={() => setPropertyType("residential")}
-                  className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                     propertyType === "residential"
-                      ? "bg-energy-500/15 border-energy-500 text-energy-400 shadow-md ring-1 ring-energy-500/40"
-                      : "bg-brand-850 border-slate-700/80 text-slate-300 hover:border-slate-600"
+                      ? "bg-red-950/90 border-red-500 text-rose-300 shadow-md"
+                      : "bg-slate-900 border-red-950/60 text-slate-300 hover:border-red-900"
                   }`}
                 >
-                  <Home className="w-4 h-4 shrink-0" />
+                  <Home className="w-4 h-4 shrink-0 text-red-400" />
                   <span>Residential Home</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPropertyType("commercial")}
-                  className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                     propertyType === "commercial"
-                      ? "bg-solar-500/15 border-solar-500 text-solar-400 shadow-md ring-1 ring-solar-500/40"
-                      : "bg-brand-850 border-slate-700/80 text-slate-300 hover:border-slate-600"
+                      ? "bg-amber-950/90 border-amber-500 text-amber-300 shadow-md"
+                      : "bg-slate-900 border-red-950/60 text-slate-300 hover:border-red-900"
                   }`}
                 >
-                  <Building2 className="w-4 h-4 shrink-0" />
+                  <Building2 className="w-4 h-4 shrink-0 text-amber-400" />
                   <span>Commercial / Office</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPropertyType("industrial")}
-                  className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                     propertyType === "industrial"
-                      ? "bg-blue-500/15 border-blue-500 text-blue-400 shadow-md ring-1 ring-blue-500/40"
-                      : "bg-brand-850 border-slate-700/80 text-slate-300 hover:border-slate-600"
+                      ? "bg-red-950/90 border-rose-500 text-rose-300 shadow-md"
+                      : "bg-slate-900 border-red-950/60 text-slate-300 hover:border-red-900"
                   }`}
                 >
-                  <Factory className="w-4 h-4 shrink-0" />
-                  <span>Industrial / Factory</span>
+                  <Factory className="w-4 h-4 shrink-0 text-rose-400" />
+                  <span>Industrial Factory</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setPropertyType("agricultural")}
-                  className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-2.5 p-3 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
                     propertyType === "agricultural"
-                      ? "bg-emerald-500/15 border-emerald-500 text-emerald-400 shadow-md ring-1 ring-emerald-500/40"
-                      : "bg-brand-850 border-slate-700/80 text-slate-300 hover:border-slate-600"
+                      ? "bg-emerald-950/90 border-emerald-500 text-emerald-300 shadow-md"
+                      : "bg-slate-900 border-red-950/60 text-slate-300 hover:border-red-900"
                   }`}
                 >
-                  <Tractor className="w-4 h-4 shrink-0" />
+                  <Tractor className="w-4 h-4 shrink-0 text-emerald-400" />
                   <span>Agricultural Farm</span>
                 </button>
               </div>
@@ -200,10 +192,10 @@ export const SavingsCalculator: React.FC = () => {
             {/* Monthly Electricity Bill Input & Slider */}
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                <label className="text-xs font-extrabold uppercase tracking-wider text-slate-300">
                   2. Average Monthly Electricity Bill
                 </label>
-                <span className="text-lg font-extrabold text-solar-400 bg-brand-850 px-3 py-1 rounded-lg border border-slate-700 font-mono shadow-md">
+                <span className="text-lg font-black text-red-400 bg-slate-900 px-3 py-1 rounded-xl border border-red-950/60 font-mono shadow-xs">
                   ₹{monthlyBill.toLocaleString("en-IN")}
                 </span>
               </div>
@@ -214,7 +206,7 @@ export const SavingsCalculator: React.FC = () => {
                 step={propertyType === "industrial" ? 5000 : 500}
                 value={monthlyBill}
                 onChange={(e) => setMonthlyBill(Number(e.target.value))}
-                className="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-solar-400 focus:outline-none"
+                className="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-red-500 focus:outline-none"
               />
               <div className="flex justify-between text-[11px] text-slate-400 font-mono">
                 <span>Min: ₹{propertyType === "industrial" ? "25,000" : propertyType === "commercial" ? "10,000" : "1,000"}</span>
@@ -224,13 +216,13 @@ export const SavingsCalculator: React.FC = () => {
 
             {/* Location Select */}
             <div className="space-y-2">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-300">
+              <label className="text-xs font-extrabold uppercase tracking-wider text-slate-300">
                 3. Installation State / DISCOM
               </label>
               <select
                 value={stateLocation}
                 onChange={(e) => setStateLocation(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-brand-850 border border-slate-700 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-energy-500"
+                className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-red-950/60 text-slate-200 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-red-500"
               >
                 <option value="Tamil Nadu">Tamil Nadu (TANGEDCO)</option>
                 <option value="Karnataka">Karnataka (BESCOM / MESCOM)</option>
@@ -242,10 +234,10 @@ export const SavingsCalculator: React.FC = () => {
             </div>
 
             {/* Roof Area Guidance */}
-            <div className="p-4 rounded-2xl bg-brand-850/60 border border-slate-800 flex items-start gap-3 text-xs text-slate-400">
-              <Info className="w-4 h-4 text-energy-400 shrink-0 mt-0.5" />
+            <div className="p-4 rounded-2xl bg-slate-900 border border-red-950/60 flex items-start gap-3 text-xs text-slate-300">
+              <Info className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
               <span>
-                Required shadow-free rooftop space: approx. <strong className="text-slate-200">{calculation.spaceRequiredSqft} sq.ft</strong> ({calculation.recommendedKw} kW system).
+                Required shadow-free rooftop space: approx. <strong className="text-white">{calculation.spaceRequiredSqft} sq.ft</strong> ({calculation.recommendedKw} kW system).
               </span>
             </div>
           </div>
@@ -253,47 +245,47 @@ export const SavingsCalculator: React.FC = () => {
           {/* Right Column: Dynamic Results Cards (7 Cols on LG) */}
           <div className="lg:col-span-7 space-y-6">
             {/* Primary Capacity & Subsidy Highlights */}
-            <div className="bg-gradient-to-br from-brand-900 via-brand-900/90 to-brand-850 border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-6 border-b border-slate-800">
-                <div className="p-4 rounded-2xl bg-brand-950/60 border border-slate-800">
-                  <span className="text-xs font-semibold text-slate-400 block mb-1">Recommended Capacity</span>
-                  <div className="text-2xl sm:text-3xl font-extrabold text-white">
-                    {calculation.recommendedKw} <span className="text-energy-400 text-lg">kW</span>
+            <div className="bg-[#14101A]/95 border border-red-900/30 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-6 border-b border-red-950/60">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-red-950/60 shadow-xs">
+                  <span className="text-xs font-bold text-slate-400 block mb-1">Recommended Size</span>
+                  <div className="text-2xl sm:text-3xl font-black text-white">
+                    {calculation.recommendedKw} <span className="text-red-400 text-lg font-bold">kW</span>
                   </div>
-                  <span className="text-[11px] text-slate-400">Generates ~{calculation.annualGenerationKwh.toLocaleString()} units/yr</span>
+                  <span className="text-[11px] text-slate-400 font-medium">~{calculation.annualGenerationKwh.toLocaleString()} kWh/yr</span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-brand-950/60 border border-slate-800">
-                  <span className="text-xs font-semibold text-slate-400 block mb-1">Annual Electricity Savings</span>
-                  <div className="text-2xl sm:text-3xl font-extrabold text-solar-400">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-red-950/60 shadow-xs">
+                  <span className="text-xs font-bold text-slate-400 block mb-1">Annual Power Savings</span>
+                  <div className="text-2xl sm:text-3xl font-black text-amber-400">
                     ₹{calculation.annualSavingsRs.toLocaleString("en-IN")}
                   </div>
-                  <span className="text-[11px] text-slate-400">~₹{calculation.monthlySavingsRs.toLocaleString("en-IN")} saved monthly</span>
+                  <span className="text-[11px] text-slate-400 font-medium">~₹{calculation.monthlySavingsRs.toLocaleString("en-IN")}/mo</span>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-brand-950/60 border border-slate-800">
-                  <span className="text-xs font-semibold text-slate-400 block mb-1">Estimated Payback Period</span>
-                  <div className="text-2xl sm:text-3xl font-extrabold text-energy-400">
-                    {calculation.paybackYears} <span className="text-slate-300 text-lg">Years</span>
+                <div className="p-4 rounded-2xl bg-slate-900 border border-red-950/60 shadow-xs">
+                  <span className="text-xs font-bold text-slate-400 block mb-1">Payback Period</span>
+                  <div className="text-2xl sm:text-3xl font-black text-red-400">
+                    {calculation.paybackYears} <span className="text-slate-400 text-lg font-bold">Years</span>
                   </div>
-                  <span className="text-[11px] text-slate-400">Free power for next 21+ yrs</span>
+                  <span className="text-[11px] text-slate-400 font-medium">Free power next 21+ yrs</span>
                 </div>
               </div>
 
               {/* Subsidy Banner */}
               {calculation.subsidyAmount > 0 && (
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-2xl bg-solar-500/10 border border-solar-500/30 gap-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-2xl bg-red-950/60 border border-red-500/40 gap-3">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-solar-500/20 text-solar-400">
+                    <div className="p-2 rounded-xl bg-red-900/80 text-rose-300">
                       <Sparkles className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-sm font-bold text-white">{calculation.subsidyName}</p>
-                      <p className="text-xs text-slate-300">Direct DBT Bank Credit upon Net-Meter Commissioning</p>
+                      <p className="text-sm font-extrabold text-rose-200">{calculation.subsidyName}</p>
+                      <p className="text-xs text-rose-300/80">Direct DBT Bank Credit upon Net-Meter Commissioning</p>
                     </div>
                   </div>
                   <div className="text-right self-end sm:self-auto">
-                    <span className="text-lg font-black text-solar-400 font-mono">
+                    <span className="text-lg font-black text-amber-300 font-mono">
                       - ₹{calculation.subsidyAmount.toLocaleString("en-IN")}
                     </span>
                   </div>
@@ -302,24 +294,24 @@ export const SavingsCalculator: React.FC = () => {
 
               {/* 25-Year Lifetime Savings & Environmental Impact */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-2xl bg-brand-950/40 border border-slate-800 flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-energy-500/10 text-energy-400 shrink-0">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-red-950/60 flex items-center gap-3 shadow-xs">
+                  <div className="p-2.5 rounded-xl bg-red-950/80 text-red-400 shrink-0 border border-red-500/30">
                     <TrendingUp className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-xs text-slate-400 block">25-Year Net Savings</span>
+                    <span className="text-xs text-slate-400 font-semibold block">25-Year Net Savings</span>
                     <strong className="text-lg sm:text-xl font-black text-white font-mono">
                       ₹{calculation.lifetimeSavingsLakhs} Lakhs
                     </strong>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-brand-950/40 border border-slate-800 flex items-center gap-3">
-                  <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 shrink-0">
+                <div className="p-4 rounded-2xl bg-slate-900 border border-red-950/60 flex items-center gap-3 shadow-xs">
+                  <div className="p-2.5 rounded-xl bg-amber-950/80 text-amber-400 shrink-0 border border-amber-500/30">
                     <Trees className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className="text-xs text-slate-400 block">Lifetime CO₂ Offset</span>
+                    <span className="text-xs text-slate-400 font-semibold block">Annual CO₂ Offset</span>
                     <strong className="text-lg sm:text-xl font-black text-white font-mono">
                       {calculation.annualCo2Tons} Tons/yr
                     </strong>
@@ -329,14 +321,14 @@ export const SavingsCalculator: React.FC = () => {
 
               {/* Direct Next Action CTA */}
               <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-xs text-slate-400 leading-relaxed">
-                  *Results are estimates based on standard South India solar irradiance ({stateLocation}) and average slab tariffs.
+                <div className="text-xs text-slate-400 leading-relaxed font-medium">
+                  *Estimates based on standard South India solar irradiance ({stateLocation}) and applicable tariffs.
                 </div>
                 <Link
                   to={`/get-a-quote?type=${propertyType}&bill=${monthlyBill}&kw=${calculation.recommendedKw}`}
-                  className="btn-primary w-full sm:w-auto py-3 px-6 text-sm font-bold shrink-0 inline-flex items-center gap-2 group shimmer-container"
+                  className="btn-primary w-full sm:w-auto py-3 px-6 text-sm font-extrabold shrink-0 inline-flex items-center gap-2 group"
                 >
-                  <span>Claim Your Solar Plan</span>
+                  <span>Claim Your Custom Solar Plan</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1.5" />
                 </Link>
               </div>
@@ -347,3 +339,5 @@ export const SavingsCalculator: React.FC = () => {
     </section>
   );
 };
+
+export default SavingsCalculator;

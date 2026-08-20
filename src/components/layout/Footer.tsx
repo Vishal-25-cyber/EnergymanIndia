@@ -1,8 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  Sun,
-  Zap,
   Phone,
   Mail,
   MapPin,
@@ -11,10 +9,12 @@ import {
   ShieldCheck,
   Award,
   Sparkles,
-  ArrowUp
+  ArrowUp,
+  Calculator
 } from "lucide-react";
 import { companyData } from "../../data/company";
 import { ScrollReveal } from "../common/ScrollReveal";
+import { BrandLogo } from "../common/BrandLogo";
 
 export const Footer: React.FC = () => {
   const scrollToTop = () => {
@@ -22,94 +22,83 @@ export const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="bg-brand-950 border-t border-slate-800/80 relative overflow-hidden mt-0">
-      {/* Top glowing circuit border line with traveling photon */}
-      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-energy-500/60 to-transparent">
-        <div className="absolute top-0 bottom-0 w-32 bg-gradient-to-r from-transparent via-energy-400 to-transparent animate-[energyTravelHorizontal_6s_ease-in-out_infinite]" />
-      </div>
-
-      {/* Background radial highlight */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-energy-500/5 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-solar-500/5 rounded-full blur-3xl pointer-events-none" />
+    <footer className="bg-[#0A0A0E] text-slate-200 border-t border-red-950/60 relative overflow-hidden mt-0">
+      
+      {/* Background Subtle Red Geometric Circuit Mesh */}
+      <div
+        className="absolute inset-0 opacity-10 pointer-events-none"
+        style={{
+          backgroundImage: `radial-gradient(circle at 2px 2px, #E63946 1px, transparent 0)`,
+          backgroundSize: "32px 32px"
+        }}
+      />
+      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-red-600/5 rounded-full blur-3xl pointer-events-none" />
 
       {/* Main Footer Container */}
       <div className="site-container py-16 lg:py-20 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8">
           
-          {/* Column 1: Brand & Credentials (Spans 4 cols on LG) */}
+          {/* Column 1: Brand & Credentials (4 cols on LG) */}
           <div className="lg:col-span-4 space-y-6">
             <ScrollReveal animation="slide-up" delay={100}>
-              <Link to="/" className="flex items-center gap-3 group inline-flex">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-900 to-brand-850 border border-slate-700/80 flex items-center justify-center shadow-lg shadow-black/50 group-hover:border-energy-500/50 transition-all group-hover:scale-105">
-                  <Sun className="w-6 h-6 text-solar-400 transition-transform duration-700 group-hover:rotate-180" />
-                  <Zap className="w-3.5 h-3.5 text-energy-400 absolute bottom-1.5 right-1.5 fill-energy-400" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-display font-extrabold text-xl tracking-tight text-white group-hover:text-energy-400 transition-colors">
-                      ENERGY MAN
-                    </span>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-solar-500/20 text-solar-400 border border-solar-500/30">
-                      INDIA
-                    </span>
-                  </div>
-                  <span className="text-xs text-slate-400 font-medium tracking-wide">
-                    {companyData.tagline}
-                  </span>
-                </div>
+              <Link to="/" className="inline-block group focus:outline-none focus:ring-2 focus:ring-red-500 rounded-xl p-1">
+                <BrandLogo size="md" />
               </Link>
             </ScrollReveal>
 
-            <ScrollReveal animation="slide-up" delay={200}>
-              <p className="text-sm text-slate-400 leading-relaxed max-w-md">
+            <ScrollReveal animation="slide-up" delay={150}>
+              <p className="text-sm text-slate-300 leading-relaxed max-w-md">
                 {companyData.description}
               </p>
             </ScrollReveal>
 
             {/* Accreditations */}
-            <ScrollReveal animation="slide-up" delay={300}>
-              <div className="space-y-2 pt-4 border-t border-slate-800/80">
-                <div className="flex items-center gap-2 text-xs text-slate-300">
-                  <ShieldCheck className="w-4 h-4 text-energy-400 shrink-0" />
+            <ScrollReveal animation="slide-up" delay={200}>
+              <div className="space-y-2 pt-4 border-t border-red-950/60">
+                <div className="flex items-center gap-2 text-xs text-slate-200">
+                  <ShieldCheck className="w-4 h-4 text-red-500 shrink-0" />
                   <span>{companyData.mnreAccreditation}</span>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-300">
-                  <Award className="w-4 h-4 text-solar-400 shrink-0" />
+                <div className="flex items-center gap-2 text-xs text-slate-200">
+                  <Award className="w-4 h-4 text-amber-400 shrink-0" />
                   <span>CIN: {companyData.cin}</span>
                 </div>
               </div>
             </ScrollReveal>
 
-            {/* Quick Action Button */}
-            <ScrollReveal animation="slide-up" delay={400}>
+            {/* Get a Quote Action Button */}
+            <ScrollReveal animation="slide-up" delay={250}>
               <div className="pt-2">
                 <Link
                   to="/get-a-quote"
-                  className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center gap-2 group/btn"
+                  className="btn-primary py-3 px-6 text-xs font-black tracking-wider uppercase inline-flex items-center gap-2 group/btn shadow-md"
                 >
-                  <span>Request Free Site Survey</span>
+                  <Calculator className="w-4 h-4" />
+                  <span>GET A FREE SOLAR QUOTE</span>
                   <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1" />
                 </Link>
               </div>
             </ScrollReveal>
           </div>
 
-          {/* Column 2: Solutions */}
+          {/* Column 2: Solutions Navigation (3 cols) */}
           <div className="lg:col-span-3 lg:col-start-6 space-y-4">
-            <ScrollReveal animation="slide-up" delay={200}>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-200">Solar Solutions</p>
+            <ScrollReveal animation="slide-up" delay={150}>
+              <p className="text-xs font-bold uppercase tracking-wider text-red-400 font-mono">
+                SOLAR ENGINEERING SOLUTIONS
+              </p>
               <ul className="space-y-2.5 text-sm mt-4">
                 {[
-                  { name: "Residential Rooftop", path: "/solutions/residential" },
-                  { name: "Commercial Solar", path: "/solutions/commercial" },
-                  { name: "Industrial MW-Scale", path: "/solutions/industrial" },
+                  { name: "Residential Rooftop Solar", path: "/solutions/residential" },
+                  { name: "Industrial Solar Solutions", path: "/solutions/industrial" },
                   { name: "Agricultural Solar Pumps", path: "/solutions/agricultural" },
-                  { name: "Solar EPC & O&M", path: "/solutions/epc-maintenance" },
-                  { name: "Energy Storage (BESS)", path: "/solutions/energy-storage" },
+                  { name: "Commercial Captive Solar", path: "/solutions/commercial" },
+                  { name: "Battery Energy Storage (BESS)", path: "/solutions/energy-storage" },
+                  { name: "Solar EPC & O&M Maintenance", path: "/solutions/epc-maintenance" },
                 ].map((link, idx) => (
                   <li key={idx}>
-                    <Link to={link.path} className="text-slate-400 hover:text-energy-400 transition-colors flex items-center gap-2 group">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-energy-400 group-hover:scale-125 transition-all" />
+                    <Link to={link.path} className="text-slate-300 hover:text-red-400 transition-colors flex items-center gap-2 group">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-900 group-hover:bg-red-500 group-hover:scale-125 transition-all" />
                       {link.name}
                     </Link>
                   </li>
@@ -118,116 +107,128 @@ export const Footer: React.FC = () => {
             </ScrollReveal>
           </div>
 
-          {/* Column 3: Products & Knowledge Hubs */}
-          <div className="lg:col-span-3 lg:col-start-10 space-y-4">
-            <ScrollReveal animation="slide-up" delay={300}>
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-200">Products & Hubs</p>
+          {/* Column 3: Quick Links & Products (2 cols) */}
+          <div className="lg:col-span-2 space-y-4">
+            <ScrollReveal animation="slide-up" delay={200}>
+              <p className="text-xs font-bold uppercase tracking-wider text-red-400 font-mono">
+                DISCOVER & GUIDES
+              </p>
               <ul className="space-y-2.5 text-sm mt-4">
                 {[
-                  { name: "TOPCon Solar Panels", path: "/products/solar-panels" },
-                  { name: "Solar Inverters", path: "/products/inverters" },
-                  { name: "Solar Water Pumps", path: "/products/solar-pumps" },
+                  { name: "Commissioned Projects", path: "/projects" },
                   { name: "Solar Water Heaters", path: "/products/solar-water-heaters" },
+                  { name: "Solar Pumps (PM-KUSUM)", path: "/products/solar-pumps" },
+                  { name: "PM Surya Ghar Subsidy", path: "/government-subsidy" },
+                  { name: "Client Sites Gallery", path: "/gallery" },
+                  { name: "Insights & Articles", path: "/insights" },
+                  { name: "About ENERGYMAN", path: "/about" },
+                  { name: "Contact Engineering Hub", path: "/contact" }
                 ].map((link, idx) => (
                   <li key={idx}>
-                    <Link to={link.path} className="text-slate-400 hover:text-solar-400 transition-colors flex items-center gap-2 group">
-                      <span className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-solar-400 group-hover:scale-125 transition-all" />
+                    <Link to={link.path} className="text-slate-300 hover:text-red-400 transition-colors flex items-center gap-2 group">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-900 group-hover:bg-red-500 group-hover:scale-125 transition-all" />
                       {link.name}
                     </Link>
                   </li>
                 ))}
-                <li className="pt-2">
-                  <Link to="/government-subsidy" className="text-solar-400 hover:text-solar-300 font-medium transition-colors flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-solar-400" />
-                    PM Surya Ghar Guide
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/faq" className="text-slate-400 hover:text-solar-400 transition-colors flex items-center gap-2 group">
-                    <span className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-solar-400 group-hover:scale-125 transition-all" />
-                    Solar FAQs & Payback
-                  </Link>
-                </li>
               </ul>
             </ScrollReveal>
+          </div>
+
+          {/* Column 4: Factual Contact Directory & Social Links (3 cols) */}
+          <div className="lg:col-span-3 space-y-4">
+            <ScrollReveal animation="slide-up" delay={250}>
+              <p className="text-xs font-bold uppercase tracking-wider text-red-400 font-mono">
+                HEAD OFFICE & DIRECT CONTACT
+              </p>
+              
+              <div className="space-y-3.5 text-xs text-slate-300 mt-4">
+                <div className="flex items-start gap-2.5">
+                  <MapPin className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                  <address className="not-italic leading-relaxed">
+                    119, Gopal Layout, Ponnaiahrajapuram,
+                    <br />
+                    Behind Gandhi Park, Coimbatore - 641001,
+                    <br />
+                    Tamil Nadu, India.
+                  </address>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <Phone className="w-4 h-4 text-amber-400 shrink-0" />
+                  <a href="tel:+917092510004" className="hover:text-white transition-colors font-bold">
+                    +91 70925 10004
+                  </a>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <Mail className="w-4 h-4 text-red-400 shrink-0" />
+                  <a href="mailto:info@energymanindia.in" className="hover:text-white transition-colors font-mono">
+                    info@energymanindia.in
+                  </a>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>Mon - Sat: 9:00 AM - 7:00 PM</span>
+                </div>
+              </div>
+
+              {/* Social Media Links from Source */}
+              <div className="pt-4 border-t border-red-950/60">
+                <span className="text-[11px] font-bold text-slate-400 block mb-2 font-mono">
+                  FOLLOW ENERGYMAN
+                </span>
+                <div className="flex items-center gap-3">
+                  {[
+                    { name: "Facebook", url: companyData.socialLinks.facebook },
+                    { name: "LinkedIn", url: companyData.socialLinks.linkedin },
+                    { name: "YouTube", url: companyData.socialLinks.youtube },
+                    { name: "Instagram", url: companyData.socialLinks.instagram },
+                    { name: "WhatsApp", url: companyData.socialLinks.whatsapp }
+                  ].map((soc, idx) => (
+                    <a
+                      key={idx}
+                      href={soc.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="p-2 rounded-xl bg-slate-900 border border-red-950/60 text-slate-300 hover:text-white hover:border-red-500/50 transition-all text-xs font-bold"
+                    >
+                      {soc.name}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </ScrollReveal>
+          </div>
+
+        </div>
+
+        {/* Bottom Legal & Back to Top Bar */}
+        <div className="mt-14 pt-8 border-t border-red-950/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+          <p className="text-center sm:text-left">
+            &copy; {new Date().getFullYear()} <strong className="text-slate-200">Energyman Power Technologies (India) Private Limited</strong>. All Rights Reserved.
+          </p>
+
+          <div className="flex items-center gap-6">
+            <span className="text-[11px] font-mono text-red-400">
+              RENEWABLE ENERGY SAVES EARTH
+            </span>
+
+            <button
+              onClick={scrollToTop}
+              className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-red-950/60 text-slate-300 hover:text-white transition-all cursor-pointer inline-flex items-center gap-1.5"
+              aria-label="Scroll to top"
+            >
+              <span>Top</span>
+              <ArrowUp className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
-        {/* Contact Info Row */}
-        <ScrollReveal animation="slide-up" delay={400}>
-          <div className="mt-12 pt-8 border-t border-slate-800/80">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-brand-900 border border-slate-700 shadow-md">
-                  <MapPin className="w-4 h-4 text-energy-400" />
-                </div>
-                <div className="text-xs text-slate-300 space-y-1">
-                  <strong className="text-white block font-semibold">Coimbatore Experience Center:</strong>
-                  <span>{companyData.offices[0].address}, Coimbatore - {companyData.offices[0].pincode}</span>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-brand-900 border border-slate-700 shadow-md">
-                  <MapPin className="w-4 h-4 text-solar-400" />
-                </div>
-                <div className="text-xs text-slate-300 space-y-1">
-                  <strong className="text-white block font-semibold">Palani Registered Hub:</strong>
-                  <span>{companyData.offices[1].address}, Palani - {companyData.offices[1].pincode}</span>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-brand-900 border border-slate-700 shadow-md">
-                  <Phone className="w-4 h-4 text-emerald-400" />
-                </div>
-                <div className="text-xs text-slate-300 space-y-1 flex flex-col justify-center h-full">
-                  <a href={`tel:${companyData.phones.primary.replace(/\s+/g, '')}`} className="text-slate-200 hover:text-white font-medium text-sm transition-colors">
-                    {companyData.phones.primary}
-                  </a>
-                  <a href={`mailto:${companyData.emails.primary}`} className="text-slate-400 hover:text-white transition-colors">
-                    {companyData.emails.primary}
-                  </a>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-brand-900 border border-slate-700 shadow-md">
-                  <Clock className="w-4 h-4 text-blue-400" />
-                </div>
-                <div className="text-xs text-slate-300 space-y-1 flex items-center h-full">
-                  <span className="text-slate-300">{companyData.offices[0].workingHours}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </ScrollReveal>
-
-        {/* Bottom Bar: Copyright & Legal */}
-        <ScrollReveal animation="fade-in" delay={500}>
-          <div className="mt-12 pt-8 border-t border-slate-800/80 flex flex-col lg:flex-row items-center justify-between gap-6 text-xs text-slate-400 relative">
-            <p className="order-2 lg:order-1 text-center lg:text-left">
-              © {new Date().getFullYear()} Energyman Power Technologies (India) Private Limited. All rights reserved.
-            </p>
-            
-            <div className="order-1 lg:order-2 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 font-medium">
-              <Link to="/about" className="hover:text-energy-400 transition-colors">About Us</Link>
-              <Link to="/projects/commercial" className="hover:text-energy-400 transition-colors">Projects Gallery</Link>
-              <Link to="/insights" className="hover:text-energy-400 transition-colors">Insights</Link>
-              <Link to="/get-a-quote" className="hover:text-energy-400 transition-colors">Support</Link>
-            </div>
-
-            {/* Back to top button */}
-            <button 
-              onClick={scrollToTop}
-              className="absolute -top-14 right-0 lg:static lg:ml-4 w-10 h-10 rounded-full bg-brand-900 border border-slate-700/80 flex items-center justify-center text-slate-400 hover:text-white hover:border-energy-400 hover:bg-brand-850 transition-all hover:-translate-y-1 group order-3 focus:outline-none focus:ring-2 focus:ring-energy-500 shadow-lg"
-              aria-label="Back to top"
-            >
-              <ArrowUp className="w-4 h-4 group-hover:animate-bounce" />
-            </button>
-          </div>
-        </ScrollReveal>
       </div>
     </footer>
   );
 };
+
+export default Footer;

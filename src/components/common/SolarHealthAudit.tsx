@@ -1,15 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  Wrench,
   AlertTriangle,
   CheckCircle2,
-  Sparkles,
   ArrowRight,
-  ShieldCheck,
   Activity,
-  Cpu,
-  Flame
 } from "lucide-react";
 
 interface DiagnosticIssue {
@@ -67,27 +62,27 @@ export const SolarHealthAudit: React.FC = () => {
   const activeIssue = issuesList.find((i) => i.id === selectedIssueId) || issuesList[0];
 
   return (
-    <section className="section-padding bg-brand-950 relative overflow-hidden border-t border-slate-800" id="health-audit">
+    <section className="section-padding bg-[#0A0A0E] relative overflow-hidden border-t border-red-950/60" id="health-audit">
       <div className="site-container relative z-10 space-y-12">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-red-500/10 text-red-400 border border-red-500/30">
-            <Activity className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wider uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs">
+            <Activity className="w-3.5 h-3.5 text-red-400" />
             <span>Interactive EPC Diagnostic Tool</span>
           </div>
-          <h2 className="heading-section">
-            SOLAR HEALTH & <span className="bg-gradient-to-r from-red-400 via-solar-400 to-energy-400 bg-clip-text text-transparent">FAULT DIAGNOSTIC AUDIT</span>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+            SOLAR HEALTH &amp; <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">FAULT DIAGNOSTIC AUDIT</span>
           </h2>
-          <p className="text-subtle">
+          <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
             Is your existing solar plant underperforming or experiencing frequent inverter trips? Select your symptoms below for an instant engineering assessment.
           </p>
         </div>
 
         {/* Interactive Diagnostic Board */}
-        <div className="bg-gradient-to-br from-brand-900 via-brand-900/90 to-brand-850 border border-slate-700/80 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
+        <div className="bg-[#14101A]/95 border border-red-900/30 rounded-3xl p-6 sm:p-10 shadow-xl space-y-8">
           {/* Issue Selector Pills */}
           <div className="space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono block">
               Step 1: Select Current Plant Symptom / Behavior
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -96,84 +91,72 @@ export const SolarHealthAudit: React.FC = () => {
                   key={issue.id}
                   type="button"
                   onClick={() => setSelectedIssueId(issue.id)}
-                  className={`p-4 rounded-2xl border text-left transition-all ${
+                  className={`p-4 rounded-2xl border text-left transition-all shadow-xs cursor-pointer ${
                     selectedIssueId === issue.id
-                      ? "bg-energy-500/20 border-energy-500 text-white shadow-lg ring-1 ring-energy-500"
-                      : "bg-brand-950/80 border-slate-800 text-slate-300 hover:border-slate-700"
+                      ? "bg-[#1C1625] border-red-500 text-white shadow-md ring-1 ring-red-500/30"
+                      : "bg-slate-900 border-red-950/60 text-slate-300 hover:border-red-900"
                   }`}
                 >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="badge-slate text-[10px]">{issue.category}</span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      issue.urgency === "High" ? "bg-red-500/20 text-red-400 border border-red-500/40" : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40"
-                    }`}>
-                      {issue.urgency} Priority
-                    </span>
-                  </div>
-                  <h4 className="text-xs font-bold text-white line-clamp-2">{issue.label}</h4>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-red-400 block">
+                    {issue.category}
+                  </span>
+                  <h4 className="text-xs font-bold mt-1 line-clamp-2 text-white">
+                    {issue.label}
+                  </h4>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Diagnostic Result & Engineering Remedy */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch pt-4 border-t border-slate-800">
-            {/* Left: Engineering Diagnosis (7 Cols) */}
-            <div className="lg:col-span-7 p-6 sm:p-8 rounded-3xl bg-brand-950/90 border border-slate-700 space-y-5">
-              <div className="space-y-2">
-                <span className="badge-amber text-xs font-bold">Engineering Assessment</span>
-                <h3 className="text-xl font-bold text-white">{activeIssue.label}</h3>
+          {/* Diagnostic Result Card */}
+          <div className="p-6 sm:p-8 rounded-2xl bg-slate-900 border border-red-950/60 space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-red-950/60">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-400" />
+                <h3 className="text-base sm:text-lg font-black text-white">
+                  Diagnostic Result: {activeIssue.label}
+                </h3>
               </div>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                activeIssue.urgency === "High"
+                  ? "bg-red-950/80 text-rose-300 border border-red-500/40"
+                  : "bg-amber-950/80 text-amber-300 border border-amber-500/40"
+              }`}>
+                Urgency: {activeIssue.urgency}
+              </span>
+            </div>
 
-              <div className="space-y-3 text-xs text-slate-300 divide-y divide-slate-800">
-                <div className="pt-2">
-                  <strong className="text-slate-400 block mb-1">Root Engineering Cause:</strong>
-                  <p className="leading-relaxed">{activeIssue.cause}</p>
-                </div>
-
-                <div className="pt-3">
-                  <strong className="text-energy-400 block mb-1">Energy Man Rectification Protocol:</strong>
-                  <p className="leading-relaxed text-slate-200">{activeIssue.remedy}</p>
-                </div>
-
-                <div className="pt-3 flex items-center justify-between">
-                  <span className="text-slate-400">Estimated Recoverable Revenue / Yield:</span>
-                  <span className="text-energy-400 font-bold font-mono text-sm">{activeIssue.potentialYieldLoss}</span>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs">
+              <div className="p-4 rounded-xl bg-[#14101A] border border-red-950/60 space-y-1 shadow-xs">
+                <span className="text-slate-400 block font-bold">Estimated Output Penalty:</span>
+                <strong className="text-sm font-black text-rose-400">{activeIssue.potentialYieldLoss}</strong>
+              </div>
+              <div className="p-4 rounded-xl bg-[#14101A] border border-red-950/60 space-y-1 shadow-xs md:col-span-2">
+                <span className="text-slate-400 block font-bold">Root Cause Analysis:</span>
+                <p className="text-slate-200 leading-relaxed font-normal">{activeIssue.cause}</p>
               </div>
             </div>
 
-            {/* Right: AMC & Audit Booking Action (5 Cols) */}
-            <div className="lg:col-span-5 p-6 sm:p-8 rounded-3xl bg-brand-950/90 border border-slate-700 flex flex-col justify-between space-y-6">
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-solar-400">
-                  <Wrench className="w-5 h-5" />
-                  <h4 className="text-base font-bold text-white">Book a Comprehensive Plant Health Audit</h4>
-                </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Our certified O&M engineers in Coimbatore and Palani arrive on-site with FLIR drone thermal cameras, IV-curve tracers, and insulation testers.
-                </p>
-                <div className="space-y-1.5 text-xs text-slate-300 pt-2">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-energy-400 shrink-0" />
-                    <span>Drone Infrared Thermography Mapping</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-energy-400 shrink-0" />
-                    <span>String IV-Curve & Insulation Resistance Testing</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-energy-400 shrink-0" />
-                    <span>Guaranteed PR (Performance Ratio) Restoration</span>
-                  </div>
-                </div>
+            <div className="p-5 rounded-xl bg-[#1C1625] border border-red-500/40 space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-black text-red-400">
+                <CheckCircle2 className="w-4 h-4 text-red-500" />
+                <span>Recommended ENERGYMAN Engineering Remedy:</span>
               </div>
+              <p className="text-xs sm:text-sm text-slate-200 leading-relaxed font-medium">
+                {activeIssue.remedy}
+              </p>
+            </div>
 
+            <div className="pt-2 flex flex-wrap items-center justify-between gap-4">
+              <span className="text-xs text-slate-400 font-medium">
+                Need an on-site drone thermography scan or inverter recalibration?
+              </span>
               <Link
-                to="/solutions/epc-maintenance"
-                className="btn-primary w-full py-3 text-xs font-bold justify-center"
+                to="/contact"
+                className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center gap-1.5 rounded-xl shadow-md transition-all"
               >
-                Schedule On-Site Solar Audit →
+                <span>Book Plant Health Audit</span>
+                <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
@@ -182,3 +165,5 @@ export const SolarHealthAudit: React.FC = () => {
     </section>
   );
 };
+
+export default SolarHealthAudit;

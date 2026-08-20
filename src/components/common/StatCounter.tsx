@@ -1,22 +1,24 @@
 import React, { useEffect, useState, useRef } from "react";
 import { companyData } from "../../data/company";
-import { ShieldCheck, Award, Zap, Trees, Smile } from "lucide-react";
+import { ShieldCheck, Award, Zap, Smile, MapPin, IndianRupee } from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
 
 const getMetricIcon = (index: number) => {
   switch (index) {
     case 0:
-      return <Award className="w-5 h-5 text-solar-400" />;
+      return <Smile className="w-5 h-5 text-red-400" />;
     case 1:
-      return <Zap className="w-5 h-5 text-energy-400" />;
+      return <Zap className="w-5 h-5 text-amber-400" />;
     case 2:
-      return <ShieldCheck className="w-5 h-5 text-blue-400" />;
+      return <Award className="w-5 h-5 text-red-400" />;
     case 3:
-      return <Zap className="w-5 h-5 text-yellow-400" />;
+      return <MapPin className="w-5 h-5 text-rose-400" />;
     case 4:
-      return <Trees className="w-5 h-5 text-emerald-400" />;
+      return <IndianRupee className="w-5 h-5 text-amber-400" />;
+    case 5:
+      return <ShieldCheck className="w-5 h-5 text-red-400" />;
     default:
-      return <Smile className="w-5 h-5 text-cyan-400" />;
+      return <ShieldCheck className="w-5 h-5 text-red-400" />;
   }
 };
 
@@ -64,7 +66,7 @@ const AnimatedNumber: React.FC<{ value: number; duration?: number }> = ({ value,
     <span
       ref={ref}
       className={`transition-all duration-500 ${
-        isDone ? "text-white drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]" : ""
+        isDone ? "text-white font-black" : "text-slate-100"
       }`}
     >
       {count.toLocaleString()}
@@ -77,31 +79,31 @@ export const StatCounter: React.FC = () => {
     <div className="relative z-20 -mt-8 sm:-mt-12 site-container">
       <ScrollReveal animation="slide-up" delay={200}>
         <div className="relative group">
-          {/* Subtle glow behind the card */}
-          <div className="absolute -inset-0.5 bg-gradient-to-r from-energy-500/20 to-solar-500/20 rounded-[2rem] blur opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+          {/* Ambient crimson glow behind card */}
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600/25 via-rose-500/15 to-amber-500/20 rounded-[2rem] blur-xl opacity-75 group-hover:opacity-100 transition-opacity duration-700" />
           
-          <div className="relative bg-brand-900/80 backdrop-blur-xl border border-slate-700/60 rounded-3xl p-6 sm:p-8 lg:p-10 shadow-2xl shadow-black/80 group-hover:border-slate-600/60 transition-colors duration-500">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 sm:gap-8 divide-y md:divide-y-0 md:divide-x divide-slate-800/80">
+          <div className="relative bg-[#14101A]/95 backdrop-blur-2xl border border-red-900/40 rounded-3xl p-6 sm:p-8 lg:p-10 shadow-2xl shadow-black/80 group-hover:border-red-500/50 transition-all duration-500">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 sm:gap-8 divide-y sm:divide-y-0 sm:divide-x divide-red-950/60">
               {companyData.metrics.map((metric, index) => (
                 <div
                   key={index}
                   className={`flex flex-col items-center text-center space-y-2 group/item ${
-                    index > 0 ? "pt-4 md:pt-0 md:pl-6" : ""
+                    index > 0 ? "pt-4 sm:pt-0 sm:pl-6" : ""
                   }`}
                 >
-                  <div className="p-2.5 rounded-xl bg-brand-850/80 border border-slate-700/60 shadow-md group-hover/item:scale-110 group-hover/item:border-energy-500/30 transition-transform">
+                  <div className="p-2.5 rounded-xl bg-slate-900 border border-red-950/60 shadow-md group-hover/item:scale-110 group-hover/item:border-red-500/50 transition-all duration-300">
                     {getMetricIcon(index)}
                   </div>
-                  <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight flex items-baseline">
+                  <div className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-baseline">
                     <AnimatedNumber value={metric.value} />
-                    <span className="text-energy-400 text-xl sm:text-2xl font-bold ml-0.5">
+                    <span className="text-red-500 text-lg sm:text-xl font-black ml-0.5">
                       {metric.suffix}
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm font-semibold text-slate-200">
+                  <p className="text-xs sm:text-sm font-bold text-slate-200">
                     {metric.label}
                   </p>
-                  <p className="text-[11px] text-slate-400 hidden lg:block leading-tight">
+                  <p className="text-[11px] text-slate-400 hidden lg:block leading-tight font-medium">
                     {metric.description}
                   </p>
                 </div>
@@ -113,3 +115,5 @@ export const StatCounter: React.FC = () => {
     </div>
   );
 };
+
+export default StatCounter;

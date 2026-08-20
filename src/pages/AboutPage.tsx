@@ -1,93 +1,110 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  Sun,
-  Zap,
   ShieldCheck,
   Award,
-  CheckCircle2,
-  Users,
   Target,
   Eye,
   Heart,
-  ArrowRight,
   Sparkles,
-  Cpu,
-  Building2,
-  Factory,
-  Tractor
+  ArrowRight,
+  Sun,
+  Handshake,
+  CheckCircle2
 } from "lucide-react";
 import { SEOHead } from "../components/common/SEOHead";
 import { companyData } from "../data/company";
-import { StatCounter } from "../components/common/StatCounter";
 
 export const AboutPage: React.FC = () => {
   return (
-    <>
+    <div className="bg-[#0A0A0E] text-slate-100 min-h-screen">
       <SEOHead
-        title="About Us - Engineering A Cleaner Energy Future"
-        description="Learn about Energyman Power Technologies (India) Pvt. Ltd., our decade of solar EPC excellence, MNRE subsidy accreditation, and mission to power India sustainably."
+        title="About Us - Leading Solar Energy Storage System & EPC Players in India"
+        description="Energyman Power Technologies (India) Private Limited (formerly known as Luminary's Solar Power Systems) is one of the most efficient organizations in this field since 2011. Strategic EPC Partner with WAAREE."
       />
 
       {/* Hero Header */}
-      <section className="pt-32 pb-16 bg-gradient-to-b from-brand-950 via-brand-900/60 to-brand-950 border-b border-slate-800">
-        <div className="site-container text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-energy-500/10 text-energy-400 border border-energy-500/30">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Decade of Engineering Excellence</span>
+      <section className="pt-32 pb-16 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
+        <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="site-container relative z-10 text-center max-w-4xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs font-mono">
+            <Sparkles className="w-3.5 h-3.5 text-red-400" />
+            <span>ESTABLISHED SINCE 2011 • FORMERLY LUMINARY'S SOLAR POWER SYSTEMS</span>
           </div>
           <h1 className="heading-hero text-white">
-            ENGINEERING A <span className="bg-gradient-to-r from-energy-400 to-solar-400 bg-clip-text text-transparent">CLEANER ENERGY FUTURE</span>
+            ABOUT <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">ENERGYMAN</span>
           </h1>
-          <p className="text-subtle">
-            Founded with a steadfast mission to make clean, dependable solar energy accessible for Indian industries, farms, and homes.
+          <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto font-medium">
+            Leading Solar Energy Storage System & EPC Players in India. Harnessing the power of the sun to empower communities, industries, and businesses with clean, dependable power.
           </p>
         </div>
       </section>
 
-      {/* Metrics Strip */}
-      <StatCounter />
+      {/* 3 Core Statistics from Source */}
+      <section className="py-12 bg-[#14101A]/95 border-b border-red-950/60">
+        <div className="site-container">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {companyData.metrics.map((m, idx) => (
+              <div
+                key={idx}
+                className="p-6 rounded-3xl bg-slate-900/90 border border-red-950/60 text-center space-y-1 shadow-md"
+              >
+                <div className="text-3xl sm:text-4xl font-black text-amber-400 font-mono">
+                  {m.value}{m.suffix}
+                </div>
+                <strong className="text-sm font-bold text-white block">{m.label}</strong>
+                <p className="text-xs text-slate-400">{m.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      {/* Company Story & Mission */}
-      <section className="section-padding bg-brand-950">
+      {/* Company Story & Heritage */}
+      <section className="section-padding bg-[#0A0A0E] relative border-b border-red-950/60">
         <div className="site-container space-y-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            
             {/* Text Story (7 Cols) */}
             <div className="lg:col-span-7 space-y-6">
               <div className="space-y-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-energy-400">Our Story</span>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-white">
-                  From Regional Solar Pioneer to Trusted South India EPC Contractor
+                <span className="text-xs font-extrabold uppercase tracking-wider text-red-400 font-mono">
+                  OUR HERITAGE & BACKGROUND
+                </span>
+                <h2 className="text-2xl sm:text-3xl font-black text-white leading-tight">
+                  Pioneering Renewable Energy & Storage Systems Since 2011
                 </h2>
               </div>
 
-              <div className="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
+              <div className="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
                 <p>
-                  <strong>Energyman Power Technologies (India) Private Limited</strong> was incorporated with a vision to revolutionize clean power delivery across South India. With corporate headquarters in Coimbatore and an established engineering hub in Palani, we have evolved into a premier turnkey renewable energy solutions provider.
+                  <strong className="text-white">Energyman Power Technologies (India) Private Limited</strong> (formerly known as <strong className="text-amber-300">Luminary's Solar Power Systems</strong>) is one of the most efficient organizations in this field since 2011, which pays attention to the holistic utilization of solar energy in the products that it manufactures and installs.
                 </p>
                 <p>
-                  Over the past decade, we have engineered and commissioned over <strong>35 MW+</strong> of rooftop, ground-mounted, and agricultural solar pumping systems. Our work spans multi-megawatt captive solar plants for energy-intensive textile spinning mills to PM Surya Ghar rooftop solar setups for thousands of homes.
+                  Headquartered at <strong className="text-slate-200">119, Gopal Layout, Ponnaiahrajapuram, Near Gandhi Park, Coimbatore</strong>, with regional franchisee operations in <strong className="text-slate-200">Palani</strong> and an active network of service centres across India, EnergyMan delivers turnkey rooftop, ground-mounted, energy storage (BESS), and agricultural solar pumping solutions.
                 </p>
                 <p>
-                  As an approved <strong>Ministry of New and Renewable Energy (MNRE) Channel Partner</strong> and registered subsidy implementer, we guarantee that every kilowatt installed adheres to the strictest safety, electrical, and structural codes.
+                  We are an authorized vendor and implementing partner for the <strong className="text-red-400">MNRE Subsidy Scheme (PM Surya Ghar: Muft Bijli Yojana & PM-KUSUM)</strong>, providing clients with fixed per-kW capital subsidies, direct beneficiary transfers (DBT) within 30 days, and 5 years of comprehensive maintenance (CMC).
                 </p>
               </div>
 
               {/* Accreditations Row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                <div className="p-4 rounded-2xl bg-brand-900/80 border border-slate-800 flex items-center gap-3">
-                  <ShieldCheck className="w-6 h-6 text-energy-400 shrink-0" />
+                <div className="p-4 rounded-2xl bg-[#14101A]/95 border border-red-900/30 flex items-center gap-3 shadow-md">
+                  <ShieldCheck className="w-6 h-6 text-red-400 shrink-0" />
                   <div>
-                    <strong className="text-xs text-white block">MNRE Partner</strong>
-                    <span className="text-[11px] text-slate-400">PM Surya Ghar & PM-KUSUM</span>
+                    <strong className="text-xs text-white block font-bold">MNRE Authorized Vendor</strong>
+                    <span className="text-[11px] text-slate-400">National Portal for Rooftop Solar</span>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-brand-900/80 border border-slate-800 flex items-center gap-3">
-                  <Award className="w-6 h-6 text-solar-400 shrink-0" />
+                <div className="p-4 rounded-2xl bg-[#14101A]/95 border border-red-900/30 flex items-center gap-3 shadow-md">
+                  <Handshake className="w-6 h-6 text-amber-400 shrink-0" />
                   <div>
-                    <strong className="text-xs text-white block">ISO 9001:2015 Certified</strong>
-                    <span className="text-[11px] text-slate-400">Quality Management System</span>
+                    <strong className="text-xs text-white block font-bold">WAAREE Strategic Partner</strong>
+                    <span className="text-[11px] text-slate-400">One with the Sun EPC Alliance</span>
                   </div>
                 </div>
               </div>
@@ -95,102 +112,154 @@ export const AboutPage: React.FC = () => {
 
             {/* Image (5 Cols) */}
             <div className="lg:col-span-5">
-              <div className="rounded-3xl overflow-hidden border border-slate-800 shadow-2xl relative">
+              <div className="rounded-3xl overflow-hidden border border-red-950/60 shadow-2xl relative bg-slate-900">
                 <img
                   src="https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=1200&q=80"
-                  alt="Solar engineering field"
+                  alt="Solar engineering installation"
                   className="w-full h-96 object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-transparent to-transparent" />
-                <div className="absolute bottom-6 left-6 right-6 bg-brand-900/90 backdrop-blur-md p-4 rounded-2xl border border-slate-700">
-                  <span className="text-xs font-bold text-solar-400 block">Energy Man India</span>
-                  <span className="text-xs text-slate-300">"Renewable Energy Saves Earth"</span>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0E] via-transparent to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6 bg-[#14101A]/95 backdrop-blur-md p-4 rounded-2xl border border-red-900/30 shadow-lg space-y-1">
+                  <span className="text-xs font-mono font-bold text-red-400 block uppercase">
+                    ENERGYMAN POWER TECHNOLOGIES
+                  </span>
+                  <p className="text-xs text-slate-200">
+                    Renewable Energy Saves Earth • Coimbatore - 641001
+                  </p>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Mission, Vision, Core Values (3 Cards) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-brand-900/70 border border-slate-800 rounded-3xl p-8 space-y-4 hover:border-energy-500/40 transition-colors">
-              <div className="p-3 rounded-2xl bg-energy-500/10 text-energy-400 border border-energy-500/20 w-fit">
-                <Target className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-white">Our Mission</h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                To accelerate India's transition to clean energy by engineering reliable, high-yield solar systems that deliver genuine long-term savings and lower carbon emissions for every customer.
-              </p>
-            </div>
-
-            <div className="bg-brand-900/70 border border-slate-800 rounded-3xl p-8 space-y-4 hover:border-solar-500/40 transition-colors">
-              <div className="p-3 rounded-2xl bg-solar-500/10 text-solar-400 border border-solar-500/20 w-fit">
-                <Eye className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-white">Our Vision</h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                To stand as India's benchmark engineering EPC company—trusted for technical precision, uncompromising hardware quality, and lifetime customer care.
-              </p>
-            </div>
-
-            <div className="bg-brand-900/70 border border-slate-800 rounded-3xl p-8 space-y-4 hover:border-blue-500/40 transition-colors">
-              <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 w-fit">
-                <Heart className="w-6 h-6" />
-              </div>
-              <h3 className="text-xl font-bold text-white">Our Core Values</h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Engineering integrity, transparent economics, zero compromise on safety, and continuous innovation in renewable power management.
-              </p>
-            </div>
-          </div>
-
-          {/* Company Timeline */}
-          <div className="bg-brand-900/60 border border-slate-800 rounded-3xl p-8 sm:p-12 space-y-8">
-            <div className="text-center max-w-2xl mx-auto space-y-2">
-              <h3 className="text-2xl font-bold text-white">
-                Our Journey & Key Milestones
-              </h3>
-              <p className="text-xs text-slate-400">
-                A decade of continuous innovation and expanding solar capacity.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {[
-                { year: "2016", title: "Company Inception", desc: "Energyman Power Technologies incorporated in Tamil Nadu with focus on agricultural solar pumps and rooftop systems." },
-                { year: "2019", title: "10 MW Milestone", desc: "Crossed 10 MW installed capacity across industrial spinning mills and commercial institutions in Western Tamil Nadu." },
-                { year: "2023", title: "PM-KUSUM & BESS Expansion", desc: "Empanelled for large-scale PM-KUSUM farm pumps and launched modular LiFePO4 battery energy storage lines." },
-                { year: "2026", title: "35 MW+ & PM Surya Ghar", desc: "Over 2,500+ commissioned installations, deploying N-Type TOPCon bi-facial modules and national portal subsidy fulfillment." }
-              ].map((m, mIdx) => (
-                <div key={mIdx} className="p-5 rounded-2xl bg-brand-950/80 border border-slate-800 space-y-2">
-                  <span className="text-xl font-black text-solar-400 font-mono">{m.year}</span>
-                  <h4 className="text-sm font-bold text-white">{m.title}</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">{m.desc}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-16 bg-gradient-to-r from-brand-900 via-brand-850 to-brand-900 border-t border-slate-800 text-center">
-        <div className="site-container max-w-3xl space-y-6">
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-white">
-            Partner With India's Trusted Solar Engineers
-          </h2>
+      {/* Mission & Vision (Verbatim from Brochure Pages 2 & 3) */}
+      <section className="section-padding bg-[#0A0A0E] border-b border-red-950/60">
+        <div className="site-container space-y-12">
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            {/* MISSION */}
+            <div className="p-8 rounded-3xl bg-[#14101A]/95 border border-red-900/40 space-y-6 shadow-2xl">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-red-950/90 border border-red-500/40 text-red-400">
+                  <Target className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold text-red-400 uppercase tracking-widest block">
+                    CORE PURPOSE
+                  </span>
+                  <h3 className="text-2xl font-black text-white">Our Mission</h3>
+                </div>
+              </div>
+
+              <div className="space-y-4 text-xs sm:text-sm text-slate-300">
+                {companyData.mission.map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <p className="leading-relaxed">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* VISION */}
+            <div className="p-8 rounded-3xl bg-[#14101A]/95 border border-red-900/40 space-y-6 shadow-2xl">
+              <div className="flex items-center gap-3">
+                <div className="p-3 rounded-2xl bg-amber-950/90 border border-amber-500/40 text-amber-400">
+                  <Eye className="w-6 h-6" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-mono font-bold text-amber-400 uppercase tracking-widest block">
+                    STRATEGIC DIRECTION
+                  </span>
+                  <h3 className="text-2xl font-black text-white">Our Vision</h3>
+                </div>
+              </div>
+
+              <div className="space-y-4 text-xs sm:text-sm text-slate-300">
+                {companyData.vision.map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <p className="leading-relaxed">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* Strategic EPC Association with WAAREE (Pages 4 & 5) */}
+      <section className="section-padding bg-[#0A0A0E] border-b border-red-950/60">
+        <div className="site-container space-y-10">
+          
+          <div className="text-center max-w-3xl mx-auto space-y-3">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-red-950/80 text-rose-300 border border-red-500/40 font-mono uppercase">
+              <Handshake className="w-3.5 h-3.5 text-red-400" />
+              <span>STRATEGIC EPC COLLABORATION</span>
+            </div>
+            <h2 className="text-3xl sm:text-4xl font-black text-white">
+              WAAREE <span className="text-red-500">&amp;</span> ENERGYMAN
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-300">
+              Partnering with India's largest solar module manufacturer and EPC pioneer to deliver multi-megawatt industrial and utility solar power plants.
+            </p>
+          </div>
+
+          {/* Highlights of Major Commissioned Installations */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-xs">
+            {[
+              { client: "Waneep Solar Pvt. Ltd.", loc: "Madhya Pradesh", cap: "50 MW" },
+              { client: "Waneep Solar Pvt. Ltd.", loc: "Andhra Pradesh", cap: "50 MW" },
+              { client: "Hero Future Energies", loc: "Telangana", cap: "44 MW" },
+              { client: "Roha Dyechem Pvt. Ltd.", loc: "Rajasthan", cap: "25 MW" },
+              { client: "Reliance Metro", loc: "Mumbai", cap: "2,700 kW" },
+              { client: "Mondelez India (Cadbury)", loc: "Andhra Pradesh", cap: "2,000 kW" },
+              { client: "Piramal Glass Ltd.", loc: "Gujarat", cap: "1,700 kW" },
+              { client: "SRG Apparels", loc: "Tamil Nadu", cap: "1,000 kW" },
+              { client: "Sri Balabagavathi Mills", loc: "Karumathampatti, Coimbatore", cap: "660 kW" },
+              { client: "Deivajothi Textiles", loc: "Somanur, Coimbatore", cap: "670 kW" },
+              { client: "Green Cotton Mills", loc: "Uthukuli, Tirupur", cap: "110 kW" },
+              { client: "Mr. Palanisamy (Banu Illam)", loc: "Palladam, Tirupur", cap: "50 kW Hybrid" }
+            ].map((proj, pIdx) => (
+              <div
+                key={pIdx}
+                className="p-4 rounded-2xl bg-slate-900/90 border border-red-950/60 space-y-1 hover:border-red-500/50 transition-colors"
+              >
+                <span className="text-[10px] font-mono font-bold text-amber-400 block">{proj.cap}</span>
+                <strong className="text-xs text-white block line-clamp-1">{proj.client}</strong>
+                <p className="text-[11px] text-slate-400">{proj.loc}</p>
+              </div>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="py-16 bg-[#14101A]/95 text-center">
+        <div className="site-container max-w-2xl mx-auto space-y-4">
+          <h3 className="text-2xl font-black text-white">Partner with EnergyMan for Your Solar Transition</h3>
           <p className="text-xs sm:text-sm text-slate-300">
-            Let us evaluate your property and design an energy system built for 25+ years of reliable power generation.
+            Approved MNRE subsidy partner with complete in-house design, engineering, procurement, construction, and 25-year lifecycle support.
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link to="/get-a-quote" className="btn-primary py-3.5 px-8 font-bold text-sm">
-              Get Your Custom Solar Plan →
-            </Link>
-            <Link to="/contact" className="btn-secondary py-3.5 px-6 text-sm font-semibold">
-              Contact Our Engineers
+          <div className="pt-2">
+            <Link
+              to="/contact"
+              className="btn-primary py-3.5 px-8 text-xs sm:text-sm font-bold inline-flex items-center gap-2"
+            >
+              <span>Contact Engineering Desk</span>
+              <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
         </div>
       </section>
-    </>
+    </div>
   );
 };
+
+export default AboutPage;

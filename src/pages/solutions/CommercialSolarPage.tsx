@@ -1,19 +1,14 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
-  Building2,
   ShieldCheck,
   CheckCircle2,
-  Sparkles,
   ArrowRight,
   Zap,
-  TrendingUp,
   Percent,
-  Calculator
 } from "lucide-react";
 import { SEOHead } from "../../components/common/SEOHead";
 import { solutionsData } from "../../data/solutions";
-import { companyData } from "../../data/company";
 import { SavingsCalculator } from "../../components/common/SavingsCalculator";
 import { FAQAccordion } from "../../components/common/FAQAccordion";
 
@@ -21,25 +16,28 @@ export const CommercialSolarPage: React.FC = () => {
   const data = solutionsData.find((s) => s.id === "commercial") || solutionsData[1];
 
   return (
-    <>
+    <div className="bg-[#0A0A0E] text-slate-100 min-h-screen">
       <SEOHead
         title="Commercial Solar Power Systems & 40% Tax Depreciation"
-        description="Slash commercial electricity tariffs, claim Section 32 40% accelerated depreciation, and improve ESG ratings with Energy Man India commercial solar EPC."
+        description="Slash commercial electricity tariffs, claim Section 32 40% accelerated depreciation, and improve ESG ratings with ENERGYMAN commercial solar EPC."
       />
 
       {/* Hero Header */}
-      <section className="pt-32 pb-16 bg-gradient-to-b from-brand-950 via-brand-900/60 to-brand-950 border-b border-slate-800 relative overflow-hidden">
+      <section className="pt-32 pb-16 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
+        <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+
         <div className="site-container relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             <div className="lg:col-span-7 space-y-5">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-solar-500/10 text-solar-400 border border-solar-500/30">
-                <Percent className="w-3.5 h-3.5" />
-                <span>40% Accelerated Tax Depreciation & ESG Compliance</span>
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wider uppercase bg-amber-950/80 text-amber-300 border border-amber-500/40 shadow-xs">
+                <Percent className="w-3.5 h-3.5 text-amber-400" />
+                <span>40% Accelerated Tax Depreciation &amp; ESG Compliance</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-                SMART ENERGY FOR <span className="bg-gradient-to-r from-solar-400 to-energy-400 bg-clip-text text-transparent">MODERN BUSINESS</span>
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
+                SMART ENERGY FOR <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">MODERN BUSINESS</span>
               </h1>
-              <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl">
+              <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-xl font-normal">
                 Commercial electricity tariffs in India average ₹8 to ₹12/unit. Power your offices, hospitals, educational campuses, and hotels with high-yield rooftop solar producing clean electricity at less than ₹2.50/unit over 25 years.
               </p>
 
@@ -52,21 +50,21 @@ export const CommercialSolarPage: React.FC = () => {
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
-                  to="/projects/commercial"
-                  className="btn-secondary py-3.5 px-6 text-sm font-semibold"
+                  to="/projects"
+                  className="py-3.5 px-6 text-sm font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-red-950/60 transition-all"
                 >
                   <span>View Commercial Projects</span>
                 </Link>
               </div>
 
               {/* Badges */}
-              <div className="pt-4 flex flex-wrap items-center gap-6 text-xs text-slate-300 font-medium">
+              <div className="pt-4 flex flex-wrap items-center gap-6 text-xs text-slate-400 font-semibold">
                 <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-solar-400" />
-                  CAPEX & OPEX / RESCO Models
+                  <ShieldCheck className="w-4 h-4 text-amber-400" />
+                  CAPEX &amp; OPEX / RESCO Models
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-energy-400" />
+                  <ShieldCheck className="w-4 h-4 text-red-400" />
                   CEIG / Safety Inspectorate Liaison
                 </span>
               </div>
@@ -74,16 +72,16 @@ export const CommercialSolarPage: React.FC = () => {
 
             {/* Hero Image */}
             <div className="lg:col-span-5">
-              <div className="rounded-3xl overflow-hidden border border-slate-800 shadow-2xl relative">
+              <div className="rounded-3xl overflow-hidden border border-red-950/60 shadow-xl relative bg-slate-900">
                 <img
                   src={data.heroImage}
                   alt="Commercial solar building"
                   className="w-full h-80 sm:h-96 object-cover"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-brand-950 via-transparent to-transparent" />
-                <div className="absolute bottom-4 left-4 right-4 bg-brand-900/90 backdrop-blur-md p-4 rounded-2xl border border-slate-700 text-xs">
-                  <span className="text-slate-400 block">Typical Capital Payback:</span>
-                  <strong className="text-base text-energy-400 font-extrabold">{data.typicalRoi}</strong>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0E] via-transparent to-transparent" />
+                <div className="absolute bottom-4 left-4 right-4 bg-[#14101A]/95 backdrop-blur-md p-4 rounded-2xl border border-red-900/30 text-xs shadow-md">
+                  <span className="text-slate-400 block font-bold">Typical Capital Payback:</span>
+                  <strong className="text-base text-amber-300 font-black">{data.typicalRoi}</strong>
                 </div>
               </div>
             </div>
@@ -92,23 +90,23 @@ export const CommercialSolarPage: React.FC = () => {
       </section>
 
       {/* Overview & Key Highlights */}
-      <section className="section-padding bg-brand-950">
+      <section className="section-padding bg-[#0A0A0E]">
         <div className="site-container space-y-16">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
             <div className="lg:col-span-7 space-y-6">
-              <h2 className="text-2xl sm:text-3xl font-bold text-white">
-                Strategic Cost Reduction & Corporate Sustainability
+              <h2 className="text-2xl sm:text-3xl font-black text-white">
+                Strategic Cost Reduction &amp; Corporate Sustainability
               </h2>
-              <p className="text-sm text-slate-300 leading-relaxed">
+              <p className="text-sm text-slate-300 leading-relaxed font-normal">
                 {data.overview}
               </p>
 
               <div className="space-y-3 pt-4">
-                <h3 className="text-base font-bold text-white">Commercial System Advantages:</h3>
+                <h3 className="text-base font-black text-white">Commercial System Advantages:</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {data.keyBenefits.map((b, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 p-3 rounded-xl bg-brand-900/60 border border-slate-800 text-xs text-slate-200">
-                      <CheckCircle2 className="w-4 h-4 text-solar-400 shrink-0 mt-0.5" />
+                    <div key={idx} className="flex items-start gap-2.5 p-3 rounded-xl bg-[#14101A]/95 border border-red-900/30 text-xs text-slate-200 font-medium shadow-xs">
+                      <CheckCircle2 className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                       <span>{b}</span>
                     </div>
                   ))}
@@ -117,9 +115,9 @@ export const CommercialSolarPage: React.FC = () => {
             </div>
 
             {/* Technical Specs Card */}
-            <div className="lg:col-span-5 bg-brand-900/80 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Zap className="w-5 h-5 text-solar-400" />
+            <div className="lg:col-span-5 bg-[#14101A]/95 border border-red-900/30 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+              <h3 className="text-lg font-black text-white flex items-center gap-2">
+                <Zap className="w-5 h-5 text-amber-400" />
                 <span>Commercial System Specifications</span>
               </h3>
 
@@ -127,17 +125,17 @@ export const CommercialSolarPage: React.FC = () => {
                 {data.technicalSpecs.map((spec, sIdx) => (
                   <div key={sIdx} className="pt-2.5 flex justify-between gap-4">
                     <span className="text-slate-400 font-medium">{spec.label}</span>
-                    <span className="text-slate-200 font-bold text-right">{spec.value}</span>
+                    <span className="text-white font-bold text-right">{spec.value}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="p-4 rounded-2xl bg-brand-950 border border-slate-800 space-y-2">
-                <p className="text-xs font-bold text-solar-400">Suitable Commercial Facilities:</p>
+              <div className="p-4 rounded-2xl bg-slate-900 border border-red-950/60 space-y-2 shadow-xs">
+                <p className="text-xs font-black text-amber-400">Suitable Commercial Facilities:</p>
                 <ul className="text-xs text-slate-300 space-y-1">
                   {data.suitableFor.map((item, idx) => (
                     <li key={idx} className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-solar-400" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
                       <span>{item}</span>
                     </li>
                   ))}
@@ -147,22 +145,22 @@ export const CommercialSolarPage: React.FC = () => {
           </div>
 
           {/* 5-Step Process */}
-          <div className="bg-brand-900/60 border border-slate-800 rounded-3xl p-8 sm:p-12 space-y-8">
+          <div className="bg-[#14101A]/95 border border-red-900/30 rounded-3xl p-8 sm:p-12 space-y-8 shadow-xl">
             <div className="text-center max-w-2xl mx-auto space-y-2">
-              <h3 className="text-2xl font-bold text-white">
+              <h3 className="text-2xl font-black text-white">
                 Our 5-Step Commercial EPC Execution Model
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-300 font-normal">
                 Engineered for rapid delivery with zero operational interruption to your business.
               </p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               {data.processSteps.map((p) => (
-                <div key={p.step} className="p-5 rounded-2xl bg-brand-950/80 border border-slate-800 space-y-2">
-                  <span className="text-xl font-extrabold text-solar-400 font-mono">{p.step}</span>
+                <div key={p.step} className="p-5 rounded-2xl bg-slate-900 border border-red-950/60 space-y-2 shadow-xs hover:border-red-500/50 transition-colors">
+                  <span className="text-xl font-black text-red-500 font-mono">{p.step}</span>
                   <h4 className="text-sm font-bold text-white">{p.title}</h4>
-                  <p className="text-xs text-slate-400 leading-relaxed">{p.desc}</p>
+                  <p className="text-xs text-slate-300 leading-relaxed font-normal">{p.desc}</p>
                 </div>
               ))}
             </div>
@@ -174,17 +172,19 @@ export const CommercialSolarPage: React.FC = () => {
       <SavingsCalculator />
 
       {/* FAQs */}
-      <section className="section-padding bg-brand-950/90 border-t border-slate-800">
+      <section className="section-padding bg-[#0A0A0E] border-t border-red-950/60">
         <div className="site-container max-w-4xl space-y-8">
           <div className="text-center space-y-2">
-            <h2 className="heading-section">
-              COMMERCIAL SOLAR <span className="text-solar-400">FAQS</span>
+            <h2 className="heading-section text-white">
+              COMMERCIAL SOLAR <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">FAQS</span>
             </h2>
-            <p className="text-subtle">Learn about tax depreciation, CEIG clearances, and payback calculations.</p>
+            <p className="text-slate-300 text-sm">Learn about tax depreciation, CEIG clearances, and payback calculations.</p>
           </div>
           <FAQAccordion defaultCategory="commercial" />
         </div>
       </section>
-    </>
+    </div>
   );
 };
+
+export default CommercialSolarPage;
