@@ -77,13 +77,13 @@ export const TestimonialsPage: React.FC = () => {
       {/* Testimonials Grid */}
       <section className="section-padding bg-[#0A0A0E]">
         <div className="site-container">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             {filteredReviews.map((item) => (
               <div
                 key={item.id}
-                className="bg-[#14101A]/95 border border-red-900/30 rounded-3xl p-8 hover:border-red-500/50 hover:shadow-2xl hover:shadow-black/70 transition-all duration-300 flex flex-col justify-between space-y-6 relative group shadow-md"
+                className="bg-[#14101A]/95 border border-red-900/30 rounded-3xl p-5 sm:p-8 hover:border-red-500/50 hover:shadow-2xl hover:shadow-black/70 transition-all duration-300 flex flex-col justify-between space-y-6 relative group shadow-md"
               >
-                <Quote className="w-12 h-12 text-slate-800 absolute top-6 right-6 pointer-events-none group-hover:text-red-500/20 transition-colors" />
+                <Quote className="w-10 h-10 sm:w-12 sm:h-12 text-slate-800 absolute top-5 sm:top-6 right-5 sm:right-6 pointer-events-none group-hover:text-red-500/20 transition-colors" />
 
                 <div className="space-y-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -98,29 +98,29 @@ export const TestimonialsPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <p className="text-sm sm:text-base text-slate-200 leading-relaxed italic font-medium">
+                  <blockquote className="text-sm sm:text-base text-slate-200 leading-relaxed italic font-medium">
                     &ldquo;{item.quote}&rdquo;
-                  </p>
+                  </blockquote>
                 </div>
 
-                <div className="pt-4 border-t border-red-950/60 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
+                <div className="pt-4 border-t border-red-950/60 flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     {item.avatar && (
                       <img
                         src={item.avatar}
                         alt={item.name}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-red-950/60 shadow-xs"
+                        className="w-11 h-11 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-red-950/60 shadow-xs shrink-0"
                       />
                     )}
-                    <div>
-                      <h4 className="text-sm font-bold text-white">{item.name}</h4>
-                      <p className="text-xs text-slate-400">
+                    <div className="min-w-0">
+                      <h4 className="text-sm font-bold text-white truncate">{item.name}</h4>
+                      <p className="text-xs text-slate-400 truncate">
                         {item.role}{item.organization ? ` • ${item.organization}` : ""}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1 text-[11px] text-red-400 font-medium">
+                  <div className="flex items-center gap-1 text-[11px] text-red-400 font-medium shrink-0">
                     <ShieldCheck className="w-4 h-4" />
                     <span>Verified Project</span>
                   </div>
