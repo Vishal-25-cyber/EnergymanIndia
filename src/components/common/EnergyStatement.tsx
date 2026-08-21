@@ -1,6 +1,7 @@
+"use client";
 import React from "react";
 import { ArrowRight, Users } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { ScrollReveal } from "./ScrollReveal";
 
 const COMPANY_TEAM_IMAGE = "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?auto=format&fit=crop&w=1200&q=80";
@@ -100,14 +101,14 @@ export const EnergyStatement: React.FC = () => {
             {/* Ending CTA Button Strip */}
             <div className="pt-2 flex flex-wrap items-center gap-4">
               <Link
-                to="/about"
+                href="/about"
                 className="btn-primary py-3.5 px-7 text-xs sm:text-sm font-bold inline-flex items-center gap-2"
               >
                 <span>Learn Our Complete Story</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
-                to="/projects"
+                href="/projects"
                 className="py-3.5 px-6 text-xs sm:text-sm font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-red-950/60 transition-all hover:text-white hover:border-red-500/40"
               >
                 Explore Commissioned Plants

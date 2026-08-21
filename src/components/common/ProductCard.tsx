@@ -1,5 +1,6 @@
+"use client";
 import React from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { ShieldCheck, CheckCircle2 } from "lucide-react";
 import { ProductItem } from "../../data/products";
 
@@ -63,14 +64,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
       <div className="p-6 pt-0">
         <div className="grid grid-cols-2 gap-2 pt-2 border-t border-red-950/60">
           <Link
-            to={`/products/${product.category}?item=${product.slug}`}
+            href={`/products/${product.category}?item=${product.slug}`}
             className="py-2.5 px-3 text-xs font-bold justify-center text-center bg-slate-900 hover:bg-slate-800 text-slate-200 rounded-xl border border-red-950/60 transition-colors block"
           >
             View Specs
           </Link>
 
           <Link
-            to={`/get-a-quote?product=${encodeURIComponent(product.name)}`}
+            href={`/get-a-quote?product=${encodeURIComponent(product.name)}`}
             className="btn-primary py-2.5 px-3 text-xs font-bold justify-center text-center rounded-xl shadow-xs transition-colors block"
           >
             Request Quote

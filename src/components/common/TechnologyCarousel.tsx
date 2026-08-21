@@ -1,5 +1,6 @@
+"use client";
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import {
   ArrowRight,
   Cpu,
@@ -177,7 +178,7 @@ export const TechnologyCarousel: React.FC = () => {
 
                     <div className="pt-2">
                       <Link
-                        to={item.link}
+                        href={item.link}
                         className="inline-flex items-center justify-between w-full px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-red-600 text-slate-200 hover:text-white font-bold text-xs transition-all duration-300 border border-red-950/60 shadow-xs"
                       >
                         <span>View Technical Specs</span>

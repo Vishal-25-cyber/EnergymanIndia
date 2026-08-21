@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import { ArrowRight, Calculator, Sparkles, ShieldCheck } from "lucide-react";
 import { GeometricEnergyVisual } from "./GeometricEnergyVisual";

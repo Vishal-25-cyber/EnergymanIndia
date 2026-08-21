@@ -1,5 +1,6 @@
+"use client";
 import React from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { galleryData } from "../../data/gallery";
 import { Camera, ArrowRight, MapPin } from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
@@ -28,7 +29,7 @@ export const ExclusiveGalleryPreview: React.FC = () => {
             </div>
 
             <Link
-              to="/gallery"
+              href="/gallery"
               className="btn-primary py-3 px-6 text-xs sm:text-sm font-bold inline-flex items-center gap-2 self-start md:self-auto"
             >
               <span>View Complete Gallery</span>

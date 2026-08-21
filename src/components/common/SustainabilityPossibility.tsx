@@ -1,6 +1,7 @@
+"use client";
 import React from "react";
 import { Sun, Home, Factory, Tractor, ArrowRight, CheckCircle2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { ScrollReveal } from "./ScrollReveal";
 
 interface TransitionStage {
@@ -112,7 +113,7 @@ export const SustainabilityPossibility: React.FC = () => {
             {stages.map((stage, idx) => (
               <ScrollReveal key={stage.step} delay={idx * 100} animation="slide-up">
                 <Link
-                  to={stage.link}
+                  href={stage.link}
                   className={`group flex flex-col justify-between p-5 rounded-3xl bg-[#14101A]/90 border border-red-900/30 ${stage.borderGlow} hover:bg-[#1A1322] hover:-translate-y-1.5 transition-all duration-300 shadow-lg relative h-full space-y-4 cursor-pointer block`}
                 >
                   

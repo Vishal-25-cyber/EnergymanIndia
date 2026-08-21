@@ -1,5 +1,6 @@
+"use client";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import {
   CreditCard,
   ArrowRight,
@@ -205,7 +206,7 @@ export const EMIFinanceCalculator: React.FC = () => {
 
             {/* Action CTA */}
             <Link
-              to={`/get-a-quote?type=Homeowner&kw=${systemKw}&financing=loan`}
+              href={`/get-a-quote?type=Homeowner&kw=${systemKw}&financing=loan`}
               className="btn-primary w-full py-3.5 text-xs sm:text-sm font-black justify-center rounded-xl shadow-xl shadow-red-600/30 hover:scale-[1.02] transition-all flex items-center gap-2"
             >
               <span>Apply for 7% Solar Loan Assistance</span>

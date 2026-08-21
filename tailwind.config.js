@@ -1,14 +1,27 @@
 /** @type {import('tailwindcss').Config} */
-export default {
+module.exports = {
   content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   darkMode: 'class',
   theme: {
     extend: {
       colors: {
         brand: {
+          crimson: '#E63946',
+          ruby: '#D91E36',
+          'deep-red': '#B91C1C',
+          'dark-ruby': '#9B111E',
+          burgundy: '#6A0D15',
+          'dark-burgundy': '#4A070D',
+          obsidian: '#0A0A0E',
+          charcoal: '#0F172A',
+          'slate-dark': '#1E293B',
+          'slate-body': '#334155',
+          'slate-muted': '#64748B',
+          'warm-gray': '#F8F9FA',
+          'warm-light': '#F1F5F9',
           forest: '#08502A',
           deep: '#064E3B',
           950: '#070B19',

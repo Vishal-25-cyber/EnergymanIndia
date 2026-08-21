@@ -1,6 +1,7 @@
+"use client";
 import React from "react";
 import { ShieldCheck, CheckCircle2, ArrowRight, IndianRupee, FileText, Banknote } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { subsidyProcessTimeline } from "../../data/subsidies";
 import { ScrollReveal } from "./ScrollReveal";
 
@@ -28,7 +29,7 @@ export const SubsidyJourney: React.FC = () => {
 
             <ScrollReveal animation="fade-in" delay={100}>
               <Link
-                to="/government-subsidy"
+                href="/government-subsidy"
                 className="btn-primary py-4 px-8 font-black text-xs sm:text-sm tracking-wider uppercase whitespace-nowrap self-start lg:self-auto group inline-flex items-center gap-2 shadow-lg"
               >
                 <span>CHECK YOUR SOLAR SUBSIDY</span>

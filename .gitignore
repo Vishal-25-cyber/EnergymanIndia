@@ -23,9 +23,19 @@ dist-ssr
 *.sln
 *.sw?
 
-.gradle/
 node_modules/
 dist/
+dist-ssr/
 .env
+.env*.local
+
+# Next.js
+.next/
+out/
+build/
+tsconfig.tsbuildinfo
+*.tsbuildinfo
+.vercel
 
 .gradle/
+

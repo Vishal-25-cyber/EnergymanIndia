@@ -1,5 +1,6 @@
+"use client";
 import React, { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import {
   Home,
   Building2,
@@ -552,7 +553,7 @@ export const QuoteWizard: React.FC<{ initialType?: string; initialBill?: string;
 
                 <div className="flex flex-wrap gap-4 pt-2">
                   <Link
-                    to="/contact"
+                    href="/contact"
                     className="btn-primary py-3.5 px-6 text-xs sm:text-sm font-bold inline-flex items-center gap-2"
                   >
                     <Phone className="w-4 h-4" />
@@ -560,7 +561,7 @@ export const QuoteWizard: React.FC<{ initialType?: string; initialBill?: string;
                   </Link>
 
                   <Link
-                    to="/"
+                    href="/"
                     className="py-3.5 px-6 text-xs sm:text-sm font-bold bg-slate-900 hover:bg-slate-800 text-slate-200 border border-red-950/60 rounded-xl transition-colors"
                   >
                     <span>Return to Homepage</span>

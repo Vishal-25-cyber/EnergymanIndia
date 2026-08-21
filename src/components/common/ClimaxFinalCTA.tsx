@@ -1,6 +1,7 @@
+"use client";
 import React from "react";
 import { ArrowRight, Calculator, CheckCircle2, Sun, Phone } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { companyData } from "../../data/company";
 import { ScrollReveal } from "./ScrollReveal";
 
@@ -58,7 +59,7 @@ export const ClimaxFinalCTA: React.FC = () => {
         <ScrollReveal animation="slide-up" delay={200}>
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <Link
-              to="/get-a-quote"
+              href="/get-a-quote"
               className="btn-solar py-4 px-8 text-sm sm:text-base font-black shadow-2xl group inline-flex items-center gap-2.5 tracking-wider uppercase"
             >
               <Calculator className="w-5 h-5 text-red-600" />

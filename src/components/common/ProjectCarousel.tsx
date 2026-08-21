@@ -1,5 +1,6 @@
+"use client";
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import {
   ArrowRight,
   MapPin,
@@ -152,7 +153,7 @@ export const ProjectCarousel: React.FC = () => {
 
                     <div className="pt-2">
                       <Link
-                        to={`/projects/${project.id}`}
+                        href={`/projects/${project.id}`}
                         className="inline-flex items-center justify-between w-full px-4 py-3 rounded-xl bg-slate-900 hover:bg-red-600 text-red-400 hover:text-white font-extrabold text-xs sm:text-sm transition-all duration-300 border border-red-950/60 group/btn shadow-xs"
                       >
                         <span>Explore Case Study</span>
@@ -172,7 +173,7 @@ export const ProjectCarousel: React.FC = () => {
             Looking for a specific category of solar installation?
           </span>
           <Link
-            to="/projects"
+            href="/projects"
             className="text-red-400 hover:text-rose-300 font-extrabold flex items-center gap-1.5 hover:underline"
           >
             <span>View All Projects & Results</span>

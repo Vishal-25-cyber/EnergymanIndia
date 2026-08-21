@@ -1,5 +1,6 @@
+"use client";
 import React from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { projectsData } from "../../data/projects";
 import {
   Building2,
@@ -61,7 +62,7 @@ export const ProjectsTimeline: React.FC = () => {
                 </span>
 
                 <Link
-                  to="/projects"
+                  href="/projects"
                   className="bg-slate-900 hover:bg-slate-800 text-white border border-red-950/60 py-2 px-4 text-xs sm:text-sm font-bold inline-flex items-center gap-1.5 rounded-xl transition-all hover:border-red-500/40 shadow-xs"
                 >
                   <span>Explore All Projects</span>
@@ -89,13 +90,13 @@ export const ProjectsTimeline: React.FC = () => {
                 key={`${project.id}-${idx}`}
                 className="w-[320px] sm:w-[360px] lg:w-[380px] shrink-0"
               >
-                <div className="h-[430px] flex flex-col justify-between bg-[#14101A]/95 border border-red-900/30 rounded-2xl overflow-hidden hover:border-red-500/60 hover:shadow-2xl hover:shadow-red-950/50 hover:-translate-y-1.5 transition-all duration-300 group relative shadow-lg">
+                <div className="h-[500px] flex flex-col justify-between bg-[#14101A]/95 border border-red-900/30 rounded-2xl overflow-hidden hover:border-red-500/60 hover:shadow-2xl hover:shadow-red-950/50 hover:-translate-y-1.5 transition-all duration-300 group relative shadow-lg">
                   
                   {/* Top Glowing Accent Line on Hover */}
                   <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-red-500 via-rose-400 to-amber-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-30" />
 
-                  {/* ── Card Image Container (Fixed Height 165px) ── */}
-                  <div className="relative h-42 w-full overflow-hidden bg-slate-900 shrink-0">
+                  {/* ── Card Image Container (Fixed Height 185px) ── */}
+                  <div className="relative h-[185px] w-full overflow-hidden bg-slate-900 shrink-0">
                     <img
                       src={project.image}
                       alt={project.title}
@@ -139,7 +140,7 @@ export const ProjectsTimeline: React.FC = () => {
                   </div>
 
                   {/* ── Perfectly Aligned Card Body ── */}
-                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between space-y-3">
+                  <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between">
                     
                     {/* Top Row: Category + State */}
                     <div className="space-y-2">
@@ -166,7 +167,7 @@ export const ProjectsTimeline: React.FC = () => {
                     </div>
 
                     {/* Compact Key Metrics (Yield & Savings) */}
-                    <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div className="grid grid-cols-2 gap-2 pt-2">
                       <div className="p-2.5 rounded-xl bg-slate-900/90 border border-red-950/60 shadow-xs">
                         <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold uppercase font-mono">
                           <Sun className="w-2.5 h-2.5 text-amber-400 shrink-0" />
@@ -189,10 +190,10 @@ export const ProjectsTimeline: React.FC = () => {
                     </div>
 
                     {/* Bottom CTA Button */}
-                    <div className="pt-2 border-t border-red-950/60">
+                    <div className="pt-2.5 border-t border-red-950/60">
                       <Link
-                        to={`/projects/${project.slug}`}
-                        className="inline-flex items-center justify-between w-full px-3.5 py-2 rounded-xl bg-slate-900 group-hover:bg-red-600 text-slate-200 group-hover:text-white font-bold text-xs transition-all duration-300 border border-red-950/60 group-hover:border-red-500 shadow-xs group/btn"
+                        href={`/projects/${project.slug}`}
+                        className="inline-flex items-center justify-between w-full px-3.5 py-2.5 rounded-xl bg-slate-900 group-hover:bg-red-600 text-slate-200 group-hover:text-white font-bold text-xs transition-all duration-300 border border-red-950/60 group-hover:border-red-500 shadow-xs group/btn"
                       >
                         <span>Explore Case Study</span>
                         <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-1" />

@@ -1,5 +1,7 @@
+"use client";
 import React, { useState, useEffect, useRef } from "react";
-import { Link, useLocation } from "react-router-dom";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   ChevronDown,
   Menu,
@@ -23,7 +25,7 @@ export const Navbar: React.FC = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const location = useLocation();
+  const pathname = usePathname() ?? "";
   const dropdownTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -43,7 +45,7 @@ export const Navbar: React.FC = () => {
   useEffect(() => {
     setMobileMenuOpen(false);
     setActiveDropdown(null);
-  }, [location.pathname]);
+  }, [pathname]);
 
   const handleMouseEnter = (menuName: string) => {
     if (dropdownTimeoutRef.current) {
@@ -79,7 +81,7 @@ export const Navbar: React.FC = () => {
               
               {/* LEFT: BRAND LOGO */}
               <Link
-                to="/"
+                href="/"
                 className="flex items-center shrink-0 group focus:outline-none focus:ring-2 focus:ring-red-500 rounded-lg p-0.5"
                 title="ENERGYMAN - Renewable Energy Saves Earth"
               >
@@ -91,9 +93,10 @@ export const Navbar: React.FC = () => {
                 
                 {/* Home */}
                 <Link
-                  to="/"
+                  href="/"
+                  prefetch={true}
                   className={`text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 ${
-                    location.pathname === "/"
+                    pathname === "/"
                       ? "text-red-500 font-bold"
                       : "text-slate-200 hover:text-red-400"
                   }`}
@@ -103,9 +106,10 @@ export const Navbar: React.FC = () => {
 
                 {/* Government Subsidy */}
                 <Link
-                  to="/government-subsidy"
+                  href="/government-subsidy"
+                  prefetch={true}
                   className={`text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 ${
-                    location.pathname === "/government-subsidy"
+                    pathname === "/government-subsidy"
                       ? "text-red-500 font-bold"
                       : "text-slate-200 hover:text-red-400"
                   }`}
@@ -115,33 +119,40 @@ export const Navbar: React.FC = () => {
 
                 {/* Projects (Dropdown) */}
                 <div
-                  className="relative"
+                  className="relative group py-2"
                   onMouseEnter={() => handleMouseEnter("projects")}
                   onMouseLeave={handleMouseLeave}
                 >
                   <Link
-                    to="/projects"
-                    onClick={() => setActiveDropdown(null)}
+                    href="/projects"
+                    prefetch={true}
                     className={`flex items-center gap-1.5 text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 cursor-pointer ${
-                      location.pathname.startsWith("/projects")
+                      pathname.startsWith("/projects")
                         ? "text-red-500 font-bold"
                         : "text-slate-200 hover:text-red-400"
                     }`}
                   >
                     <span>Projects</span>
                     <ChevronDown
-                      className={`w-4 h-4 transition-transform duration-200 ${
+                      className={`w-4 h-4 transition-transform duration-200 group-hover:rotate-180 ${
                         activeDropdown === "projects" ? "rotate-180 text-red-500" : ""
                       }`}
                     />
                   </Link>
 
                   {/* Projects Mega Dropdown Menu */}
-                  {activeDropdown === "projects" && (
-                    <div className="absolute top-full left-0 mt-3 w-80 rounded-2xl bg-[#14101A]/95 backdrop-blur-2xl border border-red-900/40 p-3 shadow-2xl shadow-black/80 animate-fade-in z-50">
+                  <div
+                    className={`absolute top-full left-0 pt-2 w-80 z-50 transition-all duration-200 ${
+                      activeDropdown === "projects"
+                        ? "visible opacity-100 pointer-events-auto"
+                        : "invisible opacity-0 group-hover:visible group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
+                    }`}
+                  >
+                    <div className="rounded-2xl bg-[#14101A]/95 backdrop-blur-2xl border border-red-900/40 p-3 shadow-2xl shadow-black/80">
                       <div className="space-y-1">
                         <Link
-                          to="/projects/industrial"
+                          href="/projects/industrial"
+                          prefetch={true}
                           onClick={() => setActiveDropdown(null)}
                           className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
                         >
@@ -153,7 +164,8 @@ export const Navbar: React.FC = () => {
                         </Link>
 
                         <Link
-                          to="/projects/commercial"
+                          href="/projects/commercial"
+                          prefetch={true}
                           onClick={() => setActiveDropdown(null)}
                           className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
                         >
@@ -165,38 +177,45 @@ export const Navbar: React.FC = () => {
                         </Link>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Product (Dropdown) */}
                 <div
-                  className="relative"
+                  className="relative group py-2"
                   onMouseEnter={() => handleMouseEnter("product")}
                   onMouseLeave={handleMouseLeave}
                 >
                   <Link
-                    to="/products"
-                    onClick={() => setActiveDropdown(null)}
+                    href="/products"
+                    prefetch={true}
                     className={`flex items-center gap-1.5 text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 cursor-pointer ${
-                      location.pathname.startsWith("/products")
+                      pathname.startsWith("/products")
                         ? "text-red-500 font-bold"
                         : "text-slate-200 hover:text-red-400"
                     }`}
                   >
                     <span>Product</span>
                     <ChevronDown
-                      className={`w-4 h-4 transition-transform duration-200 ${
+                      className={`w-4 h-4 transition-transform duration-200 group-hover:rotate-180 ${
                         activeDropdown === "product" ? "rotate-180 text-red-500" : ""
                       }`}
                     />
                   </Link>
 
                   {/* Product Dropdown Menu */}
-                  {activeDropdown === "product" && (
-                    <div className="absolute top-full left-0 mt-3 w-72 rounded-2xl bg-[#14101A]/95 backdrop-blur-2xl border border-red-900/40 p-3 shadow-2xl shadow-black/80 animate-fade-in z-50">
+                  <div
+                    className={`absolute top-full left-0 pt-2 w-72 z-50 transition-all duration-200 ${
+                      activeDropdown === "product"
+                        ? "visible opacity-100 pointer-events-auto"
+                        : "invisible opacity-0 group-hover:visible group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto"
+                    }`}
+                  >
+                    <div className="rounded-2xl bg-[#14101A]/95 backdrop-blur-2xl border border-red-900/40 p-3 shadow-2xl shadow-black/80">
                       <div className="space-y-1">
                         <Link
-                          to="/products/solar-pumps"
+                          href="/products/solar-pumps"
+                          prefetch={true}
                           onClick={() => setActiveDropdown(null)}
                           className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
                         >
@@ -208,7 +227,8 @@ export const Navbar: React.FC = () => {
                         </Link>
 
                         <Link
-                          to="/products/solar-water-heaters"
+                          href="/products/solar-water-heaters"
+                          prefetch={true}
                           onClick={() => setActiveDropdown(null)}
                           className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
                         >
@@ -220,14 +240,15 @@ export const Navbar: React.FC = () => {
                         </Link>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Blog */}
                 <Link
-                  to="/insights"
+                  href="/insights"
+                  prefetch={true}
                   className={`text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 ${
-                    location.pathname.startsWith("/insights")
+                    pathname.startsWith("/insights")
                       ? "text-red-500 font-bold"
                       : "text-slate-200 hover:text-red-400"
                   }`}
@@ -237,9 +258,10 @@ export const Navbar: React.FC = () => {
 
                 {/* Gallery */}
                 <Link
-                  to="/gallery"
+                  href="/gallery"
+                  prefetch={true}
                   className={`text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 ${
-                    location.pathname === "/gallery"
+                    pathname === "/gallery"
                       ? "text-red-500 font-bold"
                       : "text-slate-200 hover:text-red-400"
                   }`}
@@ -249,9 +271,10 @@ export const Navbar: React.FC = () => {
 
                 {/* Contact */}
                 <Link
-                  to="/contact"
+                  href="/contact"
+                  prefetch={true}
                   className={`text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 ${
-                    location.pathname === "/contact"
+                    pathname === "/contact"
                       ? "text-red-500 font-bold"
                       : "text-slate-200 hover:text-red-400"
                   }`}
@@ -294,9 +317,10 @@ export const Navbar: React.FC = () => {
             {/* Mobile Nav Links with Home */}
             <div className="space-y-1">
               <Link
-                to="/"
+                href="/"
+                prefetch={true}
                 className={`block px-4 py-3 rounded-2xl text-base font-bold transition-colors ${
-                  location.pathname === "/"
+                  pathname === "/"
                     ? "bg-red-950/90 text-red-400 border border-red-500/40"
                     : "text-slate-200 hover:bg-slate-900 hover:text-white"
                 }`}
@@ -305,9 +329,10 @@ export const Navbar: React.FC = () => {
               </Link>
 
               <Link
-                to="/government-subsidy"
+                href="/government-subsidy"
+                prefetch={true}
                 className={`block px-4 py-3 rounded-2xl text-base font-bold transition-colors ${
-                  location.pathname === "/government-subsidy"
+                  pathname === "/government-subsidy"
                     ? "bg-red-950/90 text-red-400 border border-red-500/40"
                     : "text-slate-200 hover:bg-slate-900 hover:text-white"
                 }`}
@@ -321,10 +346,10 @@ export const Navbar: React.FC = () => {
                   Projects
                 </p>
                 <div className="space-y-1 pl-2">
-                  <Link to="/projects/industrial" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
+                  <Link href="/projects/industrial" prefetch={true} className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
                     • Our Industrial Solar Projects
                   </Link>
-                  <Link to="/projects/commercial" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
+                  <Link href="/projects/commercial" prefetch={true} className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
                     • Our Commercial Solar Projects
                   </Link>
                 </div>
@@ -336,10 +361,10 @@ export const Navbar: React.FC = () => {
                   Product
                 </p>
                 <div className="space-y-1 pl-2">
-                  <Link to="/products/solar-pumps" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
+                  <Link href="/products/solar-pumps" prefetch={true} className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
                     • Solar Pump
                   </Link>
-                  <Link to="/products/solar-water-heaters" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
+                  <Link href="/products/solar-water-heaters" prefetch={true} className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
                     • Solar Water Heater
                   </Link>
                 </div>
@@ -347,19 +372,22 @@ export const Navbar: React.FC = () => {
 
               <div className="pt-2 border-t border-red-950/60 mt-2">
                 <Link
-                  to="/insights"
+                  href="/insights"
+                  prefetch={true}
                   className="block px-4 py-3 rounded-2xl text-base font-bold text-slate-200 hover:bg-slate-900 hover:text-white"
                 >
                   Blog
                 </Link>
                 <Link
-                  to="/gallery"
+                  href="/gallery"
+                  prefetch={true}
                   className="block px-4 py-3 rounded-2xl text-base font-bold text-slate-200 hover:bg-slate-900 hover:text-white"
                 >
                   Gallery
                 </Link>
                 <Link
-                  to="/contact"
+                  href="/contact"
+                  prefetch={true}
                   className="block px-4 py-3 rounded-2xl text-base font-bold text-slate-200 hover:bg-slate-900 hover:text-white"
                 >
                   Contact

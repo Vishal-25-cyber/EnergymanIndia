@@ -1,6 +1,7 @@
+"use client";
 import React from "react";
 import { UserCheck, Layers, Wrench, CheckCircle2, ShieldCheck, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { ScrollReveal } from "./ScrollReveal";
 
 const pathwaySteps = [
@@ -121,7 +122,7 @@ export const WhyEnergyPathway: React.FC = () => {
         {/* Bottom CTA Strip */}
         <div className="text-center pt-4">
           <Link
-            to="/get-a-quote"
+            href="/get-a-quote"
             className="btn-primary py-3.5 px-8 text-xs sm:text-sm font-black tracking-wider uppercase inline-flex items-center gap-2 shadow-lg"
           >
             <span>START YOUR 5-STAGE SOLAR JOURNEY</span>

@@ -1,5 +1,6 @@
+"use client";
 import React, { useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import {
   Calculator,
   ArrowRight,

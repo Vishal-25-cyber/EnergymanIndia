@@ -1,6 +1,7 @@
+"use client";
 import React, { useState } from "react";
 import { Trees, Globe, Flame, Zap, ShieldCheck, ArrowRight, TrendingUp } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { ScrollReveal } from "./ScrollReveal";
 
 export const SustainabilityImpact: React.FC = () => {
@@ -135,7 +136,7 @@ export const SustainabilityImpact: React.FC = () => {
             </div>
 
             <Link
-              to="/get-a-quote"
+              href="/get-a-quote"
               className="btn-primary py-3 px-6 text-xs sm:text-sm font-bold whitespace-nowrap inline-flex items-center gap-2 self-start md:self-auto"
             >
               <span>Get Site Feasibility Study</span>

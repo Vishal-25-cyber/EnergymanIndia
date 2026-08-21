@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useCallback } from "react";
 import { Star, ShieldCheck, ArrowLeft, ArrowRight } from "lucide-react";
 import { testimonialsData } from "../../data/testimonials";

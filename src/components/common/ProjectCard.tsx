@@ -1,5 +1,6 @@
+"use client";
 import React from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { ArrowRight, MapPin } from "lucide-react";
 import { ProjectItem } from "../../data/projects";
 
@@ -78,7 +79,7 @@ export const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         {/* CTA Link */}
         <div className="pt-1">
           <Link
-            to={`/projects/${project.id}`}
+            href={`/projects/${project.id}`}
             className="inline-flex items-center justify-between w-full px-4 py-3 rounded-xl bg-slate-900 hover:bg-red-600 text-slate-200 hover:text-white font-bold text-xs sm:text-sm transition-all duration-300 border border-red-950/60 group/btn shadow-xs"
           >
             <span>View Full Case Study</span>

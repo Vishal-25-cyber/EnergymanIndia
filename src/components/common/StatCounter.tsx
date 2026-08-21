@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState, useRef } from "react";
 import { companyData } from "../../data/company";
 import { ShieldCheck, Award, Zap, Smile, MapPin, IndianRupee } from "lucide-react";

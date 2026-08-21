@@ -1,6 +1,7 @@
+"use client";
 import React, { useState } from "react";
 import { Sun, ShieldCheck, Zap, ArrowRight, CheckCircle2 } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { ScrollReveal } from "./ScrollReveal";
 
 interface WaterHeaterCapacity {
@@ -202,7 +203,7 @@ export const SolarWaterHeaterInteractive: React.FC = () => {
               </div>
 
               <Link
-                to="/get-a-quote?product=Solar%20Water%20Heater"
+                href="/get-a-quote?product=Solar%20Water%20Heater"
                 className="btn-primary py-3 px-6 text-xs sm:text-sm font-black inline-flex items-center gap-2 shadow-xl shadow-red-600/30 hover:scale-105 transition-all w-full sm:w-auto justify-center"
               >
                 <span>Request Quotation</span>

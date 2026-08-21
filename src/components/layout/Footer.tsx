@@ -1,5 +1,6 @@
+"use client";
 import React from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import {
   Phone,
   Mail,
@@ -31,7 +32,7 @@ export const Footer: React.FC = () => {
                 { name: "Solar Water Heaters", path: "/products/solar-water-heaters" }
               ].map((link, idx) => (
                 <li key={idx}>
-                  <Link to={link.path} className="text-slate-300 hover:text-red-400 transition-colors font-medium">
+                  <Link href={link.path} className="text-slate-300 hover:text-red-400 transition-colors font-medium">
                     {link.name}
                   </Link>
                 </li>
@@ -54,7 +55,7 @@ export const Footer: React.FC = () => {
                 { name: "Contact Engineering Desk", path: "/contact" }
               ].map((link, idx) => (
                 <li key={idx}>
-                  <Link to={link.path} className="text-slate-300 hover:text-red-400 transition-colors font-medium">
+                  <Link href={link.path} className="text-slate-300 hover:text-red-400 transition-colors font-medium">
                     {link.name}
                   </Link>
                 </li>

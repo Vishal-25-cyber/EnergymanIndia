@@ -1,3 +1,4 @@
+"use client";
 import React, { useState, useEffect, useRef } from "react";
 import { Plus, Minus } from "lucide-react";
 import { faqsData } from "../../data/faqs";

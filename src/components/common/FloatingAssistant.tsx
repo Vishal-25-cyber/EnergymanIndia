@@ -1,5 +1,6 @@
+"use client";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import {
   MessageCircle,
   Phone,
@@ -87,7 +88,7 @@ export const FloatingAssistant: React.FC = () => {
             </a>
 
             <Link
-              to="/get-a-quote"
+              href="/get-a-quote"
               onClick={() => setIsOpen(false)}
               className="w-full py-2.5 px-4 rounded-xl bg-amber-950/60 hover:bg-amber-900/60 border border-amber-500/40 text-amber-200 font-bold flex items-center justify-between transition-colors"
             >

@@ -1,5 +1,6 @@
+"use client";
 import React, { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import {
   ArrowRight,
   Home,
@@ -201,7 +202,7 @@ export const SolutionsCarousel: React.FC = () => {
 
                     <div className="pt-4 border-t border-red-950/60">
                       <Link
-                        to={`/solutions/${item.slug}`}
+                        href={`/solutions/${item.slug}`}
                         className="inline-flex items-center gap-2 text-xs font-bold text-red-400 group-hover:text-red-300 group-hover:gap-3 transition-all"
                       >
                         <span>Explore {item.shortTitle}</span>

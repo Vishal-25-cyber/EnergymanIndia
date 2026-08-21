@@ -1,6 +1,7 @@
+"use client";
 import React from "react";
 import { ArrowRight, Calculator } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 
 export const HeroSection: React.FC = () => {
   return (
@@ -47,7 +48,7 @@ export const HeroSection: React.FC = () => {
           
           {/* Button 1: Primary CTA */}
           <Link
-            to="/get-a-quote"
+            href="/get-a-quote"
             className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-black text-sm sm:text-base text-white bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 shadow-xl shadow-red-600/40 hover:shadow-2xl hover:shadow-red-500/60 hover:-translate-y-0.5 transition-all duration-200 border border-red-400/40 cursor-pointer text-center"
           >
             <Calculator className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
@@ -57,7 +58,7 @@ export const HeroSection: React.FC = () => {
 
           {/* Button 2: Secondary CTA */}
           <Link
-            to="/projects"
+            href="/projects"
             className="group inline-flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-bold text-sm sm:text-base text-slate-200 bg-slate-900/80 hover:bg-slate-800/90 hover:text-white border border-red-900/60 hover:border-red-500/60 shadow-lg backdrop-blur-md hover:-translate-y-0.5 transition-all duration-200 cursor-pointer text-center"
           >
             <span className="tracking-wider uppercase">EXPLORE PROJECTS</span>

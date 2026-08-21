@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useState, useRef } from "react";
 import { Smile, Factory, MapPin, ShieldCheck, Award } from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";

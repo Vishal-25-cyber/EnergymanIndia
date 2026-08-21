@@ -1,5 +1,6 @@
+"use client";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -152,7 +153,7 @@ export const SolarHealthAudit: React.FC = () => {
                 Need an on-site drone thermography scan or inverter recalibration?
               </span>
               <Link
-                to="/contact"
+                href="/contact"
                 className="btn-primary py-2.5 px-5 text-xs font-bold inline-flex items-center gap-1.5 rounded-xl shadow-md transition-all"
               >
                 <span>Book Plant Health Audit</span>

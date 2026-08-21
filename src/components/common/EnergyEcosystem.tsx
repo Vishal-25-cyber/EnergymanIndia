@@ -1,5 +1,6 @@
+"use client";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import {
   Home,
   Building2,
@@ -321,7 +322,7 @@ export const EnergyEcosystem: React.FC = () => {
             {/* Action Buttons */}
             <div className="flex flex-wrap items-center gap-4 pt-4">
               <Link
-                to={currentTab.link}
+                href={currentTab.link}
                 className="btn-primary py-4 px-7 text-xs sm:text-sm font-black inline-flex items-center gap-2.5 shadow-xl"
               >
                 <span>Explore Engineering Specs</span>
@@ -329,7 +330,7 @@ export const EnergyEcosystem: React.FC = () => {
               </Link>
 
               <Link
-                to="/get-a-quote"
+                href="/get-a-quote"
                 className="py-4 px-6 rounded-xl bg-[#14101A] hover:bg-slate-800 text-slate-200 font-bold text-xs sm:text-sm transition-all border border-red-950/60 hover:border-red-500/40 hover:text-white inline-flex items-center gap-2"
               >
                 <Calculator className="w-4 h-4 text-amber-400" />
@@ -405,7 +406,7 @@ export const EnergyEcosystem: React.FC = () => {
 
           <div className="flex items-center justify-center pt-0.5">
             <Link
-              to="/get-a-quote"
+              href="/get-a-quote"
               className="btn-primary py-3.5 px-7 text-xs sm:text-sm font-black inline-flex items-center gap-2 shadow-xl hover:scale-105 transition-transform"
             >
               <span>Get Free Site Feasibility</span>

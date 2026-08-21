@@ -1,6 +1,7 @@
+"use client";
 import React from "react";
 import { ShieldCheck, Award, Target, CheckCircle2, ArrowRight, Building2, Layers } from "lucide-react";
-import { Link } from "react-router-dom";
+import Link from "next/link";
 import { ScrollReveal } from "./ScrollReveal";
 
 export const CompanyIntroSection: React.FC = () => {
@@ -87,14 +88,14 @@ export const CompanyIntroSection: React.FC = () => {
             <ScrollReveal animation="slide-up" delay={250}>
               <div className="pt-2 flex flex-wrap items-center gap-4">
                 <Link
-                  to="/about"
+                  href="/about"
                   className="btn-primary py-3 px-6 text-xs sm:text-sm font-bold inline-flex items-center gap-2"
                 >
                   <span>Learn About Our Heritage</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
                 <Link
-                  to="/projects"
+                  href="/projects"
                   className="py-3 px-6 text-xs sm:text-sm font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-red-950/60 transition-all hover:text-white"
                 >
                   View Case Studies
