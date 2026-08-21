@@ -15,7 +15,7 @@ import { LiveSolarTelemetry } from "../components/common/LiveSolarTelemetry";
 import { EMIFinanceCalculator } from "../components/common/EMIFinanceCalculator";
 import { FAQAccordion } from "../components/common/FAQAccordion";
 import { TestimonialCarousel } from "../components/common/TestimonialCarousel";
-import { Sun, Zap, Sparkles } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 
 export const HomePage: React.FC = () => {
   return (
@@ -62,7 +62,7 @@ export const HomePage: React.FC = () => {
       <section className="py-12 bg-[#0A0A0E] border-y border-red-950/60">
         <div className="site-container space-y-8">
           <p className="text-center text-[10px] font-black uppercase tracking-[0.25em] text-slate-500 font-mono">
-            ⚡ Verified Client Installations — Tamil Nadu &amp; Beyond
+            Verified Client Installations — Tamil Nadu &amp; Beyond
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
@@ -108,7 +108,7 @@ export const HomePage: React.FC = () => {
         <div className="site-container relative z-10">
           <div className="text-center max-w-4xl mx-auto mb-12 space-y-3">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs font-mono">
-              <Zap className="w-3.5 h-3.5 text-red-400" />
+              <HelpCircle className="w-3.5 h-3.5 text-red-400" />
               <span>SOLAR KNOWLEDGE BASE</span>
             </div>
             <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">

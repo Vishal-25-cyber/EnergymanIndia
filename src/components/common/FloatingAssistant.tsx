@@ -4,7 +4,7 @@ import {
   MessageCircle,
   Phone,
   X,
-  Sparkles,
+  Calculator,
   ArrowRight,
   ShieldCheck
 } from "lucide-react";
@@ -92,7 +92,7 @@ export const FloatingAssistant: React.FC = () => {
               className="w-full py-2.5 px-4 rounded-xl bg-amber-950/60 hover:bg-amber-900/60 border border-amber-500/40 text-amber-200 font-bold flex items-center justify-between transition-colors"
             >
               <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-amber-400" />
+                <Calculator className="w-4 h-4 text-amber-400" />
                 <span>60-Sec Solar Quote Wizard</span>
               </div>
               <ArrowRight className="w-3.5 h-3.5" />

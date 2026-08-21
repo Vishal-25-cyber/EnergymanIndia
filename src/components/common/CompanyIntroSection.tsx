@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, Award, Target, CheckCircle2, ArrowRight, Sparkles, Building2, Layers } from "lucide-react";
+import { ShieldCheck, Award, Target, CheckCircle2, ArrowRight, Building2, Layers } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ScrollReveal } from "./ScrollReveal";
 
@@ -23,7 +23,7 @@ export const CompanyIntroSection: React.FC = () => {
                 
                 <div className="relative rounded-3xl overflow-hidden border border-red-900/40 bg-slate-900 shadow-2xl">
                   <img
-                    src="https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=1000&q=80"
+                    src="https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?auto=format&fit=crop&w=1000&q=80"
                     alt="ENERGYMAN Solar Engineering Operations"
                     className="w-full h-80 sm:h-[420px] object-cover transition-transform duration-700 group-hover:scale-105"
                     loading="lazy"
@@ -33,7 +33,7 @@ export const CompanyIntroSection: React.FC = () => {
                   {/* Floating Overlay Badge */}
                   <div className="absolute bottom-6 left-6 right-6 bg-[#14101A]/95 backdrop-blur-md p-4 rounded-2xl border border-red-900/40 shadow-xl space-y-1">
                     <span className="text-xs font-black uppercase tracking-wider text-red-400 font-mono flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5" />
+                      <ShieldCheck className="w-3.5 h-3.5" />
                       MNRE Approved Channel Partner
                     </span>
                     <p className="text-xs text-slate-200 font-medium">

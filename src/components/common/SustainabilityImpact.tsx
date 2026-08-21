@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Trees, Globe, Flame, Zap, ShieldCheck, Sparkles, ArrowRight } from "lucide-react";
+import { Trees, Globe, Flame, Zap, ShieldCheck, ArrowRight, TrendingUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ScrollReveal } from "./ScrollReveal";
 
@@ -126,7 +126,7 @@ export const SustainabilityImpact: React.FC = () => {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-6 rounded-2xl bg-gradient-to-r from-[#1C0B0E] via-[#2A050B] to-[#14101A] border border-red-500/30 shadow-lg">
             <div className="space-y-1">
               <span className="text-xs font-black uppercase tracking-wider text-amber-400 font-mono flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4" />
+                <TrendingUp className="w-4 h-4" />
                 25-Year Cumulative Financial Savings
               </span>
               <h4 className="text-2xl sm:text-3xl font-black text-white font-mono">

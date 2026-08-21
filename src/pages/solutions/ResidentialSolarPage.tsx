@@ -5,7 +5,7 @@ import {
   CheckCircle2,
   Sparkles,
   ArrowRight,
-  Zap,
+  Home,
   Phone,
   MapPin,
   Wrench,
@@ -75,7 +75,7 @@ export const ResidentialSolarPage: React.FC = () => {
 
             {/* Hero Image */}
             <div className="lg:col-span-5">
-              <div className="rounded-3xl overflow-hidden border border-red-950/60 shadow-2xl relative bg-slate-900 aspect-4/3 sm:aspect-auto sm:h-96">
+              <div className="rounded-2xl overflow-hidden border border-red-950/60 shadow-xl relative bg-slate-900 h-[220px] sm:h-[260px] lg:h-[290px]">
                 <img
                   src={data.heroImage}
                   alt="Residential rooftop solar installation"
@@ -98,7 +98,7 @@ export const ResidentialSolarPage: React.FC = () => {
           {/* Grand Section Header */}
           <div className="text-center max-w-4xl mx-auto space-y-3">
             <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-red-950/80 text-rose-300 border border-red-500/40 font-mono shadow-xs">
-              <Zap className="w-3 h-3 text-amber-400" />
+              <Home className="w-3 h-3 text-amber-400" />
               <span>RESIDENTIAL ADVANTAGES</span>
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white uppercase tracking-tight leading-[1.12]">
@@ -168,7 +168,7 @@ export const ResidentialSolarPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 relative z-10">
                 {[
                   { num: "01", title: "Site Audit", desc: "3D terrace shadow simulation & structure load appraisal", icon: MapPin, color: "text-red-400 border-red-500/60 bg-red-950/90" },
-                  { num: "02", title: "Custom Design", desc: "Optimal string, inverter sizing & yield simulation", icon: Zap, color: "text-orange-400 border-orange-500/60 bg-orange-950/90" },
+                  { num: "02", title: "Custom Design", desc: "Optimal string, inverter sizing & yield simulation", icon: Home, color: "text-orange-400 border-orange-500/60 bg-orange-950/90" },
                   { num: "03", title: "DISCOM Clearance", desc: "Bi-directional net-metering application & approvals", icon: ShieldCheck, color: "text-amber-400 border-amber-500/60 bg-amber-950/90" },
                   { num: "04", title: "Turnkey Install", desc: "Tier-1 equipment execution & earthing protection", icon: Wrench, color: "text-rose-400 border-rose-500/60 bg-rose-950/90" },
                   { num: "05", title: "Subsidy Credit", desc: "Direct DBT bank transfer under PM Surya Ghar", icon: Award, color: "text-emerald-400 border-emerald-500/60 bg-emerald-950/90" }

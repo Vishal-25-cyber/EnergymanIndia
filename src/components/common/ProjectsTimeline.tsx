@@ -2,17 +2,17 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { projectsData } from "../../data/projects";
 import {
-  Zap,
+  Building2,
+  Sun,
   MapPin,
   ArrowRight,
-  Sparkles,
   TrendingUp,
   Leaf
 } from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
 
 // Fallback image in case of network issues
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=800&q=80";
+const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=800&q=80";
 
 export const ProjectsTimeline: React.FC = () => {
   // Duplicate projects array to create an infinite seamless loop
@@ -36,7 +36,7 @@ export const ProjectsTimeline: React.FC = () => {
               
               {/* Badge */}
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs font-mono mx-auto">
-                <Sparkles className="w-3.5 h-3.5 text-red-400" />
+                <Building2 className="w-3.5 h-3.5 text-amber-400" />
                 <span>COMMISSIONED CASE STUDIES</span>
               </div>
 
@@ -169,7 +169,7 @@ export const ProjectsTimeline: React.FC = () => {
                     <div className="grid grid-cols-2 gap-2 pt-1">
                       <div className="p-2.5 rounded-xl bg-slate-900/90 border border-red-950/60 shadow-xs">
                         <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold uppercase font-mono">
-                          <Zap className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+                          <Sun className="w-2.5 h-2.5 text-amber-400 shrink-0" />
                           <span className="truncate">Annual Yield</span>
                         </div>
                         <strong className="text-xs font-black text-amber-400 font-mono block mt-0.5 truncate">

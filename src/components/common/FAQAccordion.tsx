@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Plus, Minus } from "lucide-react";
 import { faqsData } from "../../data/faqs";
 
@@ -12,13 +12,34 @@ const CATEGORIES = [
 
 export const FAQAccordion: React.FC<{ defaultCategory?: string }> = ({ defaultCategory = "all" }) => {
   const [activeCat, setActiveCat] = useState(defaultCategory);
-  const [openId, setOpenId] = useState<string>(faqsData[0]?.id || "");
+  const [openId, setOpenId] = useState<string>("");
+  const openScrollPos = useRef<number>(0);
 
   const filtered = faqsData.filter(
     (f) => activeCat === "all" || f.category === activeCat
   );
 
-  const toggle = (id: string) => setOpenId((prev) => (prev === id ? "" : id));
+  const toggle = (id: string) => {
+    setOpenId((prev) => {
+      if (prev === id) return "";
+      openScrollPos.current = window.scrollY;
+      return id;
+    });
+  };
+
+  useEffect(() => {
+    if (!openId) return;
+
+    const handleScroll = () => {
+      const currentY = window.scrollY;
+      if (Math.abs(currentY - openScrollPos.current) > 50) {
+        setOpenId("");
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [openId]);
 
   return (
     <div className="w-full space-y-8">

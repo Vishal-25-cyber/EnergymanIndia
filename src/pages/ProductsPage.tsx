@@ -1,127 +1,153 @@
-import React, { useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import React from "react";
+import { Link } from "react-router-dom";
 import {
   Layers,
-  Search,
+  ArrowRight,
+  CheckCircle2
 } from "lucide-react";
 import { SEOHead } from "../components/common/SEOHead";
-import { ProductCard } from "../components/common/ProductCard";
-import { SolarWaterHeaterInteractive } from "../components/common/SolarWaterHeaterInteractive";
 import { productsData } from "../data/products";
 
-export const ProductsPage: React.FC<{ categoryFilter?: string }> = ({ categoryFilter }) => {
-  const [searchParams] = useSearchParams();
-  const initialCategory = categoryFilter || searchParams.get("category") || "all";
-  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
-  const [searchQuery, setSearchQuery] = useState<string>("");
-
-  const filteredProducts = productsData.filter((product) => {
-    const matchesCat = selectedCategory === "all" || product.category === selectedCategory;
-    const matchesQuery =
-      product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.tagline.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCat && matchesQuery;
-  });
-
+export const ProductsPage: React.FC = () => {
   return (
     <div className="bg-[#0A0A0E] text-slate-100 min-h-screen">
       <SEOHead
-        title="Engineering Solar Hardware & Product Catalogue"
-        description="Tier-1 Solar Panels (TOPCon Bi-facial), On-Grid & Hybrid Inverters, Stainless Steel Solar Water Pumps, Solar Water Heaters, and LiFePO4 Energy Storage Racks."
+        title="Solar Hardware & Turnkey Systems Catalogue | ENERGYMAN"
+        description="Explore our MNRE-certified solar pumps, solar water heaters, bi-facial solar modules, and hybrid smart inverters."
       />
 
-      {/* Hero Header */}
-      <section className="pt-32 pb-16 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
+      {/* ── Breadcrumb Bar ── */}
+      <section className="pt-28 pb-4 bg-[#0A0A0E] border-b border-red-950/60">
+        <div className="site-container flex items-center gap-2 text-xs text-slate-400 font-mono">
+          <Link to="/" className="hover:text-red-400 transition-colors">Home</Link>
+          <span className="text-slate-600">/</span>
+          <span className="text-white font-bold">Products</span>
+        </div>
+      </section>
+
+      {/* ── Monumental Editorial Header (Cardless) ── */}
+      <section className="pt-10 pb-12 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
         <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="site-container relative z-10 text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wider uppercase bg-amber-950/80 text-amber-300 border border-amber-500/40 shadow-xs">
+        <div className="site-container relative z-10 space-y-4 text-center flex flex-col items-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-red-950/80 text-rose-300 border border-red-500/40">
             <Layers className="w-3.5 h-3.5 text-amber-400" />
-            <span>Tier-1 Engineering Hardware</span>
+            <span>Turnkey Engineering Hardware</span>
           </div>
-          <h1 className="heading-hero text-white">
-            SOLAR PRODUCTS <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">CATALOGUE</span>
+
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.12] max-w-5xl uppercase">
+            OUR SOLAR <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">PRODUCTS</span>
           </h1>
-          <p className="text-slate-300 max-w-2xl mx-auto text-sm sm:text-base">
-            Explore our engineering-grade renewable energy hardware. Tested and certified under BIS, IEC, and MNRE standards with 25-30 year performance warranties.
+
+          <p className="text-slate-300 text-xs sm:text-sm md:text-base leading-relaxed max-w-3xl font-normal">
+            Tested and certified under BIS, IEC, and MNRE standards. Select any product below to inspect complete technical specifications, dimensional drawings, and government subsidy benefits.
           </p>
         </div>
       </section>
 
-      {/* Filter and Search Bar */}
-      <section className="py-4 bg-[#14101A]/95 border-b border-red-950/60 sticky top-[60px] md:top-[92px] z-30 backdrop-blur-md shadow-lg">
-        <div className="site-container flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Category Filter Pills */}
-          <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto bg-slate-900 p-1.5 rounded-2xl border border-red-950/60">
-            {[
-              { id: "all", label: "All Products" },
-              { id: "solar-panels", label: "Solar Panels" },
-              { id: "inverters", label: "Inverters" },
-              { id: "solar-pumps", label: "Solar Pumps" },
-              { id: "solar-water-heaters", label: "Water Heaters" },
-              { id: "energy-storage", label: "Energy Storage" },
-              { id: "other", label: "Structures & BOS" }
-            ].map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                  selectedCategory === cat.id
-                    ? "bg-red-600 text-white shadow-md"
-                    : "text-slate-300 hover:text-red-400 hover:bg-slate-800"
+      {/* ── Editorial Cardless Product List ── */}
+      <section className="py-16 bg-[#0A0A0E]">
+        <div className="site-container space-y-20">
+          {productsData.map((product, index) => {
+            const isEven = index % 2 === 0;
+            const productHref =
+              product.category === "solar-pumps"
+                ? "/products/solar-pumps"
+                : product.category === "solar-water-heaters"
+                ? "/products/solar-water-heaters"
+                : `/products/${product.category}?item=${product.slug}`;
+
+            return (
+              <div
+                key={product.id}
+                className={`relative pt-12 first:pt-0 flex flex-col lg:flex-row items-center gap-10 lg:gap-14 ${
+                  !isEven ? "lg:flex-row-reverse" : ""
                 }`}
               >
-                {cat.label}
-              </button>
-            ))}
-          </div>
+                {/* Thin divider line above (except first) */}
+                {index > 0 && (
+                  <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-red-950/60 to-transparent" />
+                )}
 
-          {/* Search Box */}
-          <div className="relative w-full md:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search products & specs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-900 border border-red-950/60 text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 shadow-xs"
-            />
-          </div>
+                {/* ── Product Image Showcase Frame ── */}
+                <div className="w-full lg:w-[46%] relative group">
+                  <div className="relative rounded-2xl overflow-hidden border border-red-950/60 shadow-2xl shadow-black/80 z-10 bg-slate-950">
+                    <img
+                      src={product.mainImage}
+                      alt={product.name}
+                      className="w-full h-[260px] sm:h-[300px] lg:h-[340px] object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                      loading="lazy"
+                    />
+                    <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#0A0A0E] to-transparent" />
+
+                    {/* Category badge */}
+                    <span className="absolute bottom-4 left-4 px-3 py-1 bg-red-600 text-white text-xs font-mono font-black rounded-lg shadow-lg z-10">
+                      {product.categoryLabel}
+                    </span>
+
+                    {/* Warranty badge */}
+                    <span className="absolute top-4 left-4 px-2.5 py-1 bg-black/80 backdrop-blur-sm text-[11px] font-mono font-bold text-amber-400 rounded-md border border-red-950/60 z-10">
+                      {product.warranty.split("&")[0]}
+                    </span>
+                  </div>
+                </div>
+
+                {/* ── Editorial Content Breakdown (Cardless) ── */}
+                <div className="w-full lg:w-[54%] space-y-4 relative z-10">
+                  {/* Category Pill */}
+                  <span className="inline-block px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-widest bg-red-950/60 text-rose-300 border border-red-500/30">
+                    {product.categoryLabel}
+                  </span>
+
+                  {/* Title */}
+                  <div className="border-l-4 border-red-600 pl-4">
+                    <h2 className="text-2xl lg:text-[1.65rem] font-black text-white leading-tight tracking-tight uppercase">
+                      {product.name}
+                    </h2>
+                    <p className="text-xs sm:text-sm font-mono text-red-400 font-bold mt-1">
+                      {product.tagline}
+                    </p>
+                  </div>
+
+                  {/* Description */}
+                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+                    {product.description}
+                  </p>
+
+                  {/* Feature Highlights Checklist */}
+                  <div className="space-y-1.5 pt-1">
+                    {product.features.slice(0, 3).map((feat, fIdx) => (
+                      <div key={fIdx} className="flex items-start gap-2 text-xs text-slate-300 font-medium">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                        <span>{feat}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* CTA Actions */}
+                  <div className="pt-3 flex flex-wrap items-center gap-3">
+                    <Link
+                      to={productHref}
+                      className="btn-primary py-3 px-6 text-xs font-bold inline-flex items-center gap-2"
+                    >
+                      <span>View Specifications</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+
+                    <Link
+                      to={`/get-a-quote?product=${encodeURIComponent(product.name)}`}
+                      className="py-3 px-5 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-red-950/60 inline-flex items-center gap-2 transition-all"
+                    >
+                      <span>Get Instant Quote</span>
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
-
-      {/* Product Grid */}
-      <section className="section-padding bg-[#0A0A0E]">
-        <div className="site-container space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-
-          {filteredProducts.length === 0 && (
-            <div className="text-center py-16 bg-[#14101A] rounded-3xl border border-red-950/60 text-slate-400 max-w-md mx-auto space-y-3">
-              <p className="text-sm font-bold text-white">No products found matching your search</p>
-              <button
-                onClick={() => {
-                  setSelectedCategory("all");
-                  setSearchQuery("");
-                }}
-                className="btn-primary px-4 py-2 text-xs font-bold"
-              >
-                Reset Search Filters
-              </button>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Interactive Water Heater Engineering Visualizer (Shown under Water Heaters or when browsing) */}
-      {(selectedCategory === "solar-water-heaters" || selectedCategory === "all") && (
-        <SolarWaterHeaterInteractive />
-      )}
     </div>
   );
 };

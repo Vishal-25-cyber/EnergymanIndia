@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { galleryData } from "../../data/gallery";
-import { Camera, ArrowRight, Sparkles, MapPin } from "lucide-react";
+import { Camera, ArrowRight, MapPin } from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
 
 export const ExclusiveGalleryPreview: React.FC = () => {

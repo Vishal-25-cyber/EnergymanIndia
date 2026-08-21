@@ -1,5 +1,5 @@
 import React from "react";
-import { UserCheck, Layers, Cpu, CheckCircle2, ShieldCheck, ArrowRight, Sparkles } from "lucide-react";
+import { UserCheck, Layers, Wrench, CheckCircle2, ShieldCheck, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ScrollReveal } from "./ScrollReveal";
 
@@ -25,7 +25,7 @@ const pathwaySteps = [
     title: "ENGINEER",
     subtitle: "Tier-1 Hardware Procurement",
     description: "Deployment of ALMM-enlisted Mono PERC & TOPCon bi-facial modules, high-efficiency hybrid inverters, and hot-dip galvanized mounting structures.",
-    icon: <Cpu className="w-6 h-6 text-red-400" />,
+    icon: <Wrench className="w-6 h-6 text-red-400" />,
     badge: "Tier-1 Standards"
   },
   {
@@ -62,7 +62,7 @@ export const WhyEnergyPathway: React.FC = () => {
         <ScrollReveal animation="slide-up">
           <div className="text-center max-w-3xl mx-auto space-y-3">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs font-mono">
-              <Sparkles className="w-3.5 h-3.5 text-red-400" />
+              <ShieldCheck className="w-3.5 h-3.5 text-red-400" />
               <span>THE 5-STAGE LIFETIME COMMITMENT</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">

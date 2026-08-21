@@ -4,7 +4,6 @@ import {
   Factory,
   ShieldCheck,
   ArrowRight,
-  Zap,
   MapPin,
   Wrench,
   Award,
@@ -73,7 +72,7 @@ export const IndustrialSolarPage: React.FC = () => {
 
             {/* Hero Image */}
             <div className="lg:col-span-5">
-              <div className="rounded-3xl overflow-hidden border border-red-950/60 shadow-2xl relative bg-slate-900 aspect-4/3 sm:aspect-auto sm:h-96">
+              <div className="rounded-2xl overflow-hidden border border-red-950/60 shadow-xl relative bg-slate-900 h-[220px] sm:h-[260px] lg:h-[290px]">
                 <img
                   src={data.heroImage}
                   alt="Industrial manufacturing solar plant"
@@ -96,7 +95,7 @@ export const IndustrialSolarPage: React.FC = () => {
           {/* Grand Section Header */}
           <div className="text-center max-w-4xl mx-auto space-y-3">
             <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-red-950/80 text-rose-300 border border-red-500/40 font-mono shadow-xs">
-              <Zap className="w-3 h-3 text-amber-400" />
+              <Factory className="w-3 h-3 text-amber-400" />
               <span>INDUSTRIAL ADVANTAGES</span>
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white uppercase tracking-tight leading-[1.12]">
@@ -166,7 +165,7 @@ export const IndustrialSolarPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 relative z-10">
                 {[
                   { num: "01", title: "Drone & SLD Audit", desc: "3D topographical drone survey, structure load capacity & electrical SLD audit", icon: MapPin, color: "text-red-400 border-red-500/60 bg-red-950/90" },
-                  { num: "02", title: "Civil & HT Design", desc: "Foundation engineering, HT switchgear integration & short-circuit analysis", icon: Zap, color: "text-orange-400 border-orange-500/60 bg-orange-950/90" },
+                  { num: "02", title: "Civil & HT Design", desc: "Foundation engineering, HT switchgear integration & short-circuit analysis", icon: Factory, color: "text-orange-400 border-orange-500/60 bg-orange-950/90" },
                   { num: "03", title: "CEIG Clearances", desc: "Safety inspectorate clearance, drawing preparation & statutory approvals", icon: ShieldCheck, color: "text-amber-400 border-amber-500/60 bg-amber-950/90" },
                   { num: "04", title: "Heavy-Duty EPC", desc: "Corrosion-resistant HDG structures, cable trenching & earthing grid testing", icon: Wrench, color: "text-rose-400 border-rose-500/60 bg-rose-950/90" },
                   { num: "05", title: "SCADA Handover", desc: "24/7 remote monitoring, string mapping & thermal imaging validation", icon: Award, color: "text-emerald-400 border-emerald-500/60 bg-emerald-950/90" }

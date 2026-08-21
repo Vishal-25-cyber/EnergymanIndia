@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import {
-  Sparkles,
+  TrendingUp,
   CheckCircle2,
   XCircle,
   Building2,
@@ -95,7 +95,7 @@ export const BeforeAfterSolar: React.FC = () => {
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wider uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs">
-            <Sparkles className="w-3.5 h-3.5 text-red-400" />
+            <TrendingUp className="w-3.5 h-3.5 text-red-400" />
             <span>Documented Economic Impact</span>
           </div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">

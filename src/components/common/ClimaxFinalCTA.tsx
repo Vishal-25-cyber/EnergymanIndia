@@ -1,5 +1,5 @@
 import React from "react";
-import { ArrowRight, Calculator, CheckCircle2, Sparkles, Phone } from "lucide-react";
+import { ArrowRight, Calculator, CheckCircle2, Sun, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
 import { companyData } from "../../data/company";
 import { ScrollReveal } from "./ScrollReveal";
@@ -11,7 +11,7 @@ export const ClimaxFinalCTA: React.FC = () => {
       {/* Background Solar Ambience */}
       <div className="absolute inset-0 z-0">
         <img
-          src="https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=1920&q=80"
+          src="https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?auto=format&fit=crop&w=1920&q=80"
           alt="Clean Energy Sunrise"
           className="w-full h-full object-cover opacity-15 transform scale-105"
         />
@@ -25,7 +25,7 @@ export const ClimaxFinalCTA: React.FC = () => {
         
         <ScrollReveal animation="slide-up">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-black bg-white/15 text-amber-300 border border-amber-300/30 shadow-xl backdrop-blur-md font-mono uppercase">
-            <Sparkles className="w-4 h-4 text-amber-300" />
+            <Sun className="w-4 h-4 text-amber-300" />
             <span>THE 25-YEAR CLEAN ENERGY PARTNERSHIP</span>
           </div>
         </ScrollReveal>

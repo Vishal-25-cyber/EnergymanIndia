@@ -2,10 +2,10 @@ import React from "react";
 import { Link } from "react-router-dom";
 import {
   BatteryCharging,
+  Battery,
   ShieldCheck,
   ArrowRight,
   Clock,
-  Zap,
   MapPin,
   Wrench,
   Award,
@@ -74,7 +74,7 @@ export const EnergyStoragePage: React.FC = () => {
 
             {/* Hero Image */}
             <div className="lg:col-span-5">
-              <div className="rounded-3xl overflow-hidden border border-red-950/60 shadow-2xl relative bg-slate-900 aspect-4/3 sm:aspect-auto sm:h-96">
+              <div className="rounded-2xl overflow-hidden border border-red-950/60 shadow-xl relative bg-slate-900 h-[220px] sm:h-[260px] lg:h-[290px]">
                 <img
                   src={data.heroImage}
                   alt="Lithium battery energy storage rack"
@@ -97,7 +97,7 @@ export const EnergyStoragePage: React.FC = () => {
           {/* Grand Section Header */}
           <div className="text-center max-w-4xl mx-auto space-y-3">
             <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-amber-950/80 text-amber-300 border border-amber-500/40 font-mono shadow-xs">
-              <Zap className="w-3 h-3 text-amber-400" />
+              <Battery className="w-3 h-3 text-amber-400" />
               <span>STORAGE ADVANTAGES</span>
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white uppercase tracking-tight leading-[1.12]">
@@ -167,7 +167,7 @@ export const EnergyStoragePage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 relative z-10">
                 {[
                   { num: "01", title: "Load Segmentation", desc: "Essential circuit audit, peak surge currents & autonomy hour planning", icon: MapPin, color: "text-red-400 border-red-500/60 bg-red-950/90" },
-                  { num: "02", title: "Storage Sizing", desc: "C-rate simulation, modular rack capacity & hybrid inverter matching", icon: Zap, color: "text-orange-400 border-orange-500/60 bg-orange-950/90" },
+                  { num: "02", title: "Storage Sizing", desc: "C-rate simulation, modular rack capacity & hybrid inverter matching", icon: BatteryCharging, color: "text-orange-400 border-orange-500/60 bg-orange-950/90" },
                   { num: "03", title: "Safety Architecture", desc: "Class-T rapid fuses, DC disconnects & integrated aerosol fire suppression", icon: ShieldCheck, color: "text-amber-400 border-amber-500/60 bg-amber-950/90" },
                   { num: "04", title: "BMS Programming", desc: "Setting peak shaving thresholds, self-consumption priority & grid sync", icon: Wrench, color: "text-rose-400 border-rose-500/60 bg-rose-950/90" },
                   { num: "05", title: "Failover Validation", desc: "Live grid blackout trip simulation, SCADA telemetry & client handover", icon: Award, color: "text-emerald-400 border-emerald-500/60 bg-emerald-950/90" }

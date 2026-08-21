@@ -4,8 +4,8 @@ import {
   Clock,
   ChevronRight,
   Share2,
-  Zap,
-  Lightbulb
+  Phone,
+  ArrowRight
 } from "lucide-react";
 import { SEOHead } from "../../components/common/SEOHead";
 import { blogsData } from "../../data/blogs";
@@ -18,141 +18,206 @@ export const BlogDetailPage: React.FC = () => {
 
   const relatedPosts = blogsData
     .filter((b) => b.id !== post.id)
-    .slice(0, 2);
+    .slice(0, 3);
 
   return (
     <div className="bg-[#0A0A0E] text-slate-100 min-h-screen">
       <SEOHead
-        title={post.title}
+        title={`${post.title} | ENERGYMAN Solar Publication`}
         description={post.excerpt}
         ogImage={post.coverImage}
       />
 
-      {/* Breadcrumb Header */}
+      {/* ── Breadcrumb Header (Cardless) ── */}
       <section className="pt-28 pb-4 bg-[#0A0A0E] border-b border-red-950/60">
-        <div className="site-container flex items-center gap-2 text-xs text-slate-400">
-          <Link to="/" className="hover:text-red-400 transition-colors font-medium">Home</Link>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-          <Link to="/insights" className="hover:text-red-400 transition-colors font-medium">Insights</Link>
-          <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-          <span className="text-white font-bold truncate max-w-xs">{post.title}</span>
+        <div className="site-container flex items-center gap-2 text-xs text-slate-400 font-mono overflow-x-auto whitespace-nowrap">
+          <Link to="/" className="hover:text-red-400 transition-colors">Home</Link>
+          <ChevronRight className="w-3 h-3 text-slate-600 shrink-0" />
+          <Link to="/insights" className="hover:text-red-400 transition-colors">Insights &amp; Blog</Link>
+          <ChevronRight className="w-3 h-3 text-slate-600 shrink-0" />
+          <span className="text-rose-400 font-bold">{post.category}</span>
+          <ChevronRight className="w-3 h-3 text-slate-600 shrink-0" />
+          <span className="text-white font-bold truncate max-w-xs sm:max-w-md">{post.title}</span>
         </div>
       </section>
 
-      {/* Article Hero */}
-      <section className="pt-10 pb-12 bg-[#0A0A0E] border-b border-red-950/60">
-        <div className="site-container max-w-4xl space-y-6">
-          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-400 font-medium">
-            <span className="badge-crimson text-xs font-bold px-3 py-1 rounded-full">{post.category}</span>
+      {/* ── Monumental Editorial Article Header (Cardless) ── */}
+      <section className="pt-10 pb-12 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
+        <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="site-container relative z-10 space-y-6">
+          
+          {/* Metadata Row */}
+          <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-slate-400">
+            <span className="px-3 py-1 bg-red-950/80 text-rose-300 border border-red-500/40 rounded-full font-bold uppercase tracking-wider text-[11px]">
+              {post.category}
+            </span>
             <span>•</span>
             <span>{post.date}</span>
             <span>•</span>
-            <span className="flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5 text-red-400" />
+            <span className="flex items-center gap-1 text-slate-300">
+              <Clock className="w-3.5 h-3.5 text-amber-400" />
               {post.readTime}
             </span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight">
-            {post.title}
-          </h1>
+          {/* Monumental Headline */}
+          <div className="border-l-4 border-red-600 pl-4 sm:pl-6 max-w-5xl">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white leading-tight tracking-tight uppercase">
+              {post.title}
+            </h1>
+          </div>
 
-          {/* Author Row */}
-          <div className="flex items-center justify-between pt-4 border-t border-red-950/60">
-            <div className="flex items-center gap-3">
+          <p className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-4xl font-normal">
+            {post.excerpt}
+          </p>
+
+          {/* Author & Share Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-red-950/40">
+            <div className="flex items-center gap-3.5">
               <img
                 src={post.author.avatar}
                 alt={post.author.name}
-                className="w-12 h-12 rounded-full object-cover border-2 border-red-950/60 shadow-xs"
+                className="w-11 h-11 rounded-full object-cover border border-red-950/60 shadow-md"
               />
               <div>
-                <p className="text-sm font-black text-white">{post.author.name}</p>
-                <p className="text-xs text-slate-400">{post.author.role}</p>
+                <p className="text-xs sm:text-sm font-bold text-white font-mono">{post.author.name}</p>
+                <p className="text-[11px] text-slate-400">{post.author.role}</p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <a
-                href={`https://wa.me/?text=${encodeURIComponent(post.title + " " + (typeof window !== 'undefined' ? window.location.href : ''))}`}
+                href={`https://wa.me/?text=${encodeURIComponent(`${post.title} - Read more at: ` + (typeof window !== 'undefined' ? window.location.href : ''))}`}
                 target="_blank"
                 rel="noreferrer"
-                className="p-2.5 rounded-xl bg-slate-900 hover:bg-red-600 border border-red-950/60 text-slate-200 hover:text-white transition-colors"
+                className="py-2 px-4 rounded-xl bg-emerald-950/80 hover:bg-emerald-900/80 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold inline-flex items-center gap-2 transition-all cursor-pointer shadow-xs"
                 title="Share on WhatsApp"
               >
-                <Share2 className="w-4 h-4" />
+                <Share2 className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Share Guide</span>
               </a>
             </div>
           </div>
+
         </div>
       </section>
 
-      {/* Main Article Content & TOC Layout */}
-      <section className="section-padding bg-[#0A0A0E]">
+      {/* ── Main Editorial Content Breakdown (Cardless 2-Column Grid) ── */}
+      <section className="py-14 bg-[#0A0A0E]">
         <div className="site-container">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-            {/* Left/Main Column: Article Content (8 Cols) */}
-            <div className="lg:col-span-8 space-y-8">
-              {/* Cover Image */}
-              <div className="rounded-3xl overflow-hidden border border-red-950/60 shadow-xl bg-slate-900">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+            
+            {/* ── Left / Main Column: Editorial Body (8 Cols) ── */}
+            <div className="lg:col-span-8 space-y-10">
+              
+              {/* Cover Image Frame (Cardless) */}
+              <div className="relative rounded-2xl overflow-hidden border border-red-950/60 shadow-2xl shadow-black/80 bg-slate-950">
                 <img
                   src={post.coverImage}
                   alt={post.title}
-                  className="w-full h-80 sm:h-96 object-cover"
+                  className="w-full h-[260px] sm:h-[340px] lg:h-[380px] object-cover"
                 />
+                <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#0A0A0E] to-transparent" />
+                <span className="absolute bottom-4 left-4 px-3 py-1 bg-red-600 text-white text-xs font-mono font-black rounded-lg shadow-lg">
+                  {post.category}
+                </span>
               </div>
 
-              {/* Intro */}
-              <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-medium border-l-4 border-red-500 pl-4 py-1">
-                {post.content.intro}
-              </p>
+              {/* Executive Summary Intro */}
+              <div className="border-l-4 border-red-500 pl-5 py-2">
+                <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-red-400 block mb-1">
+                  EXECUTIVE SUMMARY
+                </span>
+                <p className="text-base sm:text-lg text-slate-200 leading-relaxed font-medium">
+                  {post.content.intro}
+                </p>
+              </div>
 
-              {/* Sections */}
-              <div className="space-y-10">
-                {post.content.sections.map((section) => (
-                  <div key={section.id} id={section.id} className="space-y-4 pt-4">
-                    <h2 className="text-xl sm:text-2xl font-black text-white">
+              {/* Article Sections (Cardless Editorial Rail) */}
+              <div className="space-y-12">
+                {post.content.sections.map((section, idx) => (
+                  <div key={section.id} id={section.id} className="space-y-4 pt-6 border-t border-red-950/40 first:border-t-0 first:pt-0">
+                    
+                    <span className="text-xs font-mono font-bold uppercase tracking-widest text-amber-400 block">
+                      0{idx + 1} // ENGINEERING BRIEF
+                    </span>
+
+                    <h2 className="text-xl sm:text-2xl lg:text-3xl font-black text-white leading-snug tracking-tight uppercase">
                       {section.heading}
                     </h2>
-                    <div className="space-y-3 text-sm sm:text-base text-slate-300 leading-relaxed font-normal">
+
+                    <div className="space-y-3.5 text-xs sm:text-sm md:text-base text-slate-300 leading-relaxed font-normal">
                       {section.body.map((paragraph, pIdx) => (
                         <p key={pIdx}>{paragraph}</p>
                       ))}
                     </div>
 
+                    {/* Key Takeaway Rail (Cardless) */}
                     {section.keyTakeaway && (
-                      <div className="p-4 rounded-2xl bg-[#14101A] border border-red-900/40 flex items-start gap-3 mt-4">
-                        <Lightbulb className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-                        <div>
-                          <span className="text-xs font-bold uppercase tracking-wider text-red-400 block font-mono">Key Takeaway</span>
-                          <p className="text-xs sm:text-sm text-slate-200 font-medium">{section.keyTakeaway}</p>
-                        </div>
+                      <div className="mt-4 pt-3 pb-3 pl-4 border-l-4 border-amber-500 bg-transparent space-y-1">
+                        <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-amber-400 block">
+                          CRITICAL ENGINEERING TAKEAWAY:
+                        </span>
+                        <p className="text-xs sm:text-sm text-slate-200 font-semibold leading-relaxed">
+                          {section.keyTakeaway}
+                        </p>
                       </div>
                     )}
                   </div>
                 ))}
               </div>
 
-              {/* Conclusion */}
-              <div className="p-6 rounded-3xl bg-[#14101A]/95 border border-red-900/30 space-y-3">
-                <h3 className="text-lg font-black text-white">Conclusion &amp; Next Steps</h3>
-                <p className="text-sm text-slate-300 leading-relaxed font-normal">{post.content.conclusion}</p>
+              {/* Conclusion Section (Cardless) */}
+              <div className="pt-8 pb-4 border-y border-red-950/60 space-y-3">
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-red-400 block">
+                  CONCLUSION &amp; NEXT STEPS
+                </span>
+                <p className="text-xs sm:text-sm md:text-base text-slate-300 leading-relaxed font-normal">
+                  {post.content.conclusion}
+                </p>
               </div>
+
+              {/* Bottom Action Strip */}
+              <div className="pt-4 flex flex-wrap items-center justify-between gap-4">
+                <Link
+                  to="/get-a-quote"
+                  className="btn-primary py-3.5 px-8 text-xs sm:text-sm font-bold inline-flex items-center gap-2"
+                >
+                  <span>Request Technical Sizing</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+
+                <Link
+                  to="/contact"
+                  className="py-3.5 px-6 text-xs sm:text-sm font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-red-950/60 inline-flex items-center gap-2 transition-all"
+                >
+                  <Phone className="w-4 h-4 text-red-400" />
+                  <span>Talk to Solar Engineer</span>
+                </Link>
+              </div>
+
             </div>
 
-            {/* Right Column: CTA & Table of Contents (4 Cols) */}
-            <div className="lg:col-span-4 space-y-6 sticky top-24">
-              {/* Table of Contents */}
+            {/* ── Right Sidebar: Cardless Editorial Rail (4 Cols) ── */}
+            <div className="lg:col-span-4 space-y-10 lg:sticky lg:top-28">
+              
+              {/* 01: Table of Contents (Cardless) */}
               {post.tableOfContents && post.tableOfContents.length > 0 && (
-                <div className="p-6 rounded-3xl bg-[#14101A]/95 border border-red-900/30 space-y-4 shadow-xl">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-red-400 font-mono">Table of Contents</h4>
-                  <ul className="space-y-2 text-xs">
-                    {post.tableOfContents.map((toc) => (
+                <div className="space-y-3 pt-2">
+                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-red-400 block pb-2 border-b border-red-950/60">
+                    01 // TABLE OF CONTENTS
+                  </span>
+                  <ul className="space-y-2 text-xs font-mono">
+                    {post.tableOfContents.map((toc, tIdx) => (
                       <li key={toc.id}>
                         <a
                           href={`#${toc.id}`}
-                          className="text-slate-300 hover:text-red-400 transition-colors block py-0.5"
+                          className="text-slate-300 hover:text-red-400 transition-colors block py-1 border-b border-red-950/20 hover:border-red-500/40"
                         >
-                          • {toc.title}
+                          <span className="text-red-500 font-bold mr-2">0{tIdx + 1}.</span>
+                          <span>{toc.title}</span>
                         </a>
                       </li>
                     ))}
@@ -160,47 +225,60 @@ export const BlogDetailPage: React.FC = () => {
                 </div>
               )}
 
-              {/* Free Assessment Box */}
-              <div className="p-6 sm:p-8 rounded-3xl bg-[#14101A]/95 border border-red-900/30 space-y-4 shadow-xl text-center">
-                <div className="w-12 h-12 rounded-2xl bg-red-950 text-red-400 border border-red-500/40 flex items-center justify-center mx-auto shadow-md">
-                  <Zap className="w-6 h-6" />
-                </div>
-                <h3 className="text-lg font-black text-white">
-                  Want Solar For Your Facility?
-                </h3>
-                <p className="text-xs text-slate-300 leading-relaxed font-normal">
-                  Calculate how much you can save under PM Surya Ghar or Commercial 40% Tax Depreciation.
+              {/* 02: Solar Engineering Advisory Desk (Cardless Rail) */}
+              <div className="space-y-3 pt-4 border-t border-red-950/60">
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-amber-400 block">
+                  02 // ENGINEERING ADVISORY
+                </span>
+                <h4 className="text-base font-black text-white uppercase tracking-tight">
+                  Consult Coimbatore Solar Desk
+                </h4>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Have questions about MNRE central subsidies, agricultural solar pumps, or captive rooftop payback?
                 </p>
-                <Link
-                  to="/get-a-quote"
-                  className="btn-primary w-full py-3 text-xs font-bold rounded-xl shadow-md transition-all block"
-                >
-                  Get Custom Solar Proposal →
-                </Link>
+                <div className="pt-2 space-y-2">
+                  <a
+                    href="tel:+917092510004"
+                    className="flex items-center gap-2 text-xs font-mono font-bold text-red-400 hover:text-white transition-colors"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    <span>+91 70925 10004 / +91 97874 55554</span>
+                  </a>
+                  <p className="text-[11px] text-slate-500 font-mono">
+                    119, Gopal Layout, Coimbatore - 641001
+                  </p>
+                </div>
               </div>
 
-              {/* Related Posts */}
-              <div className="p-6 rounded-3xl bg-[#14101A]/95 border border-red-900/30 space-y-4 shadow-xl">
-                <h4 className="text-sm font-black text-white">Recommended Reading</h4>
+              {/* 03: Recommended Briefings (Cardless List) */}
+              <div className="space-y-3 pt-4 border-t border-red-950/60">
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400 block pb-2 border-b border-red-950/60">
+                  03 // RECOMMENDED BRIEFINGS
+                </span>
                 <div className="space-y-4">
                   {relatedPosts.map((rel) => (
                     <Link
                       key={rel.id}
                       to={`/insights/${rel.slug}`}
-                      className="block space-y-1.5 group"
+                      className="block space-y-1 group border-b border-red-950/30 pb-3"
                     >
-                      <span className="text-[10px] font-bold text-red-400 uppercase tracking-wide">{rel.category}</span>
-                      <h5 className="text-xs font-bold text-slate-200 group-hover:text-red-400 transition-colors line-clamp-2">
+                      <span className="text-[10px] font-mono font-bold text-red-400 uppercase tracking-wide">
+                        {rel.category} • {rel.readTime}
+                      </span>
+                      <h5 className="text-xs font-bold text-slate-200 group-hover:text-red-400 transition-colors line-clamp-2 leading-snug">
                         {rel.title}
                       </h5>
                     </Link>
                   ))}
                 </div>
               </div>
+
             </div>
+
           </div>
         </div>
       </section>
+
     </div>
   );
 };

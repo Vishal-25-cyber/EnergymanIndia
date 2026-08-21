@@ -1,27 +1,22 @@
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   MapPin,
   Phone,
   Mail,
   Clock,
   CheckCircle2,
-  Sparkles,
-  Calculator,
-  ArrowRight,
-  Send
+  ChevronRight,
+  Send,
+  Building
 } from "lucide-react";
 import { SEOHead } from "../components/common/SEOHead";
-import { companyData } from "../data/company";
 
 export const ContactPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
     email: "",
-    location: "",
-    propertyType: "Residential Home",
-    monthlyBill: "",
-    solution: "Rooftop Solar with Net Metering",
     message: ""
   });
 
@@ -31,268 +26,269 @@ export const ContactPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    const mailtoLink = `mailto:info@energymanindia.in?subject=Customer Query from ${formData.name}&body=Name: ${formData.name}%0APhone: ${formData.phone}%0AEmail: ${formData.email}%0A%0AMessage:%0A${formData.message}`;
+    window.location.href = mailtoLink;
     setTimeout(() => {
       setIsSubmitting(false);
       setIsSuccess(true);
-    }, 600);
+    }, 800);
   };
 
   return (
     <div className="bg-[#0A0A0E] text-slate-100 min-h-screen">
       <SEOHead
-        title="Contact ENERGYMAN - Coimbatore & Palani Solar Engineering"
-        description="Reduce Your Energy Bills & Go Green — Get a Free Solar Quote! Contact Energyman Power Technologies (India) Pvt. Ltd. at 119, Gopal Layout, Coimbatore."
+        title="Contact ENERGYMAN - Solar Engineering Desk | Coimbatore"
+        description="Reach Energyman Power Technologies (India) Pvt. Ltd. at 119, Gopal Layout, Coimbatore. Call +91 70925 10004 or email info@energymanindia.in"
       />
 
-      {/* Hero Header */}
-      <section className="pt-32 pb-16 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
+      {/* ── Breadcrumb ── */}
+      <section className="pt-28 pb-4 bg-[#0A0A0E] border-b border-red-950/60">
+        <div className="site-container flex items-center gap-2 text-xs text-slate-400 font-mono">
+          <Link to="/" className="hover:text-red-400 transition-colors">Home</Link>
+          <ChevronRight className="w-3 h-3 text-slate-600" />
+          <span className="text-white font-bold">Contact Us</span>
+        </div>
+      </section>
+
+      {/* ── Hero Header ── */}
+      <section className="pt-10 pb-12 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
         <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="site-container relative z-10 text-center max-w-3xl mx-auto space-y-4">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs font-mono">
-            <Sparkles className="w-3.5 h-3.5 text-red-400" />
-            <span>DIRECT ENGINEERING CONSULTATION</span>
+        <div className="site-container relative z-10 space-y-4 text-center flex flex-col items-center">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-red-950/80 text-rose-300 border border-red-500/40">
+            <Building className="w-3.5 h-3.5 text-amber-400" />
+            <span>Direct Engineering Consultation</span>
           </div>
-          <h1 className="heading-hero text-white">
-            REDUCE YOUR ENERGY BILLS & <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">GO GREEN</span>
+
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.12] max-w-5xl uppercase">
+            REACH US &amp; <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">GET IN TOUCH</span>
           </h1>
-          <p className="text-slate-300 max-w-2xl mx-auto text-sm sm:text-base">
-            Get a free solar quote from Energyman Power Technologies (India) Pvt. Ltd. — approved MNRE subsidy partner.
+
+          <p className="text-slate-300 text-xs sm:text-sm md:text-base leading-relaxed max-w-3xl font-normal">
+            Headquartered in Coimbatore. Send us a message or call directly — our engineering team responds within 2 hours.
           </p>
         </div>
       </section>
 
-      {/* Main Contact Grid */}
-      <section className="section-padding bg-[#0A0A0E]">
+      {/* ── Main 2-Column Layout ── */}
+      <section className="py-16 bg-[#0A0A0E]">
         <div className="site-container">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-            
-            {/* LEFT: Large Contact Statement & Offices (5 Cols) */}
-            <div className="lg:col-span-5 space-y-6">
-              <div className="space-y-3">
-                <span className="text-xs font-extrabold uppercase tracking-wider text-red-400 font-mono">
-                  ONE-STOP SOLAR SOLUTIONS
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-20 items-start">
+
+            {/* ── LEFT: Contact Details (Cardless Rail) ── */}
+            <div className="space-y-10">
+
+              {/* Head Office */}
+              <div className="space-y-5">
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-red-400 block pb-2 border-b border-red-950/60">
+                  REGISTERED HEAD OFFICE
                 </span>
-                <h2 className="text-3xl sm:text-4xl font-black text-white leading-tight">
-                  Let&apos;s Build Your Clean Energy Future.
-                </h2>
-                <p className="text-sm text-slate-300 leading-relaxed">
-                  Headquartered in Coimbatore with regional hubs in Palani, we provide complimentary on-site feasibility studies, 3D PVSyst generation modeling, and turnkey PM Surya Ghar subsidy coordination.
-                </p>
-              </div>
 
-              {/* Office Cards from Source */}
-              <div className="space-y-4 pt-2">
-                {companyData.offices.map((office, idx) => (
-                  <div
-                    key={idx}
-                    className="p-6 rounded-3xl bg-[#14101A]/95 border border-red-900/30 space-y-3 hover:border-red-500/50 transition-colors shadow-md"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-base font-black text-white">{office.city}</h3>
-                      <span className="badge-crimson text-[10px] font-bold px-2.5 py-0.5 rounded-full">{office.type}</span>
-                    </div>
-
-                    <div className="space-y-2 text-xs text-slate-300">
-                      <div className="flex items-start gap-2.5">
-                        <MapPin className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                        <span className="font-medium text-slate-200">{office.address}, {office.city} - {office.pincode}</span>
-                      </div>
-                      <div className="flex items-center gap-2.5">
-                        <Phone className="w-4 h-4 text-amber-400 shrink-0" />
-                        <a href={`tel:${office.phone.replace(/\s+/g, '')}`} className="text-slate-200 hover:text-white font-bold transition-colors font-mono">
-                          {office.phone}
-                        </a>
-                      </div>
-                      <div className="flex items-center gap-2.5">
-                        <Mail className="w-4 h-4 text-rose-400 shrink-0" />
-                        <a href={`mailto:${office.email}`} className="text-slate-200 hover:text-white font-medium transition-colors font-mono">
-                          {office.email}
-                        </a>
-                      </div>
-                      <div className="flex items-center gap-2.5">
-                        <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                        <span>{office.workingHours}</span>
-                      </div>
+                <div className="space-y-4 text-sm font-mono">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                    <div>
+                      <strong className="text-white block font-sans font-bold text-sm mb-0.5">Energyman Power Technologies (India) Pvt. Ltd.</strong>
+                      <span className="text-slate-400 text-xs leading-relaxed">
+                        119, Gopal Layout, Ponnaiahrajapuram,<br />
+                        Near Gandhi Park, Coimbatore – 641001,<br />
+                        Tamil Nadu, India
+                      </span>
                     </div>
                   </div>
-                ))}
+
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-4 h-4 text-amber-400 shrink-0" />
+                    <div className="space-x-2 text-xs">
+                      <a href="tel:+917092510004" className="text-white hover:text-red-400 font-bold transition-colors">
+                        +91 70925 10004
+                      </a>
+                      <span className="text-slate-600">/</span>
+                      <a href="tel:+919787455554" className="text-white hover:text-red-400 font-bold transition-colors">
+                        +91 97874 55554
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-rose-400 shrink-0" />
+                    <a href="mailto:info@energymanindia.in" className="text-slate-300 hover:text-white text-xs transition-colors">
+                      info@energymanindia.in
+                    </a>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span className="text-slate-400 text-xs">Monday – Saturday: 9:00 AM – 7:30 PM</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Social Channels */}
-              <div className="p-6 rounded-3xl bg-slate-900/90 border border-red-950/60 space-y-3">
-                <span className="text-xs font-bold text-slate-400 uppercase font-mono block">
-                  Official Channels
+              {/* Regional Hub */}
+              <div className="space-y-4 pt-4 border-t border-red-950/60">
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-amber-400 block pb-2 border-b border-red-950/60">
+                  REGIONAL SERVICE HUB — PALANI
                 </span>
-                <div className="flex flex-wrap items-center gap-2">
-                  {[
-                    { name: "Facebook", url: companyData.socialLinks.facebook },
-                    { name: "LinkedIn", url: companyData.socialLinks.linkedin },
-                    { name: "YouTube", url: companyData.socialLinks.youtube },
-                    { name: "Instagram", url: companyData.socialLinks.instagram },
-                    { name: "WhatsApp", url: companyData.socialLinks.whatsapp }
-                  ].map((soc, idx) => (
-                    <a
-                      key={idx}
-                      href={soc.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1.5 rounded-xl bg-black/60 border border-red-950/60 text-slate-300 hover:text-white hover:border-red-500/50 transition-all text-xs font-bold"
-                    >
-                      {soc.name}
+
+                <div className="space-y-3 text-sm font-mono">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                    <span className="text-slate-400 text-xs leading-relaxed">
+                      Dindigul Highway, Palani – 624601, Tamil Nadu
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-4 h-4 text-amber-400 shrink-0" />
+                    <a href="tel:+919787455554" className="text-white hover:text-red-400 font-bold text-xs transition-colors">
+                      +91 97874 55554
                     </a>
-                  ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Connect */}
+              <div className="space-y-3 pt-4 border-t border-red-950/60">
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-slate-400 block">
+                  QUICK CONNECT
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    className="px-3.5 py-2 rounded-lg bg-emerald-950/80 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold hover:bg-emerald-900/80 transition-all cursor-pointer"
+                  >
+                    WhatsApp Us
+                  </button>
+                  <button
+                    type="button"
+                    className="px-3.5 py-2 rounded-lg bg-slate-900 border border-red-950/60 text-slate-300 text-xs font-mono font-bold hover:text-white hover:border-red-500/50 transition-all cursor-pointer"
+                  >
+                    Send Email Directly
+                  </button>
                 </div>
               </div>
 
             </div>
 
-            {/* RIGHT: Premium Quote Form (7 Cols) */}
-            <div className="lg:col-span-7">
-              <div className="bg-[#14101A]/95 border border-red-900/40 rounded-3xl p-8 sm:p-10 shadow-2xl space-y-6">
-                
-                <div className="space-y-1 pb-4 border-b border-red-950/60">
-                  <span className="badge-crimson text-xs font-bold">
-                    FAST RESPONSE SLA
-                  </span>
-                  <h3 className="text-2xl font-black text-white">
-                    Request a Free Solar Quote
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Fill in your details below and an Energyman solar engineer will contact you within 2 hours.
-                  </p>
+            {/* ── RIGHT: Simple Email Query Form (Cardless) ── */}
+            <div className="space-y-6">
+
+              <div className="border-l-4 border-red-600 pl-4 sm:pl-5 space-y-1">
+                <span className="text-xs font-mono font-bold uppercase tracking-widest text-red-400 block">
+                  SEND US A MESSAGE
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
+                  Have a Query? Write to Us
+                </h2>
+                <p className="text-xs text-slate-400 leading-relaxed font-normal">
+                  Fill in the form below and we'll respond within 2 hours on working days.
+                </p>
+              </div>
+
+              {isSuccess ? (
+                <div className="py-10 space-y-3 text-center font-mono border-t border-red-950/60">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-400 mx-auto" />
+                  <p className="text-sm font-bold text-white">Message Sent Successfully!</p>
+                  <p className="text-xs text-slate-400">Our team at Coimbatore will reach out to you shortly.</p>
+                  <button
+                    onClick={() => { setIsSuccess(false); setFormData({ name: "", phone: "", email: "", message: "" }); }}
+                    className="btn-primary py-2 px-5 text-xs font-bold mt-2 inline-flex items-center gap-2"
+                  >
+                    Send Another Message
+                  </button>
                 </div>
+              ) : (
+                <form onSubmit={handleSubmit} className="space-y-5 pt-2">
 
-                {isSuccess ? (
-                  <div className="p-8 rounded-2xl bg-slate-900/90 border border-emerald-500/50 text-center space-y-3 animate-fade-in">
-                    <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-                    <h4 className="text-lg font-black text-white">Quote Request Received!</h4>
-                    <p className="text-xs text-slate-300 max-w-md mx-auto">
-                      Thank you! Our engineering team in Coimbatore will review your requirements and reach out to <strong className="text-white">{formData.phone || formData.email}</strong> shortly.
-                    </p>
-                    <button
-                      onClick={() => setIsSuccess(false)}
-                      className="btn-primary py-2 px-5 text-xs font-bold mt-2"
-                    >
-                      Submit Another Request
-                    </button>
-                  </div>
-                ) : (
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-300">Your Full Name *</label>
-                        <input
-                          type="text"
-                          required
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          placeholder="e.g. Mr. K. Palanisamy"
-                          className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-red-950/60 focus:border-red-500 focus:outline-none text-white text-xs font-medium"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-300">Phone Number *</label>
-                        <input
-                          type="tel"
-                          required
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          placeholder="+91 98422 xxxxx"
-                          className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-red-950/60 focus:border-red-500 focus:outline-none text-white text-xs font-medium font-mono"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-300">Email Address</label>
-                        <input
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          placeholder="name@example.com"
-                          className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-red-950/60 focus:border-red-500 focus:outline-none text-white text-xs font-medium"
-                        />
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-300">City / District (Tamil Nadu) *</label>
-                        <input
-                          type="text"
-                          required
-                          value={formData.location}
-                          onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                          placeholder="e.g. Coimbatore, Tirupur, Palani"
-                          className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-red-950/60 focus:border-red-500 focus:outline-none text-white text-xs font-medium"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-300">Sector / Property Type</label>
-                        <select
-                          value={formData.propertyType}
-                          onChange={(e) => setFormData({ ...formData, propertyType: e.target.value })}
-                          className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-red-950/60 focus:border-red-500 focus:outline-none text-white text-xs font-medium cursor-pointer"
-                        >
-                          <option value="Residential Home">Residential Rooftop (Home / Villa)</option>
-                          <option value="Industrial Factory">Industrial Spinning Mill / Factory</option>
-                          <option value="Commercial Complex">Commercial Building / Hospital / Hotel</option>
-                          <option value="Agricultural Farm">Agricultural Farm (PM-KUSUM Solar Pump)</option>
-                          <option value="Solar Water Heater">Solar Water Heater (Domestic / Industrial)</option>
-                        </select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-slate-300">Monthly Electricity Bill (Approx)</label>
-                        <input
-                          type="text"
-                          value={formData.monthlyBill}
-                          onChange={(e) => setFormData({ ...formData, monthlyBill: e.target.value })}
-                          placeholder="e.g. ₹4,500 or ₹1.5 Lakhs"
-                          className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-red-950/60 focus:border-red-500 focus:outline-none text-white text-xs font-medium font-mono"
-                        />
-                      </div>
-                    </div>
-
+                  {/* Name & Phone */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-xs font-bold text-slate-300">Project Details / Roof Area</label>
-                      <textarea
-                        rows={3}
-                        value={formData.message}
-                        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                        placeholder="Tell us about your rooftop area, existing connected load, or specific solar requirements..."
-                        className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-red-950/60 focus:border-red-500 focus:outline-none text-white text-xs font-medium resize-none"
+                      <label className="text-xs font-mono font-bold text-slate-400 uppercase">
+                        Your Name *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        placeholder="e.g. Mr. K. Palanisamy"
+                        className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-red-950/60 focus:border-red-500 focus:outline-none text-white text-xs font-mono"
                       />
                     </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-mono font-bold text-slate-400 uppercase">
+                        Phone Number *
+                      </label>
+                      <input
+                        type="tel"
+                        required
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        placeholder="+91 98422 xxxxx"
+                        className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-red-950/60 focus:border-red-500 focus:outline-none text-white text-xs font-mono font-bold"
+                      />
+                    </div>
+                  </div>
 
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="btn-primary w-full py-4 text-xs sm:text-sm font-black tracking-wider uppercase inline-flex items-center justify-center gap-2 rounded-xl shadow-lg mt-2 cursor-pointer disabled:opacity-50"
-                    >
-                      {isSubmitting ? (
-                        <span>Processing Request...</span>
-                      ) : (
-                        <>
-                          <Send className="w-4 h-4" />
-                          <span>GET A FREE SOLAR QUOTE</span>
-                        </>
-                      )}
-                    </button>
-                  </form>
-                )}
+                  {/* Email */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-slate-400 uppercase">
+                      Email Address *
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="name@example.com"
+                      className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-red-950/60 focus:border-red-500 focus:outline-none text-white text-xs font-mono"
+                    />
+                  </div>
 
-              </div>
+                  {/* Message */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-mono font-bold text-slate-400 uppercase">
+                      Your Message / Query *
+                    </label>
+                    <textarea
+                      rows={5}
+                      required
+                      value={formData.message}
+                      onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                      placeholder="Type your question, requirement, or inquiry here... e.g. I want to know about solar rooftop subsidy for my home in Coimbatore."
+                      className="w-full px-4 py-3 rounded-xl bg-slate-900 border border-red-950/60 focus:border-red-500 focus:outline-none text-white text-xs font-mono resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="btn-primary w-full py-4 text-xs sm:text-sm font-black tracking-wider uppercase inline-flex items-center justify-center gap-2 rounded-xl cursor-pointer disabled:opacity-50 font-mono"
+                  >
+                    {isSubmitting ? (
+                      <span>Opening Mail Client...</span>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>SEND YOUR QUERY</span>
+                      </>
+                    )}
+                  </button>
+
+                  <p className="text-[11px] text-slate-500 font-mono text-center">
+                    This will open your email client pre-filled with your message to info@energymanindia.in
+                  </p>
+
+                </form>
+              )}
+
             </div>
 
           </div>
         </div>
       </section>
+
     </div>
   );
 };

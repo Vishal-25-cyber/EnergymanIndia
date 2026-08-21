@@ -2,15 +2,15 @@ import React, { useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Calculator,
-  Sparkles,
   ArrowRight,
   Home,
   Building2,
   Tractor,
-  Zap,
+  Sun,
   ShieldCheck,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  TrendingUp
 } from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
 
@@ -249,8 +249,8 @@ export const SavingsCalculator: React.FC = () => {
             {/* Sizing Specifications Tile */}
             <div className="p-4 rounded-2xl bg-[#14101A]/90 border border-red-900/30 space-y-2 shadow-xs">
               <div className="flex items-center justify-between text-xs font-mono text-slate-300">
-                <span className="flex items-center gap-1.5 text-red-400 font-bold">
-                  <Zap className="w-4 h-4 text-red-400" />
+                <span className="flex items-center gap-1.5 text-amber-400 font-bold">
+                  <Sun className="w-4 h-4 text-amber-400" />
                   RECOMMENDED SYSTEM SIZE
                 </span>
                 <span className="text-base font-black text-white font-mono">{calculation.recommendedKw} kW</span>
@@ -271,7 +271,7 @@ export const SavingsCalculator: React.FC = () => {
               
               <div className="flex items-center justify-between">
                 <div className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold text-amber-400">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
                   <span>25-YEAR ESTIMATED ELECTRICITY BILL SAVINGS</span>
                 </div>
                 <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-900/40">

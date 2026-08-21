@@ -27,77 +27,67 @@ export const galleryData: GalleryImage[] = [
     categoryLabel: "Agricultural",
     location: "Palani / Dindigul, Tamil Nadu",
     capacity: "10 HP (9.6 kWp)",
-    image: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1592833159155-c62df1b65634?auto=format&fit=crop&w=1200&q=80",
     description: "PM-KUSUM solar pump discharging 180,000 LPD for continuous plantation irrigation."
   },
   {
     id: "gal-3",
-    title: "350 kWp Elevated Commercial Hospital Rooftop",
+    title: "350 kWp Elevated Commercial Rooftop Installation",
     category: "commercial",
     categoryLabel: "Commercial",
     location: "Salem, Tamil Nadu",
     capacity: "350 kWp",
-    image: "https://images.unsplash.com/photo-1548337138-e87d889cc369?auto=format&fit=crop&w=1200&q=80",
-    description: "Walkable elevated HDG structure providing clean power for medical equipment."
+    image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&w=1200&q=80",
+    description: "Walkable elevated HDG structure providing clean captive power for commercial operations."
   },
   {
     id: "gal-4",
-    title: "10 kWp Net-Zero Villa Solar with Lithium Battery Backup",
+    title: "10 kWp Net-Zero Villa Solar with Hybrid Inverter",
     category: "residential",
     categoryLabel: "Residential",
     location: "Pollachi, Tamil Nadu",
-    capacity: "10 kWp + 15kWh LiFePO4",
-    image: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80",
-    description: "All-black monocrystalline rooftop array with hybrid inverter and energy storage."
+    capacity: "10 kWp Net-Metering",
+    image: "https://images.unsplash.com/photo-1545208942-e1c9c916524b?auto=format&fit=crop&w=1200&q=80",
+    description: "High-efficiency monocrystalline rooftop array with hybrid inverter for 24/7 power autonomy."
   },
   {
     id: "gal-5",
-    title: "500 kWp Turmeric Cold Storage Warehouse Solar",
+    title: "500 kWp Cold Storage & Food Processing Solar",
     category: "industrial",
     categoryLabel: "Industrial",
     location: "Erode, Tamil Nadu",
     capacity: "500 kWp",
-    image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=1200&q=80",
-    description: "Zero-export industrial solar array offsetting daytime refrigeration compressor spikes."
+    image: "https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?auto=format&fit=crop&w=1200&q=80",
+    description: "Cold storage facility achieving zero daytime grid dependency with captive rooftop solar."
   },
   {
     id: "gal-6",
-    title: "200 kWp Engineering College Green Campus Pergola",
+    title: "Solar Water Heating System for Commercial Facility",
     category: "commercial",
     categoryLabel: "Commercial",
-    location: "Tirupur, Tamil Nadu",
-    capacity: "200 kWp",
-    image: "https://images.unsplash.com/photo-1545208942-e1c9c916524b?auto=format&fit=crop&w=1200&q=80",
-    description: "Architectural elevated solar structure creating shaded campus walkways."
+    location: "Kodaikanal, Tamil Nadu",
+    capacity: "5,000 LPD System",
+    image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&w=1200&q=80",
+    description: "High-temperature glass-lined mild steel tank array supplying hot water round the clock."
   },
   {
     id: "gal-7",
-    title: "5 kWp PM Surya Ghar Villa Rooftop Installation",
+    title: "5 kWp PM Surya Ghar Residential Rooftop System",
     category: "residential",
     categoryLabel: "Residential",
-    location: "Coimbatore, Tamil Nadu",
-    capacity: "5 kWp",
-    image: "https://images.unsplash.com/photo-1592833159155-c62df1b65634?auto=format&fit=crop&w=1200&q=80",
-    description: "High-efficiency bi-facial rooftop array with bidirectional TANGEDCO net metering."
+    location: "Tiruppur, Tamil Nadu",
+    capacity: "5 kWp (₹78k Subsidy)",
+    image: "https://images.unsplash.com/photo-1545208942-e1c9c916524b?auto=format&fit=crop&w=1200&q=80",
+    description: "Homeowner receiving ₹78,000 direct subsidy and zero monthly DISCOM power bills."
   },
   {
     id: "gal-8",
-    title: "7.5 HP Agro Solar Surface Pump for Canal Irrigation",
-    category: "agricultural",
-    categoryLabel: "Agricultural",
-    location: "Udumalpet, Tamil Nadu",
-    capacity: "7.5 HP (7.2 kWp)",
-    image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80",
-    description: "Automated solar pump array with variable frequency MPPT vector control drive."
-  },
-  {
-    id: "gal-9",
-    title: "Utility-Scale Transformer & HT Switchgear Substation",
+    title: "2.5 MW Ground-Mounted Captive Solar Power Plant",
     category: "industrial",
     categoryLabel: "Industrial",
-    location: "Dindigul, Tamil Nadu",
-    capacity: "33 kV Substation",
-    image: "https://images.unsplash.com/photo-1558441719-8b489c6340c4?auto=format&fit=crop&w=1200&q=80",
-    description: "High-voltage substation step-up transformers with CEIG Class A safety approval."
+    location: "Udumalpet, Tamil Nadu",
+    capacity: "2.5 MWp",
+    image: "https://images.unsplash.com/photo-1592833159155-c62df1b65634?auto=format&fit=crop&w=1200&q=80",
+    description: "Ground-mounted MW power generation array connected to 33kV high-tension feeder."
   }
 ];

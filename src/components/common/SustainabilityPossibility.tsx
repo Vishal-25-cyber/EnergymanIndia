@@ -1,5 +1,5 @@
 import React from "react";
-import { Sun, Home, Factory, Tractor, Sparkles, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
+import { Sun, Home, Factory, Tractor, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ScrollReveal } from "./ScrollReveal";
 
@@ -87,7 +87,7 @@ export const SustainabilityPossibility: React.FC = () => {
         <ScrollReveal animation="slide-up">
           <div className="text-center max-w-3xl mx-auto space-y-3">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs font-mono">
-              <Sparkles className="w-3.5 h-3.5 text-red-400" />
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
               <span>THE CLEAN ENERGY TRANSITION</span>
             </div>
             <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight">

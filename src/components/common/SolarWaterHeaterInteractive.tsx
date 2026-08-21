@@ -168,8 +168,8 @@ export const SolarWaterHeaterInteractive: React.FC = () => {
               </p>
             </div>
 
-            {/* Factual Specs Checklist (Sitting Directly on Background) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            {/* Factual Specs Checklist (Cardless Seamless Layout) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-1 text-xs">
               {[
                 { label: "Inner Tank", val: "Mild Steel Glass-Lined Anti-Corrosive" },
                 { label: "Outer Tank", val: "High-Grade Powder-Coated Finish" },
@@ -182,12 +182,12 @@ export const SolarWaterHeaterInteractive: React.FC = () => {
               ].map((spec, sIdx) => (
                 <div
                   key={sIdx}
-                  className="p-3 rounded-2xl bg-[#14101A]/95 border border-red-900/30 space-y-0.5 shadow-xs"
+                  className="py-2.5 border-b border-red-950/40 flex justify-between items-center"
                 >
-                  <span className="text-[10px] font-bold text-slate-400 uppercase font-mono block">
-                    {spec.label}
+                  <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider">
+                    {spec.label}:
                   </span>
-                  <strong className="text-xs text-slate-100 block font-semibold">
+                  <strong className="text-xs text-white font-mono font-bold text-right">
                     {spec.val}
                   </strong>
                 </div>

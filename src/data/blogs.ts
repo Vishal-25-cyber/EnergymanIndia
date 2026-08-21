@@ -3,7 +3,7 @@ export interface BlogPost {
   slug: string;
   title: string;
   excerpt: string;
-  category: "Government Subsidy" | "Solar Energy" | "Technology" | "Agriculture" | "Industry" | "Energy Savings";
+  category: "Government Subsidy" | "Solar Energy" | "Agriculture" | "Industry" | "Solar Water Heaters";
   author: {
     name: string;
     role: string;
@@ -30,36 +30,36 @@ export const blogsData: BlogPost[] = [
   {
     id: "pm-surya-ghar-subsidy-guide-2026",
     slug: "pm-surya-ghar-subsidy-guide-2026",
-    title: "Complete Guide to PM Surya Ghar Muft Bijli Yojana: How to Claim ₹78,000 Subsidy in 2026",
-    excerpt: "Everything Indian homeowners need to know about the updated PM Surya Ghar rooftop solar scheme, application procedures, eligibility checks, and net-metering timelines.",
+    title: "Complete Guide to PM Surya Ghar Muft Bijli Yojana: How to Claim ₹78,000 Subsidy in Tamil Nadu",
+    excerpt: "Official guide by Energy Man India on the PM Surya Ghar residential rooftop solar scheme, application procedures via the National Portal, TANGEDCO net-metering, and DBT subsidy timelines.",
     category: "Government Subsidy",
     author: {
       name: "Er. K. Sivakumar",
-      role: "Chief Solar Systems Engineer, Energy Man India",
+      role: "Managing Director & Chief Solar Engineer, Energy Man India",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
     },
     date: "Feb 10, 2026",
     readTime: "6 min read",
     featured: true,
-    coverImage: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80",
+    coverImage: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&w=1200&q=80",
     tableOfContents: [
       { id: "overview", title: "What is PM Surya Ghar Scheme?" },
       { id: "subsidy-breakdown", title: "Capacity & Subsidy Amount Breakdown" },
-      { id: "eligibility", title: "Who is Eligible?" },
-      { id: "step-by-step", title: "Step-by-Step Application Process" },
+      { id: "eligibility", title: "Who is Eligible in Tamil Nadu?" },
+      { id: "step-by-step", title: "Step-by-Step Application Process with Energy Man India" },
       { id: "loan-benefits", title: "7% Concessional Bank Loans" }
     ],
     content: {
-      intro: "The PM Surya Ghar: Muft Bijli Yojana is India's flagship rooftop solar initiative, aimed at empowering over 1 crore households with up to 300 units of free clean electricity every month. In this comprehensive guide, we demystify the exact subsidy calculations, vendor empannelment requirements, and the DBT disbursement process.",
+      intro: "The PM Surya Ghar: Muft Bijli Yojana is India's flagship rooftop solar initiative, aimed at empowering residential households with up to 300 units of free clean electricity every month. Energyman Power Technologies (India) Pvt. Ltd., headquartered in Coimbatore, is an empannelled MNRE rooftop solar vendor assisting homeowners across Tamil Nadu in claiming maximum government subsidies with turnkey net-metering.",
       sections: [
         {
           id: "overview",
           heading: "What is PM Surya Ghar: Muft Bijli Yojana?",
           body: [
-            "Launched with a massive outlay of ₹75,021 crore, the scheme provides direct financial subsidies to residential consumers who install grid-connected rooftop solar systems.",
-            "Unlike older subsidy schemes that were routed through local state DISCOMs with long delays, PM Surya Ghar operates entirely on a centralized National Portal (pmsuryaghar.gov.in) with Direct Benefit Transfer (DBT) directly into the applicant's Aadhaar-linked bank account within 30 days of net-meter commissioning."
+            "Launched with a massive central outlay of ₹75,021 crore, the scheme provides direct financial subsidies to residential consumers who install grid-connected rooftop solar systems.",
+            "PM Surya Ghar operates on a centralized National Portal (pmsuryaghar.gov.in) with Direct Benefit Transfer (DBT) deposited straight into the applicant's Aadhaar-linked bank account within 30 days of TANGEDCO bidirectional net-meter commissioning."
           ],
-          keyTakeaway: "Direct central subsidy of ₹78,000 for 3kW+ systems makes rooftop solar payback under 3.5 years."
+          keyTakeaway: "Direct central subsidy of ₹78,000 for 3kW+ systems makes rooftop solar capital payback under 3.5 years."
         },
         {
           id: "subsidy-breakdown",
@@ -73,148 +73,85 @@ export const blogsData: BlogPost[] = [
         },
         {
           id: "eligibility",
-          heading: "Eligibility & Technical Requirements",
+          heading: "Eligibility & Technical Requirements in Tamil Nadu",
           body: [
-            "The applicant must own a residential electricity connection with a dedicated consumer number.",
+            "The applicant must have an active domestic electricity connection with TANGEDCO.",
             "The rooftop must have shadow-free space (approx. 80-100 sq.ft per kW).",
-            "Crucially, the solar modules installed must be manufactured with Domestic Content Requirement (DCR) cells and be listed on the MNRE Approved List of Module Manufacturers (ALMM). Energy Man India strictly installs 100% ALMM DCR-compliant panels for all subsidy installations."
+            "Crucially, the solar modules installed must be manufactured with Domestic Content Requirement (DCR) cells and be listed on the MNRE Approved List of Module Manufacturers (ALMM). Energy Man India strictly installs 100% ALMM DCR-compliant panels."
           ]
         },
         {
           id: "step-by-step",
-          heading: "Step-by-Step Application Process",
+          heading: "Step-by-Step Application Process with Energy Man India",
           body: [
-            "1. Register on the National Portal with your state, electricity distribution company (DISCOM), and consumer number.",
-            "2. Apply for rooftop solar and select 'Energyman Power Technologies' as your registered vendor.",
-            "3. Receive technical feasibility approval from DISCOM.",
-            "4. Our engineering team installs the solar array, inverter, and safety earthing per MNRE guidelines.",
-            "5. Apply for net-metering inspection on the portal; DISCOM installs the bidirectional meter.",
-            "6. Once the commissioning certificate is issued, submit your bank details and canceled cheque. Subsidy arrives via DBT within 30 days."
+            "1. Register on the National Portal (pmsuryaghar.gov.in) with your consumer number.",
+            "2. Select 'Energyman Power Technologies (India) Pvt. Ltd.' as your registered vendor.",
+            "3. Receive technical feasibility approval from TANGEDCO / DISCOM.",
+            "4. Our engineering team installs the solar array, inverter, and safety earthing per MNRE standards.",
+            "5. TANGEDCO inspects the installation and commissions the bi-directional net meter.",
+            "6. Commissioning report is uploaded to the portal, and the ₹78,000 subsidy arrives via DBT within 30 days."
           ]
         },
         {
           id: "loan-benefits",
           heading: "Collateral-Free Concessional Solar Loans at 7%",
           body: [
-            "To eliminate upfront cost barriers, leading public sector banks including State Bank of India (SBI), Canara Bank, and Punjab National Bank provide collateral-free residential solar loans at attractive interest rates pegged around 7% p.a. (repo rate + 0.5%).",
-            "The monthly EMI is often lower than your current electricity bill, meaning you become cash-flow positive from Day 1 of switching to solar."
+            "Leading public sector banks including SBI, Canara Bank, and Indian Bank provide collateral-free residential solar loans at interest rates around 7% p.a.",
+            "The monthly EMI is lower than your regular electricity bill, meaning you become cash-flow positive immediately."
           ]
         }
       ],
-      conclusion: "Rooftop solar under PM Surya Ghar is one of the highest-yield financial investments available for Indian homeowners today. Energy Man India handles the entire paperwork and net metering process end-to-end so you can enjoy worry-free green power."
+      conclusion: "Rooftop solar under PM Surya Ghar is one of the safest high-yield investments for homeowners in Tamil Nadu. Energy Man India handles the entire paperwork, TANGEDCO approvals, and commissioning end-to-end."
     }
   },
   {
-    id: "topcon-vs-mono-perc-solar-panels",
-    slug: "topcon-vs-mono-perc-solar-panels",
-    title: "TOPCon vs Mono PERC Solar Panels: Which Technology is Best for Indian Summers?",
-    excerpt: "A deep engineering comparison of N-Type TOPCon vs P-Type Mono PERC modules, thermal degradation coefficients, bi-facial gains, and 25-year yield analysis.",
-    category: "Technology",
-    author: {
-      name: "Er. Ramesh Krishnan",
-      role: "Lead PV R&D Specialist",
-      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
-    },
-    date: "Jan 24, 2026",
-    readTime: "7 min read",
-    featured: false,
-    coverImage: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=1200&q=80",
-    tableOfContents: [
-      { id: "intro-tech", title: "The Evolution from P-Type to N-Type" },
-      { id: "temp-coefficient", title: "Temperature Coefficient in Indian Summers" },
-      { id: "bifacial-gain", title: "Bi-faciality & Reflected Light Yield" },
-      { id: "degradation", title: "Degradation Rate & 30-Year Performance" },
-      { id: "recommendation", title: "Energy Man India's Engineering Recommendation" }
-    ],
-    content: {
-      intro: "As solar module technology leaps forward, prospective solar owners face a critical choice: should you stick with traditional Mono PERC or upgrade to next-generation N-Type TOPCon (Tunnel Oxide Passivated Contact) panels? In this technical breakdown, we look at the physics and economics of both.",
-      sections: [
-        {
-          id: "intro-tech",
-          heading: "The Evolution from P-Type to N-Type Silicon",
-          body: [
-            "For the past decade, P-Type Mono PERC has been the dominant solar panel technology. However, P-type silicon is susceptible to boron-oxygen defects that cause Light Induced Degradation (LID) in the first weeks of sunlight exposure.",
-            "N-Type TOPCon uses phosphorus-doped silicon substrates. By inserting an ultra-thin tunnel oxide layer beneath a conductive poly-silicon layer, surface recombination losses are dramatically minimized, pushing cell efficiencies past 25%."
-          ]
-        },
-        {
-          id: "temp-coefficient",
-          heading: "Temperature Coefficient in Indian Climates",
-          body: [
-            "In states like Tamil Nadu, Gujarat, and Rajasthan, summer ambient temperatures frequently cross 40°C, causing panel surface temperatures to soar to 65°C-70°C.",
-            "Standard Mono PERC has a temperature coefficient of roughly -0.35%/°C. TOPCon boasts an improved coefficient of -0.30%/°C.",
-            "This 0.05% difference translates to 3% to 5% higher daily energy generation during the hottest months when energy demand is highest."
-          ]
-        },
-        {
-          id: "bifacial-gain",
-          heading: "Bi-faciality Factor: Generating Power from Both Sides",
-          body: [
-            "TOPCon dual-glass modules achieve a bi-faciality factor of 80% to 85%, compared to only 70% for standard PERC.",
-            "On white-painted rooftops, light-colored gravel, or industrial shed roofs, TOPCon panels capture reflected albedo light from behind, delivering an extra 10% to 20% kilowatt-hours from the same installed area."
-          ]
-        },
-        {
-          id: "degradation",
-          heading: "Long-Term Degradation: 30-Year Lifespan",
-          body: [
-            "Mono PERC degrades by approx. 2% in Year 1 and 0.55% annually thereafter, guaranteeing ~84.8% output at Year 25.",
-            "TOPCon features zero LID (< 1% Year 1 degradation) and only 0.40% annual degradation, guaranteeing 87.4%+ output at Year 30.",
-            "Over 30 years, a TOPCon array generates over 12% more total cumulative kilowatt-hours per watt installed."
-          ]
-        }
-      ],
-      conclusion: "While TOPCon carries a modest 4-6% price premium over Mono PERC, the superior temperature tolerance and bifacial gains deliver a faster overall ROI and far higher 25-year financial returns."
-    }
-  },
-  {
-    id: "agricultural-solar-pumping-kusum",
-    slug: "agricultural-solar-pumping-kusum",
-    title: "How Indian Farmers are Eliminating Diesel Bills with PM-KUSUM Solar Water Pumps",
-    excerpt: "Discover how solar water pumps are transforming Indian agriculture, providing dependable daylight irrigation, and saving lakhs in diesel and maintenance expenses.",
+    id: "agricultural-solar-water-pump-kusum",
+    slug: "agricultural-solar-water-pump-kusum",
+    title: "How Tamil Nadu Farmers are Eliminating Diesel Bills with PM-KUSUM Solar Water Pumps",
+    excerpt: "Energy Man India's engineering guide on 1 Hp to 50 Hp open well and submersible solar pumps under the 60% PM-KUSUM subsidy scheme.",
     category: "Agriculture",
     author: {
       name: "Er. K. Sivakumar",
-      role: "Agricultural Solar Specialist",
+      role: "Agricultural Solar & Pumping Specialist, Energy Man India",
       avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
     },
-    date: "Jan 12, 2026",
+    date: "Jan 28, 2026",
     readTime: "5 min read",
     featured: false,
-    coverImage: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1200&q=80",
+    coverImage: "https://images.unsplash.com/photo-1592833159155-c62df1b65634?auto=format&fit=crop&w=1200&q=80",
     tableOfContents: [
       { id: "diesel-crisis", title: "The Heavy Cost of Diesel Farming" },
-      { id: "kusum-subsidy", title: "60% Subsidy under PM-KUSUM" },
-      { id: "solar-pump-engineering", title: "Solar Pump Controller & MPPT Tech" },
-      { id: "case-study", title: "Farmer ROI & Water Output Case Study" }
+      { id: "kusum-subsidy", title: "60% Subsidy under PM-KUSUM Component-B" },
+      { id: "solar-pump-engineering", title: "High-Efficiency Stainless Steel Submersibles" },
+      { id: "farmer-roi", title: "Farmer ROI & Water Yield Case Study" }
     ],
     content: {
-      intro: "For decades, erratic agricultural power supplies have forced farmers to irrigate fields in the middle of the night or burn expensive diesel fuel. The PM-KUSUM scheme and modern MPPT solar water pumps have revolutionized farm economics.",
+      intro: "In regions like Coimbatore, Pollachi, Tiruppur, and Dindigul, erratic agricultural power supplies have historically forced farmers to irrigate fields at midnight or burn expensive diesel fuel. Energy Man India's stainless steel solar pumping solutions offer dependable daylight irrigation with zero recurring electricity bills.",
       sections: [
         {
           id: "diesel-crisis",
           heading: "The Heavy Cost of Diesel Agriculture",
           body: [
             "A standard 7.5 HP diesel engine consumes roughly 1.8 to 2.2 litres of diesel per hour of operation. A farmer irrigating a 15-acre coconut or sugarcane plantation for 6 hours daily burns over ₹1,200 per day in fuel alone, exceeding ₹3 Lakhs annually.",
-            "Add routine oil changes, belt replacements, and engine overhauls, and conventional irrigation becomes one of the largest drains on agricultural profitability."
+            "Add routine oil changes, belt replacements, and engine overhauls, and conventional diesel irrigation becomes one of the largest drains on agricultural profitability."
           ]
         },
         {
           id: "kusum-subsidy",
           heading: "Up to 60% Financial Subsidy via PM-KUSUM",
           body: [
-            "Under Component B of the PM-KUSUM scheme, the Central Government provides 30% financial assistance, matched by another 30% from the State Government.",
-            "The farmer contributes only 10% to 40% of the total system cost, with agricultural bank loans available for the balance at subsidized rates.",
+            "Under Component-B of the PM-KUSUM scheme, the Central Government provides 30% financial assistance, matched by another 30% from the State Government.",
+            "The farmer contributes only 10% to 40% of the total system cost, with agricultural bank loans available for the remaining balance.",
             "Energy Man India assists farmers in borewell yield testing, portal documentation, and swift installation of MNRE-certified solar pump sets."
           ]
         },
         {
           id: "solar-pump-engineering",
-          heading: "High-Efficiency Stainless Steel Submersibles & MPPT VFDs",
+          heading: "Food-Grade Stainless Steel Submersibles & MPPT VFDs",
           body: [
-            "Modern solar pump sets utilize brushless permanent magnet DC (BLDC) motors or specialized inverter-duty AC motors paired with Vector Variable Frequency Drives (VFD).",
-            "The controller tracks maximum sunlight from 6:30 AM to 5:30 PM, modulating pump RPM to maintain steady water flow even during morning and afternoon low-irradiance hours.",
-            "Integrated dry-run sensor technology automatically shuts off the pump if the water table drops, preventing motor burnout."
+            "Energy Man India installs multi-stage stainless steel (SS304/SS316) impellers paired with specialized Vector Variable Frequency Drives (VFD) from 110V to 440V.",
+            "The controller tracks maximum sunlight from early morning to late afternoon, modulating pump RPM to maintain steady water flow even during low irradiance.",
+            "Integrated sensorless dry-run and water-table level protection automatically shuts off the pump if the borewell water table drops, preventing motor burnout."
           ]
         }
       ],
@@ -224,32 +161,32 @@ export const blogsData: BlogPost[] = [
   {
     id: "commercial-industrial-solar-roi-depreciation",
     slug: "commercial-industrial-solar-roi-depreciation",
-    title: "Commercial & Industrial Solar in India: 40% Accelerated Depreciation & 3-Year ROI",
-    excerpt: "How manufacturing plants, spinning mills, and commercial complexes use solar EPC to cut power bills by 70% and slash corporate tax liabilities.",
+    title: "Commercial & Industrial Solar in Tamil Nadu: 40% Accelerated Depreciation & 3-Year ROI",
+    excerpt: "How spinning mills, manufacturing plants, and commercial complexes in Coimbatore & Tiruppur use solar EPC to cut power bills by 70% and slash corporate tax liabilities.",
     category: "Industry",
     author: {
-      name: "Er. Ramesh Krishnan",
-      role: "Lead PV R&D Specialist",
+      name: "Energy Man Engineering Cell",
+      role: "Industrial Solar EPC Specialists, Coimbatore",
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80"
     },
-    date: "Dec 18, 2025",
-    readTime: "8 min read",
+    date: "Jan 15, 2026",
+    readTime: "7 min read",
     featured: false,
     coverImage: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=1200&q=80",
     tableOfContents: [
-      { id: "ht-tariff-pressures", title: "Industrial Tariff Pressures in India" },
+      { id: "ht-tariff-pressures", title: "Industrial Tariff Pressures in Tamil Nadu" },
       { id: "depreciation-math", title: "Section 32 Tax Shield Calculations" },
       { id: "dg-pv-sync", title: "Diesel Generator Synchronization" },
       { id: "financial-irr", title: "Internal Rate of Return (IRR) Analysis" }
     ],
     content: {
-      intro: "Electricity is often the second largest operational expense for Indian manufacturing units after raw materials. High-tension (HT) industrial tariffs regularly cross ₹8.50/unit, while captive solar generates power at a levelized cost of less than ₹2.20/unit.",
+      intro: "Electricity is often the second largest operational expense for textile mills and manufacturing units in Tamil Nadu. High-tension (HT) industrial tariffs regularly cross ₹8.50/unit, while captive solar generates power at a levelized cost of less than ₹2.20/unit.",
       sections: [
         {
           id: "ht-tariff-pressures",
           heading: "Industrial Tariff Pressures & Power Factor Charges",
           body: [
-            "Industrial power bills are complicated by peak-time surcharge tariffs, maximum demand penalties, and power factor surcharges.",
+            "Industrial power bills are impacted by peak-time surcharge tariffs, maximum demand penalties, and power factor surcharges.",
             "Installing a captive rooftop or ground-mounted solar plant directly offsets high daytime grid tariffs while maintaining a unity power factor through smart reactive power compensation."
           ]
         },
@@ -271,7 +208,59 @@ export const blogsData: BlogPost[] = [
           ]
         }
       ],
-      conclusion: "With a typical capital payback of 2.8 to 3.5 years and guaranteed 25-year performance, solar EPC is one of the safest high-yield capital allocation decisions for Indian corporate CFOs."
+      conclusion: "With a typical capital payback of 2.8 to 3.5 years and guaranteed 25-year performance, industrial solar EPC executed by Energy Man India is one of the safest high-yield capital allocation decisions for corporate CFOs."
+    }
+  },
+  {
+    id: "solar-water-heater-engineering-guide",
+    slug: "solar-water-heater-engineering-guide",
+    title: "Engineering Guide to Solar Water Heaters: Mild Steel Glass-Lined vs Standard Tanks",
+    excerpt: "Understand how 50mm injected PUF insulation, non-welding joint technology, and glass-lined mild steel tanks provide 48+ hours hot water retention and zero leakage.",
+    category: "Solar Water Heaters",
+    author: {
+      name: "Er. K. Sivakumar",
+      role: "Managing Director & Senior Solar Thermal Engineer",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80"
+    },
+    date: "Dec 20, 2025",
+    readTime: "5 min read",
+    featured: false,
+    coverImage: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&w=1200&q=80",
+    tableOfContents: [
+      { id: "inner-tank", title: "Mild Steel Glass-Lined Corrosion Protection" },
+      { id: "insulation", title: "50mm High-Density PUF Insulation" },
+      { id: "non-welding", title: "Non-Welding Joint & Silicon Washers" },
+      { id: "sizing", title: "Capacity Sizing: 110L to 330L+" }
+    ],
+    content: {
+      intro: "Water heating accounts for up to 30% of domestic electricity bills in Indian homes. Conventional electric geysers consume 2kW to 3kW of high-tariff electricity. Energy Man India's glass-lined solar water heaters deliver high-temperature hot water with zero recurring energy costs.",
+      sections: [
+        {
+          id: "inner-tank",
+          heading: "Mild Steel Glass-Lined Anti-Corrosion Protection",
+          body: [
+            "Hard water and chlorine can corrode standard stainless steel tanks over time. Glass-lining coats the inner steel surface with a smooth vitreous enamel fused at 850°C.",
+            "This creates an impenetrable barrier against scaling, rust, and electrochemical pitting, extending system lifespan beyond 15 years."
+          ]
+        },
+        {
+          id: "insulation",
+          heading: "50 mm Injected CFC-Free PUF Thermal Insulation",
+          body: [
+            "The tank is enclosed in a high-density 50mm Polyurethane Foam (PUF) thermal blanket injected under pressure.",
+            "This superior insulation ensures water heated during the day retains temperatures up to 85°C for over 48 hours, even during chilly winter mornings and monsoon periods."
+          ]
+        },
+        {
+          id: "non-welding",
+          heading: "Non-Welding Joint Technology & Silicon Washers",
+          body: [
+            "Traditional welding creates microscopic stress fractures and weak points susceptible to water leakage.",
+            "Energy Man India systems employ precision non-welding joint engineering with food-grade silicon washers that withstand high thermal expansion without leaking."
+          ]
+        }
+      ],
+      conclusion: "Available in 110L, 165L, 220L, 275L, and 330L domestic capacities and up to 5,000L commercial manifolds, Energy Man India solar water heaters offer the most reliable thermal performance in Tamil Nadu."
     }
   }
 ];

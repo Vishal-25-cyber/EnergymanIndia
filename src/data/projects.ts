@@ -50,9 +50,9 @@ export const projectsData: ProjectItem[] = [
     co2Offset: "812 Tons / Year",
     annualSavings: "₹84.15 Lakhs / Year",
     completionDate: "Commissioned",
-    image: "https://images.unsplash.com/photo-1558441719-8b489c6340c4?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1592833159155-c62df1b65634?auto=format&fit=crop&w=1200&q=80",
     galleryImages: [
-      "https://images.unsplash.com/photo-1558441719-8b489c6340c4?auto=format&fit=crop&w=1400&q=80"
+      "https://images.unsplash.com/photo-1592833159155-c62df1b65634?auto=format&fit=crop&w=1400&q=80"
     ],
     challenge: "High HT industrial electricity tariffs and continuous spinning mill shift operations required stable, zero-interruption captive solar generation coupled with existing diesel generators.",
     solution: "Turnkey EPC installation of a 660 kW captive rooftop solar plant with advanced hybrid inverters, zero-export protection, and automated DG-PV power synchronizer.",
@@ -92,9 +92,9 @@ export const projectsData: ProjectItem[] = [
     co2Offset: "824 Tons / Year",
     annualSavings: "₹85.4 Lakhs / Year",
     completionDate: "Commissioned",
-    image: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?auto=format&fit=crop&w=1200&q=80",
     galleryImages: [
-      "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=1400&q=80"
+      "https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?auto=format&fit=crop&w=1400&q=80"
     ],
     challenge: "Maximizing rooftop area utilization while retaining rooftop accessibility and protecting the building infrastructure from high-velocity wind loads.",
     solution: "Engineered 670 kW solar array mounted on an elevated structural framework, delivering dual utility: massive clean electricity yield and rooftop weatherproofing.",
@@ -134,9 +134,9 @@ export const projectsData: ProjectItem[] = [
     co2Offset: "528 Tons / Year",
     annualSavings: "₹54.8 Lakhs / Year",
     completionDate: "Commissioned",
-    image: "https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=1200&q=80",
     galleryImages: [
-      "https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=1400&q=80"
+      "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=1400&q=80"
     ],
     challenge: "Reducing soaring monthly commercial electricity expenditure across textile loom machinery while ensuring zero structural puncture on factory roofs.",
     solution: "430 kW captive solar engineering with high-efficiency hybrid inverter configuration and non-invasive standing-seam mounting.",
@@ -176,9 +176,9 @@ export const projectsData: ProjectItem[] = [
     co2Offset: "135 Tons / Year",
     annualSavings: "₹14.0 Lakhs / Year",
     completionDate: "Commissioned",
-    image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&w=1200&q=80",
     galleryImages: [
-      "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1400&q=80"
+      "https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&w=1400&q=80"
     ],
     challenge: "Optimizing export unit operational energy bills and meeting international green manufacturing compliance standards.",
     solution: "110 kW rooftop solar deployment engineered with hybrid inverter control, maximizing direct self-consumption and clean energy certification.",
@@ -218,9 +218,9 @@ export const projectsData: ProjectItem[] = [
     co2Offset: "129 Tons / Year",
     annualSavings: "₹13.4 Lakhs / Year",
     completionDate: "Commissioned",
-    image: "https://images.unsplash.com/photo-1545208942-e1c9c916524b?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1613665813446-82a78c468a1d?auto=format&fit=crop&w=1200&q=80",
     galleryImages: [
-      "https://images.unsplash.com/photo-1545208942-e1c9c916524b?auto=format&fit=crop&w=1400&q=80"
+      "https://images.unsplash.com/photo-1613665813446-82a78c468a1d?auto=format&fit=crop&w=1400&q=80"
     ],
     challenge: "Elevated spinning equipment requires structural clearance on rooftop with high wind-load endurance in the Tirupur-Uthukuli textile belt.",
     solution: "105 kW solar plant installed on a custom heavy-duty GI Superstructure providing complete under-panel clearance and wind stability rated up to 160 km/h.",

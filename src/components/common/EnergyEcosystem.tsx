@@ -2,157 +2,219 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Home,
+  Building2,
   Factory,
   Tractor,
-  Zap,
-  BatteryCharging,
+  Battery,
   Sun,
   ArrowRight,
   ShieldCheck,
-  Sparkles,
-  CheckCircle2,
+  Check,
+  Calculator,
   TrendingUp,
-  Percent
+  Award,
+  Layers,
+  CheckCircle2,
+  Clock,
+  Gauge
 } from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
 
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=800&q=80";
-
-interface SolutionCard {
+interface SolutionTab {
   id: string;
-  categoryGroup: "all" | "residential" | "commercial" | "agriculture" | "storage";
+  tabLabel: string;
+  sectorTag: string;
   title: string;
-  category: string;
-  capacityTag: string;
-  roiTag: string;
-  badge: string;
-  badgeType: "subsidy" | "depreciation" | "utility";
-  desc: string;
+  description: string;
+  capacityRange: string;
   image: string;
+  fallbackImage: string;
   icon: React.ReactNode;
-  highlights: string[];
+  badge: string;
+  stats: { value: string; label: string }[];
+  keyPoints: string[];
   link: string;
 }
 
-const solutionsList: SolutionCard[] = [
+const solutionsData: SolutionTab[] = [
   {
     id: "residential",
-    categoryGroup: "residential",
-    title: "Residential Rooftop Solar",
-    category: "Homes & Independent Villas",
-    capacityTag: "1 kW — 15 kW",
-    roiTag: "3.2 Yrs Payback",
+    tabLabel: "Residential",
+    sectorTag: "Homes & Independent Villas",
+    title: "Residential Rooftop Solar Systems",
+    description: "Custom-engineered rooftop solar installations designed for independent houses, villas, and housing societies. Slash your electricity bills by up to 90% with Tier-1 bifacial panels, smart string inverters, and instant PM Surya Ghar central subsidy credit.",
+    capacityRange: "1 kW — 15 kW",
+    image: "/images/hero_rooftop_solar.jpg",
+    fallbackImage: "/assets/images/hero-solar-bg.jpg",
+    icon: <Home className="w-4 h-4" />,
     badge: "₹78,000 Direct Subsidy",
-    badgeType: "subsidy",
-    desc: "Custom rooftop engineering with Tier-1 bifacial panels, bi-directional net metering, and instant PM Surya Ghar bank subsidy disbursement.",
-    image: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=800&q=80",
-    icon: <Home className="w-4 h-4 text-red-400" />,
-    highlights: ["Up to 90% power bill reduction", "PM Surya Ghar approved partner", "25-Year linear panel warranty"],
+    stats: [
+      { value: "₹78,000", label: "Max Central Subsidy" },
+      { value: "3.2 Yrs", label: "Typical ROI Payback" },
+      { value: "25 Yrs", label: "Linear Panel Warranty" }
+    ],
+    keyPoints: [
+      "Up to 90% monthly electricity bill reduction",
+      "Direct PM Surya Ghar Muft Bijli Yojana subsidy disbursement",
+      "Bi-directional net metering handled end-to-end with TANGEDCO",
+      "Tier-1 N-Type TOPCon bi-facial high-efficiency solar modules"
+    ],
     link: "/solutions/residential"
   },
   {
-    id: "industrial",
-    categoryGroup: "commercial",
-    title: "Industrial & Commercial Solar",
-    category: "Factories & Textile Mills",
-    capacityTag: "50 kW — 5 MW+",
-    roiTag: "Under 3.0 Yrs Payback",
+    id: "commercial",
+    tabLabel: "Commercial",
+    sectorTag: "Offices & Institutions",
+    title: "Commercial Rooftop Solar",
+    description: "Hedge your business against commercial tariff hikes with turnkey rooftop solar plants. Designed for educational institutions, corporate tech parks, hospitals, and hotels with 40% accelerated tax depreciation benefits in Year 1.",
+    capacityRange: "20 kW — 500 kW",
+    image: "/images/hero_solar_panels.jpg",
+    fallbackImage: "/assets/images/hero-solar-bg.jpg",
+    icon: <Building2 className="w-4 h-4" />,
     badge: "40% Tax Depreciation",
-    badgeType: "depreciation",
-    desc: "High-yield captive rooftop solar plants for spinning mills, industrial factories, and export units with zero-downtime DG synchronization.",
-    image: "https://images.unsplash.com/photo-1497435334941-8c899ee9e8e9?auto=format&fit=crop&w=800&q=80",
-    icon: <Factory className="w-4 h-4 text-amber-400" />,
-    highlights: ["Hedge against peak HT tariffs", "Automated DG-PV synchronizer", "CEIG certified engineering"],
+    stats: [
+      { value: "40%", label: "Accelerated Tax Benefit" },
+      { value: "< 3.0 Yrs", label: "Payback Period" },
+      { value: "< ₹2.50", label: "Cost Per Unit (kWh)" }
+    ],
+    keyPoints: [
+      "Significant reduction in sanctioned demand peak charges",
+      "40% accelerated tax depreciation under IT Act Section 32",
+      "Zero disruption to daily business operations during installation",
+      "Advanced SCADA cloud monitoring with real-time generation alerts"
+    ],
+    link: "/solutions/commercial"
+  },
+  {
+    id: "industrial",
+    tabLabel: "Industrial",
+    sectorTag: "Factories & Spinning Mills",
+    title: "Industrial & Captive MW Solar",
+    description: "Heavy-duty captive solar power systems engineered for spinning mills, industrial factories, and heavy manufacturing plants with automated DG-PV synchronization and zero export protection.",
+    capacityRange: "50 kW — 5 MW+",
+    image: "/assets/images/hero-solar-bg.jpg",
+    fallbackImage: "/images/hero_solar_panels.jpg",
+    icon: <Factory className="w-4 h-4" />,
+    badge: "Automated DG Sync",
+    stats: [
+      { value: "₹38L+", label: "Avg Annual OPEX Saved" },
+      { value: "> 99.2%", label: "System Generation Uptime" },
+      { value: "CEIG", label: "Certified Electrical Draw" }
+    ],
+    keyPoints: [
+      "Seamless synchronization with existing diesel generator sets",
+      "CEIG approvals and statutory statutory electrical safety compliance",
+      "Non-penetrative sheet rooftop mounting to preserve roof warranty",
+      "Guaranteed Performance Ratio (PR) with lifetime preventive O&M"
+    ],
     link: "/solutions/industrial"
   },
   {
     id: "agricultural",
-    categoryGroup: "agriculture",
+    tabLabel: "Agricultural",
+    sectorTag: "Irrigation & Modern Farming",
     title: "Agricultural Solar Water Pumps",
-    category: "Irrigation & Modern Farming",
-    capacityTag: "3 HP — 20 HP",
-    roiTag: "Zero Fuel Cost",
+    description: "Stainless steel multi-stage submersible and surface water pumps paired with vector VFD MPPT controllers for dependable daylight farm irrigation without recurring diesel or electricity bills.",
+    capacityRange: "3 HP — 20 HP",
+    image: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=1200&q=80",
+    fallbackImage: "/images/hero_solar_panels.jpg",
+    icon: <Tractor className="w-4 h-4" />,
     badge: "60% PM-KUSUM Subsidy",
-    badgeType: "subsidy",
-    desc: "Stainless steel multi-stage submersible and surface water pumps paired with vector VFD controllers for daylight farm irrigation.",
-    image: "https://images.unsplash.com/photo-1592982537447-7440770cbfc9?auto=format&fit=crop&w=800&q=80",
-    icon: <Tractor className="w-4 h-4 text-emerald-400" />,
-    highlights: ["Discharge up to 350,000 LPD", "Deep heads up to 600+ feet", "Dry-run sensor protection"],
+    stats: [
+      { value: "60%", label: "PM-KUSUM Subsidy" },
+      { value: "3.5L LPD", label: "Daily Water Yield" },
+      { value: "₹0", label: "Lifetime Fuel Cost" }
+    ],
+    keyPoints: [
+      "Discharge volume up to 350,000 Liters per day in sunlight",
+      "Deep well head lift capability up to 600+ feet",
+      "PM-KUSUM Component-B subsidy assistance and portal claim",
+      "Built-in dry-run sensor protection and lightning surge arresters"
+    ],
     link: "/solutions/agricultural"
   },
   {
-    id: "water-heaters",
-    categoryGroup: "residential",
+    id: "heaters",
+    tabLabel: "Water Heaters",
+    sectorTag: "Domestic & Commercial Thermal",
     title: "Solar Thermal Water Heaters",
-    category: "Domestic & Commercial Heating",
-    capacityTag: "110L — 500L+",
-    roiTag: "80% Heating Savings",
+    description: "High-retention 3-target ETC vacuum tube solar water heaters with 50mm high-density PUF insulation and food-grade stainless steel inner tanks for 48+ hours hot water storage.",
+    capacityRange: "110L — 500L+",
+    image: "https://images.unsplash.com/photo-1545208942-e1c9c916524b?auto=format&fit=crop&w=1200&q=80",
+    fallbackImage: "/images/hero_rooftop_solar.jpg",
+    icon: <Sun className="w-4 h-4" />,
     badge: "SS316 Food-Grade Tank",
-    badgeType: "utility",
-    desc: "High-retention 3-target ETC vacuum tube solar water heaters with 50mm high-density PUF insulation for 48+ hours hot water retention.",
-    image: "https://images.unsplash.com/photo-1545208942-e1c9c916524b?auto=format&fit=crop&w=800&q=80",
-    icon: <Sun className="w-4 h-4 text-amber-400" />,
-    highlights: ["48+ Hours thermal heat retention", "Non-welding inner tank build", "Rust-proof powder coated outer"],
+    stats: [
+      { value: "48+ Hrs", label: "Thermal Heat Retention" },
+      { value: "80%", label: "Geyser Power Savings" },
+      { value: "5 Yrs", label: "Comprehensive Warranty" }
+    ],
+    keyPoints: [
+      "48+ Hours thermal heat retention with 50mm PUF insulation",
+      "Non-welding inner tank build preventing seam corrosion",
+      "Compatible with hard water and pressurized booster pumps",
+      "Rust-proof powder coated outer casing with UV guard"
+    ],
     link: "/products/solar-water-heaters"
   },
   {
     id: "storage",
-    categoryGroup: "storage",
-    title: "LiFePO4 Energy Storage & Microgrids",
-    category: "Battery Backup & Peak Shaving",
-    capacityTag: "5 kWh — 200 kWh+",
-    roiTag: "6,000+ Cycles",
+    tabLabel: "Energy Storage",
+    sectorTag: "Battery Backup & Microgrids",
+    title: "LiFePO4 Energy Storage Systems",
+    description: "Modular Lithium Iron Phosphate (LiFePO4) battery banks with active cell-balancing BMS, sub-10ms automatic UPS power transfer, and peak-demand penalty shaving for continuous operation.",
+    capacityRange: "5 kWh — 200 kWh+",
+    image: "https://images.unsplash.com/photo-1558441719-8b489c6340c4?auto=format&fit=crop&w=1200&q=80",
+    fallbackImage: "/images/hero_dark_ambient.jpg",
+    icon: <Battery className="w-4 h-4" />,
     badge: "100% Blackout Immunity",
-    badgeType: "utility",
-    desc: "Modular Lithium Iron Phosphate battery banks with active BMS balancing and sub-10ms automatic UPS power transfer.",
-    image: "https://images.unsplash.com/photo-1558441719-8b489c6340c4?auto=format&fit=crop&w=800&q=80",
-    icon: <BatteryCharging className="w-4 h-4 text-rose-400" />,
-    highlights: ["Sub-10ms automatic UPS transfer", "Safe LiFePO4 chemistry", "Peak demand penalty shaving"],
+    stats: [
+      { value: "< 10ms", label: "Auto UPS Transfer" },
+      { value: "6,000+", label: "Deep Cycle Life" },
+      { value: "99.99%", label: "Power Reliability" }
+    ],
+    keyPoints: [
+      "Sub-10ms automatic UPS transfer for seamless power continuity",
+      "Safe non-combustible Lithium Iron Phosphate chemistry",
+      "Active CAN/RS485 smart BMS cell balancing and protection",
+      "Modular design stackable up to 200 kWh+ capacity"
+    ],
     link: "/solutions/energy-storage"
-  },
-  {
-    id: "megawatt",
-    categoryGroup: "commercial",
-    title: "Turnkey EPC & Lifetime O&M",
-    category: "Utility Scale & Asset Management",
-    capacityTag: "1 MW — 50 MW+",
-    roiTag: "> 99% Uptime SLA",
-    badge: "Guaranteed PR Output",
-    badgeType: "utility",
-    desc: "End-to-end solar EPC contracting with SCADA AI telemetry, drone thermal anomaly scanning, and preventive AMC maintenance.",
-    image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=800&q=80",
-    icon: <Zap className="w-4 h-4 text-amber-300" />,
-    highlights: ["Drone thermographic scanning", "String-level cloud SCADA telemetry", "Performance Ratio (PR) contract"],
-    link: "/solutions/epc-maintenance"
   }
 ];
 
 export const EnergyEcosystem: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<string>("all");
+  const [activeTabId, setActiveTabId] = useState<string>("residential");
 
-  const filteredSolutions = solutionsList.filter((s) => {
-    if (activeTab === "all") return true;
-    return s.categoryGroup === activeTab;
-  });
+  const currentTab =
+    solutionsData.find((tab) => tab.id === activeTabId) || solutionsData[0];
 
   return (
-    <section className="py-20 sm:py-28 bg-[#0A0A0E] relative overflow-hidden border-t border-red-950/60" id="solutions">
-      
-      {/* Background Glows & Subtle Texture */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute inset-0 bg-[radial-gradient(#ffffff05_1px,transparent_1px)] [background-size:32px_32px] pointer-events-none opacity-50" />
+    <section
+      className="pt-16 pb-10 sm:pt-20 sm:pb-12 bg-[#0A0A0E] relative overflow-hidden border-t border-red-950/60"
+      id="solutions"
+    >
+      {/* ── Ambient Radial Glows ── */}
+      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-red-600/10 rounded-full blur-[160px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-amber-500/10 rounded-full blur-[160px] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(#ffffff08_1px,transparent_1px)] [background-size:32px_32px] pointer-events-none opacity-40" />
 
-      <div className="site-container relative z-10 space-y-12 sm:space-y-16">
+      {/* Top Edge Conduit Line */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-4/5 h-[1px] bg-gradient-to-r from-transparent via-red-500/40 to-transparent pointer-events-none" />
+
+      <div className="site-container relative z-10 space-y-8 sm:space-y-10">
         
-        {/* ── Section Header (Centered & Bold) ── */}
+        {/* ── Section Header ── */}
         <ScrollReveal animation="slide-up">
           <div className="text-center max-w-4xl mx-auto space-y-4">
+            
+            {/* Pill Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs font-mono mx-auto">
-              <Sparkles className="w-3.5 h-3.5 text-red-400" />
+              <Sun className="w-3.5 h-3.5 text-amber-400" />
               <span>THE COMPLETE SOLAR ECOSYSTEM</span>
             </div>
 
+            {/* Headline */}
             <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1] uppercase">
               ENGINEERED SOLAR SOLUTIONS FOR{" "}
               <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent block sm:inline">
@@ -160,156 +222,194 @@ export const EnergyEcosystem: React.FC = () => {
               </span>
             </h2>
 
+            {/* Subtext */}
             <p className="text-slate-300 text-sm sm:text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
               Decade-proven turnkey engineering delivering maximum kilowatt-hour generation, PM Surya Ghar subsidies, and guaranteed ROI across Tamil Nadu.
             </p>
 
-            {/* Category Filter Tabs */}
-            <div className="flex flex-wrap items-center justify-center gap-2 pt-4">
-              {[
-                { id: "all", label: "All Solutions (6)" },
-                { id: "residential", label: "Residential & Rooftops" },
-                { id: "commercial", label: "Commercial & Industrial" },
-                { id: "agriculture", label: "Agricultural Pumps" },
-                { id: "storage", label: "Battery Storage" }
-              ].map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
-                      isActive
-                        ? "bg-gradient-to-r from-red-600 to-rose-600 text-white border-red-400 shadow-md shadow-red-900/30 scale-105"
-                        : "bg-[#14101A] text-slate-300 border-red-950/60 hover:text-white hover:border-red-500/40"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
+            {/* ── Sleek Segment Tab Switcher (Symmetrical & Clean) ── */}
+            <div className="pt-4 max-w-4xl mx-auto">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 p-1.5 rounded-2xl bg-[#130E1A] border border-red-950/70 shadow-inner">
+                {solutionsData.map((tab) => {
+                  const isActive = activeTabId === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTabId(tab.id)}
+                      className={`flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer text-center ${
+                        isActive
+                          ? "bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-lg shadow-red-950/60 scale-[1.02]"
+                          : "text-slate-400 hover:text-white hover:bg-white/5"
+                      }`}
+                    >
+                      <span className={isActive ? "text-white" : "text-slate-400"}>
+                        {tab.icon}
+                      </span>
+                      <span className="truncate">{tab.tabLabel}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
           </div>
         </ScrollReveal>
 
-        {/* ── Modern 3-Column Solution Cards Matrix ── */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7">
-          {filteredSolutions.map((item, idx) => (
-            <ScrollReveal key={item.id} animation="slide-up" delay={idx * 75}>
-              <div className="h-full flex flex-col justify-between bg-[#14101A]/95 border border-red-900/30 rounded-3xl overflow-hidden hover:border-red-500/40 hover:shadow-2xl hover:shadow-red-950/40 hover:-translate-y-1 transition-all duration-300 group relative shadow-xl">
+        {/* ── Main Showcase Area (Seamless Background Integration) ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center pt-2">
+          
+          {/* Left Column: Solution Detail, Specs & Action CTAs */}
+          <div className="lg:col-span-7 space-y-6">
+            
+            {/* Sector Tag & Capacity Pill */}
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold bg-[#14101A] text-white border border-red-900/60 shadow-sm">
+                {currentTab.icon}
+                <span>{currentTab.sectorTag}</span>
+              </span>
 
-                {/* ── Card Image Header ── */}
-                <div className="relative h-52 sm:h-56 w-full overflow-hidden bg-slate-900 shrink-0">
-                  <img
-                    src={item.image}
-                    alt={item.title}
-                    className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
-                    loading="lazy"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      if (target.src !== FALLBACK_IMAGE) {
-                        target.src = FALLBACK_IMAGE;
-                      }
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#14101A] via-black/20 to-black/40" />
+              <span className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-amber-950/90 text-amber-300 border border-amber-500/40 shadow-sm">
+                {currentTab.badge}
+              </span>
 
-                  {/* Icon & Category Pill */}
-                  <div className="absolute top-4 left-4 z-20">
-                    <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold bg-[#0A0A0E]/90 backdrop-blur-md text-white border border-red-900/50 shadow-md">
-                      {item.icon}
-                      <span>{item.category}</span>
-                    </span>
-                  </div>
+              <span className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-[#14101A] text-slate-300 border border-red-950/70">
+                Capacity: {currentTab.capacityRange}
+              </span>
+            </div>
 
-                  {/* Benefit Badge */}
-                  <div className="absolute top-4 right-4 z-20">
-                    <span className={`px-3 py-1 rounded-full text-[11px] font-mono font-bold shadow-md backdrop-blur-md border ${
-                      item.badgeType === "subsidy"
-                        ? "bg-amber-950/90 text-amber-300 border-amber-500/40"
-                        : item.badgeType === "depreciation"
-                        ? "bg-emerald-950/90 text-emerald-300 border-emerald-500/40"
-                        : "bg-red-950/90 text-rose-300 border-red-500/40"
-                    }`}>
-                      {item.badge}
-                    </span>
-                  </div>
+            {/* Title & Description */}
+            <div className="space-y-3">
+              <h3 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-[1.12]">
+                {currentTab.title}
+              </h3>
+              <p className="text-slate-300 text-sm sm:text-base leading-relaxed font-normal max-w-2xl">
+                {currentTab.description}
+              </p>
+            </div>
 
-                  {/* Capacity & ROI Bottom Strip */}
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between z-20 text-xs">
-                    <span className="bg-[#0A0A0E]/85 backdrop-blur-md px-2.5 py-1 rounded-lg border border-white/10 text-white font-mono font-bold">
-                      {item.capacityTag}
-                    </span>
-                    <span className="bg-red-950/90 backdrop-blur-md px-2.5 py-1 rounded-lg border border-red-500/30 text-rose-300 font-mono font-bold">
-                      {item.roiTag}
-                    </span>
-                  </div>
+            {/* 3 Metric Stats (Clean Glass Boxes) */}
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              {currentTab.stats.map((stat, idx) => (
+                <div
+                  key={idx}
+                  className="p-4 sm:p-5 rounded-2xl bg-[#14101A] border border-red-950/70 hover:border-red-500/40 transition-colors shadow-md text-center sm:text-left"
+                >
+                  <span className="text-[10px] sm:text-xs font-mono text-slate-400 uppercase block truncate">
+                    {stat.label}
+                  </span>
+                  <strong className="text-xl sm:text-2xl lg:text-3xl font-black text-white font-mono block mt-1">
+                    {stat.value}
+                  </strong>
                 </div>
+              ))}
+            </div>
 
-                {/* ── Card Body ── */}
-                <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
-                  <div className="space-y-3">
-                    <h3 className="text-xl font-black text-white group-hover:text-red-400 transition-colors leading-tight">
-                      {item.title}
-                    </h3>
-                    <p className="text-xs sm:text-sm text-slate-300 line-clamp-2 leading-relaxed font-normal">
-                      {item.desc}
-                    </p>
-
-                    {/* Key Technical Checklist */}
-                    <div className="space-y-1.5 pt-2 border-t border-red-950/60">
-                      {item.highlights.map((hl, hIdx) => (
-                        <div key={hIdx} className="flex items-center gap-2 text-xs text-slate-300 font-medium">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                          <span className="line-clamp-1">{hl}</span>
-                        </div>
-                      ))}
+            {/* Key Highlights Checklist */}
+            <div className="space-y-2.5 pt-2 border-t border-red-950/60">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {currentTab.keyPoints.map((point, idx) => (
+                  <div key={idx} className="flex items-start gap-2.5 text-xs sm:text-sm text-slate-200">
+                    <div className="w-4 h-4 rounded-full bg-red-950/90 border border-red-500/50 flex items-center justify-center shrink-0 mt-0.5">
+                      <Check className="w-2.5 h-2.5 text-rose-300" />
                     </div>
+                    <span className="leading-snug">{point}</span>
                   </div>
-
-                  {/* ── Card Action Button ── */}
-                  <div className="pt-2">
-                    <Link
-                      to={item.link}
-                      className="inline-flex items-center justify-between w-full px-4 py-3 rounded-xl bg-slate-900 group-hover:bg-red-600 text-slate-200 group-hover:text-white font-extrabold text-xs sm:text-sm transition-all duration-300 border border-red-950/60 group-hover:border-red-500 shadow-md group/btn"
-                    >
-                      <span>Explore Technical Specs</span>
-                      <ArrowRight className="w-4 h-4 transition-transform group-hover/btn:translate-x-1.5" />
-                    </Link>
-                  </div>
-
-                </div>
-
+                ))}
               </div>
-            </ScrollReveal>
-          ))}
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-4 pt-4">
+              <Link
+                to={currentTab.link}
+                className="btn-primary py-4 px-7 text-xs sm:text-sm font-black inline-flex items-center gap-2.5 shadow-xl"
+              >
+                <span>Explore Engineering Specs</span>
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+
+              <Link
+                to="/get-a-quote"
+                className="py-4 px-6 rounded-xl bg-[#14101A] hover:bg-slate-800 text-slate-200 font-bold text-xs sm:text-sm transition-all border border-red-950/60 hover:border-red-500/40 hover:text-white inline-flex items-center gap-2"
+              >
+                <Calculator className="w-4 h-4 text-amber-400" />
+                <span>Get Free Feasibility Quote</span>
+              </Link>
+            </div>
+
+          </div>
+
+          {/* Right Column: High-Impact Photography Showcase Frame */}
+          <div className="lg:col-span-5 flex">
+            <div className="relative w-full h-[380px] sm:h-[460px] lg:h-[500px] rounded-3xl overflow-hidden bg-slate-900 border border-red-900/40 shadow-2xl group flex flex-col justify-between p-6">
+              
+              {/* Background Image */}
+              <img
+                src={currentTab.image}
+                alt={currentTab.title}
+                className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 ease-out group-hover:scale-105"
+                loading="lazy"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (target.src !== currentTab.fallbackImage) {
+                    target.src = currentTab.fallbackImage;
+                  }
+                }}
+              />
+
+              {/* Dark Vignette Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#0A0A0E] via-transparent to-black/30 pointer-events-none" />
+
+              {/* Top Badge: Verified Partner */}
+              <div className="relative z-10 flex items-center justify-between">
+                <span className="px-3.5 py-1.5 rounded-full text-xs font-mono font-bold bg-[#0A0A0E]/90 backdrop-blur-md text-white border border-white/15 shadow-lg inline-flex items-center gap-2">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>MNRE Approved Partner</span>
+                </span>
+
+                <span className="px-3 py-1.5 rounded-xl text-xs font-mono font-bold bg-red-950/90 text-rose-300 border border-red-500/40 backdrop-blur-md">
+                  {currentTab.capacityRange}
+                </span>
+              </div>
+
+              {/* Bottom Floating Telemetry Card */}
+              <div className="relative z-10 p-4 rounded-2xl bg-[#0A0A0E]/90 backdrop-blur-md border border-red-900/50 shadow-2xl space-y-1">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-mono uppercase text-[10px]">
+                    Guaranteed Output SLA
+                  </span>
+                  <span className="text-[10px] font-mono text-emerald-400 font-bold bg-emerald-950/80 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                    Tier-1 Hardware
+                  </span>
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-white leading-snug">
+                  Turnkey Engineering • Net Metering Approval • Lifetime O&M
+                </p>
+              </div>
+
+            </div>
+          </div>
+
         </div>
 
-        {/* ── Bottom Inquire Strip ── */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#14101A] via-[#1C1525] to-[#14101A] border border-red-900/40 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="space-y-1 text-center md:text-left">
-            <h4 className="text-lg sm:text-xl font-black text-white">
-              Not sure which solar capacity or subsidy fits your property?
+        {/* ── Centered Bottom Engineering Feasibility Strip ── */}
+        <div className="pt-6 border-t border-red-950/60 flex flex-col items-center justify-center text-center space-y-4 max-w-3xl mx-auto">
+          <div className="space-y-1.5">
+            <h4 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              Not sure which solar capacity fits your roof or land?
             </h4>
-            <p className="text-xs sm:text-sm text-slate-400">
-              Speak with our senior solar engineers for a free site shadow analysis and customized payback roadmap.
+            <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
+              Request an on-site 3D shadow analysis and customized financial payback roadmap from our senior engineers.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <div className="flex items-center justify-center pt-0.5">
             <Link
               to="/get-a-quote"
-              className="btn-primary py-3 px-6 text-xs sm:text-sm font-bold inline-flex items-center gap-2"
+              className="btn-primary py-3.5 px-7 text-xs sm:text-sm font-black inline-flex items-center gap-2 shadow-xl hover:scale-105 transition-transform"
             >
               <span>Get Free Site Feasibility</span>
               <ArrowRight className="w-4 h-4" />
-            </Link>
-            <Link
-              to="/contact"
-              className="py-3 px-5 text-xs sm:text-sm font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-red-950/60 transition-all hover:text-white hover:border-red-500/40"
-            >
-              Contact Engineering Team
             </Link>
           </div>
         </div>

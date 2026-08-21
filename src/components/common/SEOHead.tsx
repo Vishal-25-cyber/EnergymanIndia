@@ -11,7 +11,7 @@ export const SEOHead = ({
   title,
   description = "Energyman Power Technologies (India) Pvt. Ltd. - Premier engineering solar solutions for residential rooftops, industrial facilities, and agricultural farms.",
   keywords = "solar energy india, solar rooftop, PM Surya Ghar subsidy, solar pumps, industrial solar EPC, coimbatore solar company, energyman india",
-  ogImage = "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=1200&q=80"
+  ogImage = "https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?auto=format&fit=crop&w=1200&q=80"
 }: SEOHeadProps) => {
   useEffect(() => {
     document.title = `${title} | Energy Man India`;

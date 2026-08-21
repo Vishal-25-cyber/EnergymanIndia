@@ -11,7 +11,6 @@ import {
   Factory,
   Tractor,
   BatteryCharging,
-  Zap,
   Droplets,
   Layers,
   ArrowRight,
@@ -120,14 +119,14 @@ export const Navbar: React.FC = () => {
                   onMouseEnter={() => handleMouseEnter("projects")}
                   onMouseLeave={handleMouseLeave}
                 >
-                  <button
-                    onClick={() => toggleDropdown("projects")}
+                  <Link
+                    to="/projects"
+                    onClick={() => setActiveDropdown(null)}
                     className={`flex items-center gap-1.5 text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 cursor-pointer ${
                       location.pathname.startsWith("/projects")
                         ? "text-red-500 font-bold"
                         : "text-slate-200 hover:text-red-400"
                     }`}
-                    aria-expanded={activeDropdown === "projects"}
                   >
                     <span>Projects</span>
                     <ChevronDown
@@ -135,7 +134,7 @@ export const Navbar: React.FC = () => {
                         activeDropdown === "projects" ? "rotate-180 text-red-500" : ""
                       }`}
                     />
-                  </button>
+                  </Link>
 
                   {/* Projects Mega Dropdown Menu */}
                   {activeDropdown === "projects" && (
@@ -143,6 +142,7 @@ export const Navbar: React.FC = () => {
                       <div className="space-y-1">
                         <Link
                           to="/projects/industrial"
+                          onClick={() => setActiveDropdown(null)}
                           className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
                         >
                           <Factory className="w-4 h-4 text-red-400 shrink-0" />
@@ -154,6 +154,7 @@ export const Navbar: React.FC = () => {
 
                         <Link
                           to="/projects/commercial"
+                          onClick={() => setActiveDropdown(null)}
                           className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
                         >
                           <Building2 className="w-4 h-4 text-amber-400 shrink-0" />
@@ -162,16 +163,6 @@ export const Navbar: React.FC = () => {
                             <p className="text-[11px] text-slate-400 font-normal">Export units & commercial rooftops</p>
                           </div>
                         </Link>
-
-                        <div className="pt-2 border-t border-red-950/60 mt-1">
-                          <Link
-                            to="/projects"
-                            className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold text-red-400 hover:text-white hover:bg-red-950/60 transition-colors"
-                          >
-                            <span>View All Projects & Case Studies</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </Link>
-                        </div>
                       </div>
                     </div>
                   )}
@@ -183,14 +174,14 @@ export const Navbar: React.FC = () => {
                   onMouseEnter={() => handleMouseEnter("product")}
                   onMouseLeave={handleMouseLeave}
                 >
-                  <button
-                    onClick={() => toggleDropdown("product")}
+                  <Link
+                    to="/products"
+                    onClick={() => setActiveDropdown(null)}
                     className={`flex items-center gap-1.5 text-[15px] xl:text-[16px] font-semibold transition-colors duration-200 cursor-pointer ${
                       location.pathname.startsWith("/products")
                         ? "text-red-500 font-bold"
                         : "text-slate-200 hover:text-red-400"
                     }`}
-                    aria-expanded={activeDropdown === "product"}
                   >
                     <span>Product</span>
                     <ChevronDown
@@ -198,7 +189,7 @@ export const Navbar: React.FC = () => {
                         activeDropdown === "product" ? "rotate-180 text-red-500" : ""
                       }`}
                     />
-                  </button>
+                  </Link>
 
                   {/* Product Dropdown Menu */}
                   {activeDropdown === "product" && (
@@ -206,6 +197,7 @@ export const Navbar: React.FC = () => {
                       <div className="space-y-1">
                         <Link
                           to="/products/solar-pumps"
+                          onClick={() => setActiveDropdown(null)}
                           className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
                         >
                           <Droplets className="w-4 h-4 text-rose-400 shrink-0" />
@@ -217,6 +209,7 @@ export const Navbar: React.FC = () => {
 
                         <Link
                           to="/products/solar-water-heaters"
+                          onClick={() => setActiveDropdown(null)}
                           className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-900/90 transition-colors"
                         >
                           <Sun className="w-4 h-4 text-amber-400 shrink-0" />
@@ -225,16 +218,6 @@ export const Navbar: React.FC = () => {
                             <p className="text-[11px] text-slate-400">110L - 330L Domestic & Industrial</p>
                           </div>
                         </Link>
-
-                        <div className="pt-2 border-t border-red-950/60 mt-1">
-                          <Link
-                            to="/products"
-                            className="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-bold text-red-400 hover:text-white hover:bg-red-950/60 transition-colors"
-                          >
-                            <span>Explore All Products</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </Link>
-                        </div>
                       </div>
                     </div>
                   )}
@@ -343,9 +326,6 @@ export const Navbar: React.FC = () => {
                   </Link>
                   <Link to="/projects/commercial" className="block px-4 py-2 text-sm text-slate-300 hover:text-white">
                     • Our Commercial Solar Projects
-                  </Link>
-                  <Link to="/projects" className="block px-4 py-2 text-sm text-red-400 hover:text-red-300">
-                    • View All Projects & Case Studies
                   </Link>
                 </div>
               </div>

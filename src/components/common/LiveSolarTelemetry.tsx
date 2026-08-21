@@ -5,7 +5,6 @@ import {
   Gauge,
   Thermometer,
   Activity,
-  Sparkles,
   MapPin,
   RefreshCw,
 } from "lucide-react";
@@ -232,7 +231,7 @@ export const LiveSolarTelemetry: React.FC = () => {
 
               <div className="p-3.5 rounded-2xl bg-[#14101A]/95 border border-red-900/30 space-y-1">
                 <div className="flex items-center gap-1.5 text-xs text-slate-400 font-semibold font-mono">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <Sun className="w-3.5 h-3.5 text-amber-400" />
                   <span>Optimal Tilt</span>
                 </div>
                 <div className="text-xl font-black text-amber-400 font-mono">{city.optimalTilt}°</div>

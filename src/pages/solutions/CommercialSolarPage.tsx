@@ -1,11 +1,11 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import {
+  Building2,
   ShieldCheck,
   ArrowRight,
-  Zap,
-  Percent,
   MapPin,
+  TrendingUp,
   Wrench,
   Award,
   Sparkles
@@ -19,20 +19,20 @@ export const CommercialSolarPage: React.FC = () => {
   return (
     <div className="bg-[#0A0A0E] text-slate-100 min-h-screen">
       <SEOHead
-        title="Commercial Solar Power Systems & 40% Tax Depreciation"
-        description="Slash commercial electricity tariffs, claim Section 32 40% accelerated depreciation, and improve ESG ratings with ENERGYMAN commercial solar EPC."
+        title="Commercial Rooftop Solar Solutions"
+        description="High-yield commercial rooftop solar EPC for offices, hospitals, institutions, and hotels. Slash operational electricity tariffs and claim 40% accelerated depreciation."
       />
 
       {/* Hero Header */}
       <section className="pt-28 pb-10 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
-        <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/4 left-1/3 w-96 h-96 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="site-container relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             <div className="lg:col-span-7 space-y-5">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wider uppercase bg-amber-950/80 text-amber-300 border border-amber-500/40 shadow-xs">
-                <Percent className="w-3.5 h-3.5 text-amber-400" />
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-wider uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs">
+                <span className="font-mono text-amber-400 font-bold">%</span>
                 <span>40% Accelerated Tax Depreciation &amp; ESG Compliance</span>
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
@@ -73,7 +73,7 @@ export const CommercialSolarPage: React.FC = () => {
 
             {/* Hero Image */}
             <div className="lg:col-span-5">
-              <div className="rounded-3xl overflow-hidden border border-red-950/60 shadow-2xl relative bg-slate-900 aspect-4/3 sm:aspect-auto sm:h-96">
+              <div className="rounded-2xl overflow-hidden border border-red-950/60 shadow-xl relative bg-slate-900 h-[220px] sm:h-[260px] lg:h-[290px]">
                 <img
                   src={data.heroImage}
                   alt="Commercial solar building"
@@ -88,15 +88,15 @@ export const CommercialSolarPage: React.FC = () => {
       {/* ── 02. SECTION: COMMERCIAL VALUE PILLARS (CARDLESS EDITORIAL DESIGN) ── */}
       <section className="py-12 sm:py-16 bg-[#0A0A0E] border-b border-red-950/60 relative overflow-hidden">
         {/* Full-bleed Ambient Glows */}
-        <div className="absolute top-1/4 left-1/5 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/5 w-[500px] h-[500px] bg-red-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-1/4 left-1/5 w-[500px] h-[500px] bg-red-600/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/5 w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[120px] pointer-events-none" />
 
         <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
           
           {/* Grand Section Header */}
           <div className="text-center max-w-4xl mx-auto space-y-3">
-            <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-amber-950/80 text-amber-300 border border-amber-500/40 font-mono shadow-xs">
-              <Zap className="w-3 h-3 text-amber-400" />
+            <span className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-red-950/80 text-rose-300 border border-red-500/40 font-mono shadow-xs">
+              <Building2 className="w-3 h-3 text-amber-400" />
               <span>COMMERCIAL ADVANTAGES</span>
             </span>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white uppercase tracking-tight leading-[1.12]">
@@ -166,7 +166,7 @@ export const CommercialSolarPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-8 relative z-10">
                 {[
                   { num: "01", title: "Energy Audit", desc: "15-minute interval demand profiling & roof structural integrity", icon: MapPin, color: "text-red-400 border-red-500/60 bg-red-950/90" },
-                  { num: "02", title: "Techno-Commercial", desc: "PVSyst yield simulation, cash flow modeling & IRR calculation", icon: Zap, color: "text-orange-400 border-orange-500/60 bg-orange-950/90" },
+                  { num: "02", title: "Techno-Commercial", desc: "PVSyst yield simulation, cash flow modeling & IRR calculation", icon: TrendingUp, color: "text-orange-400 border-orange-500/60 bg-orange-950/90" },
                   { num: "03", title: "CEIG Clearances", desc: "Chief Electrical Inspector approvals & grid connectivity liaison", icon: ShieldCheck, color: "text-amber-400 border-amber-500/60 bg-amber-950/90" },
                   { num: "04", title: "Zero-Downtime EPC", desc: "Fast-track installation without disrupting daily business operations", icon: Wrench, color: "text-rose-400 border-rose-500/60 bg-rose-950/90" },
                   { num: "05", title: "SCADA & PR Testing", desc: "Performance ratio validation, grid synchronization & cloud monitoring", icon: Award, color: "text-emerald-400 border-emerald-500/60 bg-emerald-950/90" }

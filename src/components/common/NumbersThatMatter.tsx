@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Smile, Factory, MapPin, Sparkles, ShieldCheck, Award, Zap } from "lucide-react";
+import { Smile, Factory, MapPin, ShieldCheck, Award } from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
 
 const AnimatedCounter: React.FC<{ value: number; duration?: number }> = ({ value, duration = 1800 }) => {
@@ -55,7 +55,7 @@ export const NumbersThatMatter: React.FC = () => {
         <ScrollReveal animation="slide-up">
           <div className="text-center max-w-3xl mx-auto space-y-3">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold tracking-widest uppercase bg-red-950/80 text-rose-300 border border-red-500/40 shadow-xs font-mono">
-              <Sparkles className="w-3.5 h-3.5 text-red-400" />
+              <Award className="w-3.5 h-3.5 text-red-400" />
               <span>PROVEN DECADE TRACK RECORD</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight uppercase">
@@ -156,7 +156,7 @@ export const NumbersThatMatter: React.FC = () => {
               {/* Bottom Card Footer */}
               <div className="pt-4 mt-4 border-t border-red-950/60 flex items-center justify-between text-xs text-slate-400">
                 <span className="flex items-center gap-1.5 font-medium text-[11px] text-slate-300">
-                  <Zap className="w-3.5 h-3.5 text-amber-400" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
                   DG Synchronization
                 </span>
                 <span className="text-[11px] font-mono text-amber-400 font-bold">● High Yield SLA</span>

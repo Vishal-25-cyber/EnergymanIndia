@@ -29,7 +29,7 @@ const techItems: TechItem[] = [
     name: "N-Type TOPCon & Mono PERC Dual-Glass Panels",
     description: "Next-generation 16-busbar photovoltaic cells with up to 22.8% module efficiency and bi-facial generation gains.",
     highlights: ["25% Rear-Side Bifacial Gain", "Zero LID / LeTID Degradation", "-0.30%/°C Temperature Tolerance"],
-    image: "https://images.unsplash.com/photo-1509391365360-2e959784a276?auto=format&fit=crop&w=1200&q=80",
+    image: "https://images.unsplash.com/photo-1559302504-64aae6ca6b6d?auto=format&fit=crop&w=1200&q=80",
     link: "/products",
     icon: <Cpu className="w-4 h-4 text-red-400" />
   },
@@ -41,7 +41,7 @@ const techItems: TechItem[] = [
     highlights: ["Up to 10 Independent MPPTs", "Integrated Type-II AC/DC SPDs", "Real-Time Mobile App Telemetry"],
     image: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1200&q=80",
     link: "/products",
-    icon: <Zap className="w-4 h-4 text-amber-400" />
+    icon: <Activity className="w-4 h-4 text-amber-400" />
   },
   {
     id: "tech-pumps",

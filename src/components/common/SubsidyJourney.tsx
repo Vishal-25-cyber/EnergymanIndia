@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, ShieldCheck, CheckCircle2, ArrowRight, IndianRupee, FileText, Banknote } from "lucide-react";
+import { ShieldCheck, CheckCircle2, ArrowRight, IndianRupee, FileText, Banknote } from "lucide-react";
 import { Link } from "react-router-dom";
 import { subsidyProcessTimeline } from "../../data/subsidies";
 import { ScrollReveal } from "./ScrollReveal";
@@ -15,7 +15,7 @@ export const SubsidyJourney: React.FC = () => {
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-red-950/60">
             <div className="space-y-3 max-w-2xl">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-extrabold bg-amber-950/80 text-amber-300 border border-amber-500/40 font-mono">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                <IndianRupee className="w-3.5 h-3.5 text-amber-400" />
                 <span>PM SURYA GHAR: MUFT BIJLI YOJANA</span>
               </div>
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">

@@ -2,10 +2,9 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import {
   CreditCard,
-  Sparkles,
   ArrowRight,
   ShieldCheck,
-  Zap,
+  TrendingUp,
   CheckCircle2
 } from "lucide-react";
 import { ScrollReveal } from "./ScrollReveal";
@@ -144,8 +143,8 @@ export const EMIFinanceCalculator: React.FC = () => {
             {/* System Cost & Financed Sizing Tile */}
             <div className="p-4 rounded-2xl bg-[#14101A]/90 border border-red-900/30 space-y-2 shadow-xs">
               <div className="flex items-center justify-between text-xs font-mono text-slate-300">
-                <span className="flex items-center gap-1.5 text-red-400 font-bold">
-                  <Zap className="w-4 h-4 text-red-400" />
+                <span className="flex items-center gap-1.5 text-amber-400 font-bold">
+                  <CreditCard className="w-4 h-4 text-amber-400" />
                   FINANCED LOAN PRINCIPAL
                 </span>
                 <span className="text-base font-black text-white font-mono">₹{loanPrincipal.toLocaleString("en-IN")}</span>
@@ -197,7 +196,7 @@ export const EMIFinanceCalculator: React.FC = () => {
 
             {/* Day-1 Positive Cash Flow Highlight Banner */}
             <div className="p-3.5 rounded-2xl bg-red-950/50 border border-red-500/40 text-xs text-rose-200 flex items-start gap-2.5 shadow-sm">
-              <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+              <TrendingUp className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
               <div className="leading-relaxed">
                 <strong className="text-rose-300 block font-mono text-[11px] mb-0.5">DAY-1 POSITIVE CASH FLOW:</strong>
                 Your monthly bill savings (~₹{Math.round(monthlyElectricityReplaced).toLocaleString("en-IN")}) exceed your loan EMI (₹{monthlyEmi.toLocaleString("en-IN")}) by <strong className="text-white font-bold font-mono">+₹{netMonthlyProfit.toLocaleString("en-IN")}/mo</strong> profit!
