@@ -167,7 +167,7 @@ export default function StudentDashboardPage() {
                 <p className="text-xs sm:text-sm text-slate-300 mt-1 font-medium flex items-center gap-2 flex-wrap">
                   <span className="font-semibold text-white">{classLevel}</span>
                   <span className="text-slate-400">•</span>
-                  <span>{board} Board</span>
+                  <span>{board.toLowerCase().includes("board") ? board : `${board} Board`}</span>
                   <span className="text-slate-400">•</span>
                   <span className="text-[#dfb74a] font-mono">{batchName}</span>
                 </p>
@@ -298,7 +298,8 @@ export default function StudentDashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
             
             {/* Metric 1: Attendance Turnout */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+            <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-indigo-500 to-emerald-500" />
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/70 dark:border-indigo-800/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-2xs">
@@ -350,7 +351,8 @@ export default function StudentDashboardPage() {
             </div>
 
             {/* Metric 2: Assigned Tasks */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+            <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-indigo-500" />
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-950/60 border border-purple-200/70 dark:border-purple-800/60 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-2xs">
@@ -402,7 +404,8 @@ export default function StudentDashboardPage() {
             </div>
 
             {/* Metric 3: Academic Average */}
-            <div className="p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+            <div className="relative overflow-hidden p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#dfb74a] to-amber-500" />
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200/70 dark:border-amber-800/60 text-amber-600 dark:text-[#dfb74a] flex items-center justify-center shadow-2xs">
@@ -527,7 +530,8 @@ export default function StudentDashboardPage() {
             </div>
 
             {/* Profile Identity Card */}
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-5">
+            <div className="relative overflow-hidden p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 shadow-xs space-y-5">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#002137] via-[#004b79] to-[#dfb74a]" />
               
               {/* Avatar & Key ID Info */}
               <div className="flex items-center gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
