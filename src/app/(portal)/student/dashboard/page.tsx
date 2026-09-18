@@ -4,27 +4,22 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   Calendar,
-  FileText,
   CheckCircle2,
   BookOpen,
   CalendarCheck2,
-  User,
   Mail,
   Phone,
   School,
   ShieldCheck,
   Clock,
   GraduationCap,
-  Hash,
   ArrowRight,
   Video,
   FileCheck,
   Award,
   Copy,
   Check,
-  CreditCard,
   Sparkles,
-  ExternalLink,
 } from "lucide-react";
 import { useFastFetch } from "@/lib/api-cache";
 import { formatStudentId } from "@/lib/id-generator";
@@ -173,12 +168,21 @@ export default function StudentDashboardPage() {
               </div>
             </div>
 
-            {/* Right: Date Badge & Trial Countdown if active */}
+            {/* Right: Date Badge & Single Primary Action */}
             <div className="flex flex-col items-start lg:items-end gap-3 shrink-0">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 border border-white/15 backdrop-blur-md text-xs sm:text-sm text-slate-200 font-semibold shadow-xs">
                 <Calendar className="w-4 h-4 text-[#dfb74a]" />
                 <span>{todayFormatted}</span>
               </div>
+
+              <Link
+                href="/student/classes"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#dfb74a] to-[#c9a33e] text-[#002137] font-extrabold text-xs sm:text-sm shadow-sm hover:shadow-md hover:brightness-105 active:scale-95 transition-all cursor-pointer group"
+              >
+                <Video className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
+                <span>Enter Live Classroom</span>
+                <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+              </Link>
 
               {isTrialActive && (
                 <StudentTrialCountdownBanner
@@ -192,41 +196,6 @@ export default function StudentDashboardPage() {
                 />
               )}
             </div>
-          </div>
-
-          {/* Quick Action Navigation Bar */}
-          <div className="mt-6 pt-6 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-            <Link
-              href="/student/classes"
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#dfb74a] to-[#c9a33e] text-[#002137] font-extrabold text-xs sm:text-sm shadow-sm hover:shadow-md hover:brightness-105 active:scale-95 transition-all cursor-pointer group text-center"
-            >
-              <Video className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110" />
-              <span>Live Classroom</span>
-            </Link>
-
-            <Link
-              href="/student/materials"
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/15 backdrop-blur-xs transition-all active:scale-95 cursor-pointer group text-center"
-            >
-              <BookOpen className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110 text-sky-300" />
-              <span>Study Notes</span>
-            </Link>
-
-            <Link
-              href="/student/assignments"
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/15 backdrop-blur-xs transition-all active:scale-95 cursor-pointer group text-center"
-            >
-              <FileCheck className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110 text-emerald-300" />
-              <span>Assignments</span>
-            </Link>
-
-            <Link
-              href="/student/attendance"
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm border border-white/15 backdrop-blur-xs transition-all active:scale-95 cursor-pointer group text-center"
-            >
-              <CalendarCheck2 className="w-4 h-4 shrink-0 transition-transform group-hover:scale-110 text-amber-300" />
-              <span>Attendance</span>
-            </Link>
           </div>
         </div>
 
@@ -475,29 +444,15 @@ export default function StudentDashboardPage() {
                     <span className="font-bold text-slate-700 dark:text-slate-200">Curriculum Scope:</span> {sub.topic}
                   </p>
 
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-2">
                       <GraduationCap className="w-3.5 h-3.5 text-slate-400" />
                       <span>{sub.faculty}</span>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <Link
-                        href="/student/classes"
-                        className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-[#004b79] hover:text-white dark:hover:bg-[#004b79] text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Video className="w-3.5 h-3.5" />
-                        <span>Live Class</span>
-                      </Link>
-
-                      <Link
-                        href="/student/materials"
-                        className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-[#004b79] hover:text-white dark:hover:bg-[#004b79] text-slate-700 dark:text-slate-200 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <BookOpen className="w-3.5 h-3.5" />
-                        <span>Materials</span>
-                      </Link>
-                    </div>
+                    <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      Enrolled &amp; Active
+                    </span>
                   </div>
                 </div>
               ))}
@@ -604,26 +559,7 @@ export default function StudentDashboardPage() {
                 </div>
               </div>
 
-              {/* Action Buttons inside Dossier */}
-              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
-                <Link
-                  href="/student/fees"
-                  className="w-full py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
-                >
-                  <CreditCard className="w-3.5 h-3.5 text-[#004b79] dark:text-[#dfb74a]" />
-                  <span>Tuition Receipts &amp; Invoices</span>
-                  <ArrowRight className="w-3.5 h-3.5 ml-auto text-slate-400" />
-                </Link>
 
-                <Link
-                  href="/student/parent-view"
-                  className="w-full py-2.5 px-4 rounded-xl bg-transparent hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400 font-semibold text-xs flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
-                >
-                  <User className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Parent Portal Dossier</span>
-                  <ExternalLink className="w-3 h-3 ml-auto text-slate-400" />
-                </Link>
-              </div>
 
             </div>
           </div>
