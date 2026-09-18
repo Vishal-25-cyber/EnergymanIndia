@@ -1,0 +1,1 @@
+import{j as t}from"./vendor-react-DUHfSNeF.js";import{c as r}from"./index-VfaQ6LZj.js";import{J as e}from"./JitsiClassroom-DCke5MIt.js";import"./vendor-livekit-CVdCQK6Q.js";function u(){const s=r(),o=(s==null?void 0:s.sessionId)||"acuity-session";return t.jsx(e,{classId:o,currentUserRole:"STUDENT"})}export{u as default};
