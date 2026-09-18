@@ -1,3 +1,4 @@
+"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
@@ -5,12 +6,10 @@ import {
   Bell,
   Check,
   CheckCheck,
-  X,
   Inbox,
   BookOpen,
   FileCheck,
   Video,
-  BookMarked,
   ShieldAlert,
   Info,
   Sparkles,
@@ -52,8 +51,6 @@ const getTypeStyle = (type: string) => {
 
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
-  const [showAllModal, setShowAllModal] = useState(false);
-  const [modalFilter, setModalFilter] = useState<"ALL" | "UNREAD">("ALL");
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -62,7 +59,7 @@ export function NotificationBell() {
     setMounted(true);
   }, []);
 
-  // Close dropdown whenever user touches or clicks anywhere outside / in the side
+  // Close dropdown whenever user touches or clicks anywhere outside
   useEffect(() => {
     if (!isOpen) return;
 
@@ -110,7 +107,6 @@ export function NotificationBell() {
   }, []);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
-  const quickNotifications = notifications.slice(0, 2);
 
   const markAsRead = async (notificationId: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
@@ -157,39 +153,69 @@ export function NotificationBell() {
     }
   };
 
-  const filteredModalNotifications =
-    modalFilter === "UNREAD" ? notifications.filter((n) => !n.read) : notifications;
-
-  // ── Reusable notification card ────────────────────────────────────────────
-  const NotifCard = ({ n, onClose, compact = false }: { n: NotificationItem; onClose: () => void; compact?: boolean }) => {
+  // ── Reusable notification card with individual mark-as-read button ─────────
+  const NotifCard = ({ n, onClose }: { n: NotificationItem; onClose: () => void }) => {
     const style = getTypeStyle(n.type);
     const Icon = style.icon;
     return (
-      <Link
-        href={n.linkUrl || "#"}
-        onClick={() => { markAsRead(n._id); onClose(); }}
-        className={`group flex items-start gap-3 p-3 rounded-xl transition-all duration-150 border ${
+      <div
+        className={`group relative flex items-start gap-2.5 p-3 rounded-xl transition-all duration-150 border ${
           n.read
             ? "bg-transparent border-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/40"
-            : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/80 shadow-sm hover:shadow-md"
+            : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/80 shadow-xs hover:shadow-md"
         }`}
       >
-        <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${style.bg}`}>
-          <Icon className={`w-4 h-4 ${style.iconColor}`} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-0.5">
-            <p className={`text-xs font-bold leading-tight truncate ${n.read ? "text-slate-500 dark:text-slate-400" : "text-slate-900 dark:text-slate-100"}`}>
-              {n.title}
-            </p>
-            <span className="text-[10px] text-slate-400 font-mono shrink-0 mt-0.5">{formatTimeAgo(n.createdAt)}</span>
+        <Link
+          href={n.linkUrl || "#"}
+          onClick={() => {
+            markAsRead(n._id);
+            onClose();
+          }}
+          className="flex-1 flex items-start gap-2.5 min-w-0"
+        >
+          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${style.bg}`}>
+            <Icon className={`w-4 h-4 ${style.iconColor}`} />
           </div>
-          <p className={`text-[11px] leading-relaxed ${compact ? "line-clamp-1" : "line-clamp-2"} ${n.read ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-300"}`}>
-            {n.message}
-          </p>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-1.5 mb-0.5">
+              <p
+                className={`text-xs font-bold leading-tight truncate ${
+                  n.read ? "text-slate-500 dark:text-slate-400" : "text-slate-900 dark:text-slate-100"
+                }`}
+              >
+                {n.title}
+              </p>
+              <span className="text-[10px] text-slate-400 font-mono shrink-0 mt-0.5">
+                {formatTimeAgo(n.createdAt)}
+              </span>
+            </div>
+            <p
+              className={`text-[11px] leading-relaxed line-clamp-2 ${
+                n.read ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-300"
+              }`}
+            >
+              {n.message}
+            </p>
+          </div>
+        </Link>
+
+        {/* Individual Mark As Read Button */}
+        <div className="shrink-0 flex items-center pt-1">
+          {!n.read ? (
+            <button
+              type="button"
+              onClick={(e) => markAsRead(n._id, e)}
+              title="Mark as read"
+              aria-label="Mark as read"
+              className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-700/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 border border-slate-200 dark:border-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+            </button>
+          ) : (
+            <span className="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700 my-2 mr-1" />
+          )}
         </div>
-        {!n.read && <span className={`w-2 h-2 rounded-full shrink-0 mt-1.5 ${style.dot}`} />}
-      </Link>
+      </div>
     );
   };
 
@@ -213,7 +239,7 @@ export function NotificationBell() {
         )}
       </button>
 
-      {/* ── QUICK DROPDOWN ── */}
+      {/* ── NOTIFICATIONS DROPDOWN (SCROLLABLE, INDIVIDUAL READ, NO VIEW ALL BUTTON) ── */}
       {isOpen && (
         <>
           {mounted && typeof document !== "undefined" && createPortal(
@@ -225,7 +251,7 @@ export function NotificationBell() {
             document.body
           )}
           <div
-            className="absolute right-0 mt-2 w-80 sm:w-[360px] bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl z-50 overflow-hidden"
+            className="absolute right-0 mt-2 w-80 sm:w-[360px] bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl z-50 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
             style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.1)" }}
           >
             {/* Header */}
@@ -252,135 +278,22 @@ export function NotificationBell() {
               )}
             </div>
 
-            {/* Items */}
-            <div className="p-2 space-y-0.5 max-h-64 overflow-y-auto">
-              {quickNotifications.length === 0 ? (
-                <div className="py-8 text-center">
+            {/* Scrollable Notification Items List */}
+            <div className="p-2 space-y-1 max-h-[380px] overflow-y-auto overscroll-contain divide-y divide-slate-100/60 dark:divide-slate-800/40">
+              {notifications.length === 0 ? (
+                <div className="py-10 text-center">
                   <Inbox className="w-7 h-7 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                  <p className="text-xs text-slate-400">No notifications yet</p>
+                  <p className="text-xs font-medium text-slate-400">No notifications yet</p>
                 </div>
               ) : (
-                quickNotifications.map((n) => (
-                  <NotifCard key={n._id} n={n} onClose={() => setIsOpen(false)} compact />
+                notifications.map((n) => (
+                  <NotifCard key={n._id} n={n} onClose={() => setIsOpen(false)} />
                 ))
               )}
-            </div>
-
-            {/* Footer */}
-            <div className="px-2 py-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/40">
-              <button
-                type="button"
-                onClick={() => { setIsOpen(false); setShowAllModal(true); }}
-                className="w-full py-2 rounded-xl text-xs font-bold text-[#004b79] dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <BookMarked className="w-3.5 h-3.5" />
-                View all notifications {notifications.length > 0 && `(${notifications.length})`}
-              </button>
             </div>
           </div>
         </>
       )}
-
-      {/* ── VIEW ALL MODAL (Portaled to document.body) ── */}
-      {showAllModal && mounted && typeof document !== "undefined" && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-150"
-          onClick={() => setShowAllModal(false)}
-          onTouchStart={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowAllModal(false);
-            }
-          }}
-        >
-          <div
-            className="relative w-full max-w-lg bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden flex flex-col max-h-[85vh] shadow-2xl animate-in zoom-in-95 duration-150"
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            style={{ boxShadow: "0 25px 70px -10px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05)" }}
-          >
-            {/* Modal Header */}
-            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3 shrink-0 bg-slate-50/90 dark:bg-slate-900/80">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#004b79]/10 dark:bg-[#004b79]/25 flex items-center justify-center">
-                  <Bell className="w-4 h-4 text-[#004b79] dark:text-blue-400" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-black text-slate-900 dark:text-slate-100">All Notifications</h3>
-                  <p className="text-[11px] text-slate-400 mt-0.5">{notifications.length} total · {unreadCount} unread</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-1.5">
-                {unreadCount > 0 && (
-                  <button
-                    type="button"
-                    onClick={markAllAsRead}
-                    className="text-[11px] font-bold text-[#004b79] dark:text-blue-400 px-2.5 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-950/40 cursor-pointer flex items-center gap-1 transition-colors hover:bg-blue-100 dark:hover:bg-blue-950/60"
-                  >
-                    <CheckCheck className="w-3.5 h-3.5" />
-                    <span>Mark all</span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setShowAllModal(false)}
-                  className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 transition-colors cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Filter Pills */}
-            <div className="px-5 py-2.5 flex items-center gap-1.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30 shrink-0">
-              {(["ALL", "UNREAD"] as const).map((f) => (
-                <button
-                  key={f}
-                  type="button"
-                  onClick={() => setModalFilter(f)}
-                  className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
-                    modalFilter === f
-                      ? "bg-[#002137] dark:bg-[#004b79] text-white shadow-xs"
-                      : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  {f === "ALL" ? `All (${notifications.length})` : `Unread (${unreadCount})`}
-                </button>
-              ))}
-            </div>
-
-            {/* Notification list */}
-            <div className="p-3 overflow-y-auto flex-1 space-y-1.5">
-              {filteredModalNotifications.length === 0 ? (
-                <div className="py-14 text-center space-y-2">
-                  <Inbox className="w-9 h-9 text-slate-300 dark:text-slate-600 mx-auto" />
-                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    No {modalFilter === "UNREAD" ? "unread " : ""}notifications
-                  </p>
-                  <p className="text-xs text-slate-400">You are completely up to date!</p>
-                </div>
-              ) : (
-                filteredModalNotifications.map((n) => (
-                  <div key={n._id} className="relative">
-                    <NotifCard n={n} onClose={() => setShowAllModal(false)} />
-                    {!n.read && (
-                      <button
-                        type="button"
-                        onClick={(e) => markAsRead(n._id, e)}
-                        title="Mark as read"
-                        className="absolute top-2.5 right-2.5 w-6 h-6 rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 flex items-center justify-center text-slate-400 hover:text-emerald-600 hover:border-emerald-400 transition-colors cursor-pointer shadow-sm"
-                      >
-                        <Check className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
     </div>
   );
 }
-

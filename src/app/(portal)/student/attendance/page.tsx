@@ -35,9 +35,29 @@ export default function StudentAttendancePage() {
 
   const records = Array.isArray(data?.records) ? data.records : [];
 
+  const formatDateDDMMYYYY = (dateStr?: string) => {
+    if (!dateStr) return "";
+    const match = String(dateStr).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (match) {
+      return `${match[3]}-${match[2]}-${match[1]}`;
+    }
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return String(dateStr);
+    const dd = String(d.getDate()).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const yyyy = d.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
+  };
+
   const filteredRecords = records.filter((r: any) => {
     const matchesStatus = statusFilter === "ALL" || r.status?.toUpperCase() === statusFilter.toUpperCase();
-    const matchesDate = !dateFilter || r.date?.includes(dateFilter) || r.date === dateFilter;
+    const formattedRecordDate = formatDateDDMMYYYY(r.date);
+    const matchesDate =
+      !dateFilter ||
+      r.date === dateFilter ||
+      r.date?.startsWith(dateFilter) ||
+      formattedRecordDate === formatDateDDMMYYYY(dateFilter) ||
+      formattedRecordDate.includes(dateFilter);
     return matchesStatus && matchesDate;
   });
 
@@ -63,7 +83,7 @@ export default function StudentAttendancePage() {
     if (!filteredRecords.length) return;
     const headers = ["Date", "Time", "Subject", "Topic", "Faculty", "Attendance Status"];
     const rows = filteredRecords.map((r: any) => [
-      `"${r.date || ""}"`,
+      `"${formatDateDDMMYYYY(r.date) || ""}"`,
       `"${r.time || ""}"`,
       `"${r.subject || ""}"`,
       `"${(r.title || "").replace(/"/g, '""')}"`,
@@ -194,22 +214,25 @@ export default function StudentAttendancePage() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            {/* Date Picker Filter */}
-            <input
-              type="text"
-              placeholder="Filter by date (e.g. 27 Aug)..."
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#004b79]"
-            />
-            {dateFilter && (
-              <button
-                onClick={() => setDateFilter("")}
-                className="h-9 px-2 text-xs font-bold text-rose-500 hover:underline"
-              >
-                Clear
-              </button>
-            )}
+            {/* Date Picker Calendar Filter */}
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="h-9 px-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#004b79] cursor-pointer"
+                title="Pick date as calendar"
+              />
+              {dateFilter && (
+                <button
+                  type="button"
+                  onClick={() => setDateFilter("")}
+                  className="h-9 px-2 text-xs font-bold text-rose-500 hover:underline cursor-pointer"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
 
             {/* Quick Filter Chips */}
             <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
@@ -260,7 +283,9 @@ export default function StudentAttendancePage() {
                 >
                   {/* Col 1: Date & Time */}
                   <div className="col-span-3 space-y-0.5">
-                    <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100">{r.date}</p>
+                    <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-mono">
+                      {formatDateDDMMYYYY(r.date)}
+                    </p>
                     <p className="text-[11px] text-slate-400 font-mono">{r.time}</p>
                   </div>
 

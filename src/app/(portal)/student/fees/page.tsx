@@ -93,37 +93,6 @@ export default function StudentFeesPage() {
   // Show duration remaining alert during the last 1 week (7 days) before month ends
   const isExpiringSoon = hasPaid && remainingDays <= 7 && remainingDays > 0;
 
-  // Track if success message was shown at once
-  const latestPaidId = latestPaid?._id || (authData?.user?._id ? `user_${authData.user._id}` : "confirmed");
-  const userKey = authData?.user?._id || "student";
-  const seenKey = `mantif_payment_confirmed_seen_${userKey}_${latestPaidId}`;
-
-  const [hasSeenSuccessOnce, setHasSeenSuccessOnce] = useState<boolean>(true);
-  const [mounted, setMounted] = useState<boolean>(false);
-
-  useEffect(() => {
-    setMounted(true);
-    try {
-      const isSeen = localStorage.getItem(seenKey) === "true";
-      setHasSeenSuccessOnce(isSeen);
-    } catch {
-      setHasSeenSuccessOnce(true);
-    }
-  }, [seenKey]);
-
-  const handleDismissPaymentBanner = () => {
-    try {
-      localStorage.setItem(seenKey, "true");
-    } catch {}
-    setHasSeenSuccessOnce(true);
-  };
-
-  // Only show the success banner at most once right after payment (within 24h of payment)
-  const isRecentlyPaid = paidDateRaw
-    ? Date.now() - new Date(paidDateRaw).getTime() < 24 * 60 * 60 * 1000
-    : false;
-
-  const shouldShowPaymentBanner = mounted && hasPaid && isRecentlyPaid && !hasSeenSuccessOnce;
 
   useEffect(() => {
     const handleLiveUpdate = () => {
@@ -326,52 +295,7 @@ export default function StudentFeesPage() {
         </div>
       )}
 
-      {/* Payment Successful Banner (Only shown once immediately after payment verification) */}
-      {shouldShowPaymentBanner && (
-        <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-500/[0.08] via-teal-500/[0.04] to-emerald-500/[0.02] dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-slate-900/40 border border-emerald-500/30 dark:border-emerald-500/25 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all animate-in fade-in zoom-in-95 duration-200">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-600" />
-          <div className="flex items-center gap-3.5 pr-6 sm:pr-0">
-            <div className="relative w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300/80 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 shadow-xs">
-              <CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500" />
-            </div>
-            <div className="space-y-0.5">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100">
-                  Payment Successful
-                </h3>
-                <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shadow-xs">
-                  Verified by Administrator
-                </span>
-              </div>
-              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                Your monthly tuition fee is fully verified. All live classrooms, study notes, and assignments are unlocked.
-              </p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 justify-end">
-            <Link
-              href="/student/classes"
-              onClick={handleDismissPaymentBanner}
-              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#004b79] hover:bg-[#003b60] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs hover:shadow-md active:scale-95 cursor-pointer group"
-            >
-              <span>Start Learning</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-            </Link>
-
-            <button
-              type="button"
-              onClick={handleDismissPaymentBanner}
-              className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 flex items-center justify-center transition-colors cursor-pointer shrink-0"
-              title="Dismiss notification"
-              aria-label="Dismiss payment confirmation"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* 1 Week Remaining Duration Alert Banner */}
       {isExpiringSoon && (
