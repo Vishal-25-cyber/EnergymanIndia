@@ -15,7 +15,7 @@ import {
   FileText,
   GraduationCap,
   ShieldCheck,
-  Sparkles,
+  Loader2,
   ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -324,7 +324,7 @@ export default function StudentMaterialsPage() {
                           title="Download document file"
                         >
                           {isDownloading ? (
-                            <span className="animate-spin text-xs">⏳</span>
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
                           ) : isDownloaded ? (
                             <>
                               <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -421,7 +421,7 @@ export default function StudentMaterialsPage() {
                         title="Download official file"
                       >
                         {downloadingId === (previewMaterial._id || previewMaterial.title) ? (
-                          <span className="animate-spin text-xs">⏳ Downloading...</span>
+                          <span className="inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>Downloading...</span></span>
                         ) : downloadedId === (previewMaterial._id || previewMaterial.title) ? (
                           <>
                             <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />

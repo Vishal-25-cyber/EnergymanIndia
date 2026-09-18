@@ -54,7 +54,7 @@ export function StudentTrialWelcomeModal({
       isOpen={isOpen}
       onClose={handleDismiss}
       maxWidth="sm"
-      title="🎉 2-Day Free Trial Active"
+      title="2-Day Free Trial Active"
       description={`Welcome, ${studentName}! You have full access to all live classes and study materials.`}
     >
       <div className="space-y-4 pt-1 text-slate-800 dark:text-slate-100 select-none">

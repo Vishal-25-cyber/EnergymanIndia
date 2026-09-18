@@ -18,7 +18,6 @@ import {
   Info,
   Lock,
   Receipt,
-  Sparkles,
   ArrowRight,
   X,
 } from "lucide-react";
@@ -274,7 +273,7 @@ export default function StudentFeesPage() {
         <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#002137] to-[#004b79] text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-md border border-[#dfb74a]/40 animate-in fade-in duration-200">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#dfb74a]/20 flex items-center justify-center text-[#dfb74a] shrink-0">
-              <Sparkles className="w-5 h-5" />
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <h3 className="font-extrabold text-sm sm:text-base text-white">
@@ -574,8 +573,9 @@ export default function StudentFeesPage() {
                     </span>
                   </div>
 
-                  <div className="p-2.5 rounded-lg bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-800/50 text-[11px] text-[#004b79] dark:text-blue-300 font-medium leading-relaxed">
-                    ℹ️ The transaction account is temporarily kept as Founder&apos;s bank account.
+                  <div className="p-2.5 rounded-lg bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-800/50 text-[11px] text-[#004b79] dark:text-blue-300 font-medium leading-relaxed flex items-center gap-1.5">
+                    <Info className="w-3.5 h-3.5 shrink-0" />
+                    <span>The transaction account is temporarily kept as Founder&apos;s bank account.</span>
                   </div>
 
                   <div className="flex items-center justify-between pt-2 border-t border-slate-200/80 dark:border-slate-800">

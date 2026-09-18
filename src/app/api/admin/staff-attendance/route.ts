@@ -85,7 +85,7 @@ export async function GET(req: NextRequest) {
       // Check on-time status
       let onTimeCompliance = "On-Duty";
       if (isLiveHostingNow) {
-        onTimeCompliance = "🔴 Live In Session";
+        onTimeCompliance = "Live In Session";
       } else if (completedClassesCount > 0) {
         onTimeCompliance = "✓ On-Time Concluded";
       } else if (scheduledClassesCount > 0) {

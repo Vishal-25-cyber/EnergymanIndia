@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     // Notify Student
     await Notification.create({
       userId: submission.studentId,
-      title: "Retest Permission Granted! 📝",
+      title: "Retest Permission Granted",
       message: `Your faculty has granted permission to retake "${asgTitle}". You can now start your retest.`,
       type: "TEST",
       linkUrl: "/student/assignments",

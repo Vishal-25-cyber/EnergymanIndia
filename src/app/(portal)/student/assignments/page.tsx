@@ -279,7 +279,7 @@ export default function StudentAssignmentsPage() {
       if (nextCount >= 3) {
         setActiveWarning({
           type,
-          message: "🚫 3rd Warning Reached: Test Terminated due to Proctoring Violations!",
+          message: "3rd Warning Reached: Test Terminated due to Proctoring Violations!",
           timestamp: Date.now(),
         });
         setTimeout(() => {
@@ -290,7 +290,7 @@ export default function StudentAssignmentsPage() {
 
       setActiveWarning({
         type,
-        message: `⚠️ Warning ${nextCount} of 3: ${message}`,
+        message: `Warning ${nextCount} of 3: ${message}`,
         timestamp: Date.now(),
       });
       return nextCount;
@@ -1459,7 +1459,7 @@ export default function StudentAssignmentsPage() {
                     <div className="flex items-center gap-2">
                       {/* In Frame / Away status */}
                       <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ isFaceDetected ? "text-emerald-700 bg-emerald-100" : "text-rose-600 bg-rose-100 animate-pulse" }`}>
-                        {isFaceDetected ? "● In Frame" : `⚠ Away ${awaySeconds}s`}
+                        {isFaceDetected ? "● In Frame" : `Away ${awaySeconds}s`}
                       </span>
                       {warningCount > 0 && (
                         <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 border border-rose-200 text-rose-600 flex items-center gap-1">
@@ -1677,7 +1677,7 @@ export default function StudentAssignmentsPage() {
         isOpen={terminationModalOpen}
         onClose={() => setTerminationModalOpen(false)}
         maxWidth="md"
-        title="🚫 Test Terminated: 3 Warnings"
+        title="Test Terminated: 3 Warnings"
         description="Examination closed due to repeated proctoring violations."
       >
         <div className="space-y-4 pt-1 text-slate-800 dark:text-slate-100 select-none">

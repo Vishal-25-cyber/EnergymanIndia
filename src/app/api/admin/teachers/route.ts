@@ -122,7 +122,7 @@ export async function PATCH(req: NextRequest) {
 
       await Notification.create({
         userId: teacherId,
-        title: status === "ACTIVE" ? "Account Approved 🎉" : "Account Status Update",
+        title: status === "ACTIVE" ? "Account Approved" : "Account Status Update",
         message,
         type: "SYSTEM",
       });

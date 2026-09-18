@@ -65,7 +65,7 @@ export async function PUT(
       if (students.length > 0) {
         const notifications = students.map((s) => ({
           userId: s.userId,
-          title: `🔴 LIVE NOW: ${liveClass.subject} Class Started!`,
+          title: `LIVE NOW: ${liveClass.subject} Class Started!`,
           message: `${liveClass.topic || liveClass.title} is now in session. Join the classroom now.`,
           type: "CLASS_REMINDER",
           read: false,

@@ -11,6 +11,7 @@ import {
   Building,
   GraduationCap,
   DollarSign,
+  Upload,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { invalidateCache } from "@/lib/api-cache";
@@ -403,7 +404,8 @@ export default function AdminSettingsPage() {
 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 text-xs font-bold text-slate-800 dark:text-slate-200 cursor-pointer shadow-xs transition-colors">
-                <span>📁 Upload GPay / PhonePe QR Image</span>
+                <Upload className="w-3.5 h-3.5 text-slate-600 dark:text-slate-300" />
+                <span>Upload GPay / PhonePe QR Image</span>
                 <input
                   type="file"
                   accept="image/*"

@@ -19,7 +19,6 @@ import {
   Award,
   Copy,
   Check,
-  Sparkles,
 } from "lucide-react";
 import { useFastFetch } from "@/lib/api-cache";
 import { formatStudentId } from "@/lib/id-generator";
@@ -145,7 +144,7 @@ export default function StudentDashboardPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-[#dfb74a]/20 text-[#dfb74a] border border-[#dfb74a]/30 backdrop-blur-xs">
-                  <Sparkles className="w-3.5 h-3.5" />
+                  <GraduationCap className="w-3.5 h-3.5" />
                   Academic Year 2026–27
                 </span>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-slate-200 border border-white/15 backdrop-blur-xs">

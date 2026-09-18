@@ -12,6 +12,7 @@ import {
   Search,
   Eye,
   Check,
+  Loader2,
 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { getSubjectsForClassAndBoard, CLASS_LIST } from "@/lib/curriculum";
@@ -553,7 +554,7 @@ export default function TeacherMaterialsPage() {
                 >
                   {isUploading ? (
                     <>
-                      <span className="animate-spin text-sm">⏳</span>
+                      <Loader2 className="w-4 h-4 animate-spin" />
                       <span>Uploading file to Learning Hub... Please wait</span>
                     </>
                   ) : (

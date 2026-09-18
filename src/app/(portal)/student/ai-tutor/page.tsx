@@ -12,7 +12,7 @@ export default function StudentAiTutorPage() {
   >([
     {
       sender: "AI",
-      text: "Hello Aravind! 👋 I am your Acuity AI Study Buddy, strictly customized for your Class 10 curriculum (CBSE & State Board). What topic would you like me to explain today? You can ask about Quadratic Equations, Light Ray Diagrams, Photosynthesis, or Laws of Motion.",
+      text: "Hello! I am your Mantif AI Study Buddy, strictly customized for your Class 10 curriculum (CBSE & State Board). What topic would you like me to explain today? You can ask about Quadratic Equations, Light Ray Diagrams, Photosynthesis, or Laws of Motion.",
       time: "Just now",
     },
   ]);
@@ -90,7 +90,7 @@ export default function StudentAiTutorPage() {
             onClick={() => handleAskQuestion(p)}
             className="px-3 py-1.5 rounded-xl text-[11px] font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:border-indigo-500 whitespace-nowrap transition-colors"
           >
-            💡 {p}
+            {p}
           </button>
         ))}
       </div>

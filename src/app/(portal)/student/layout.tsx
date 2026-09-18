@@ -8,6 +8,7 @@ import { LivePaymentListener } from "@/components/payment/LivePaymentListener";
 import { StudentTrialLockScreen } from "@/components/student/StudentTrialLockScreen";
 import { StudentTrialWelcomeModal } from "@/components/student/StudentTrialWelcomeModal";
 import { useFastFetch } from "@/lib/api-cache";
+import { AlertTriangle } from "lucide-react";
 
 export default function StudentLayout({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname();
@@ -70,7 +71,10 @@ export default function StudentLayout({ children }: { children?: React.ReactNode
         {isTrialExpired && isFeesPage && (
           <div className="bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 text-white px-4 sm:px-6 py-2.5 flex items-center justify-between shadow-xs border-b border-amber-400/40 shrink-0 select-none">
             <div className="flex items-center gap-2 text-xs sm:text-sm">
-              <span className="font-extrabold text-amber-200">⚠️ 2-Day Trial Concluded:</span>
+              <span className="font-extrabold text-amber-200 flex items-center gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-amber-300 shrink-0" />
+                <span>2-Day Trial Concluded:</span>
+              </span>
               <span className="text-amber-50 text-xs">
                 Complete your monthly tuition payment below to unlock all live classes and study materials.
               </span>

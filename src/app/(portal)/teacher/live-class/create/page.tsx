@@ -523,7 +523,7 @@ export default function TeacherCreateLiveClassPage() {
                 className="px-2.5 py-1 rounded-lg bg-[#004b79]/10 hover:bg-[#004b79]/20 text-[#004b79] dark:bg-amber-400/10 dark:hover:bg-amber-400/20 dark:text-amber-400 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 border border-[#004b79]/20"
                 title="Synchronize session date and time to right now"
               >
-                ⚡ Set to Right Now
+                Set to Right Now
               </button>
             </div>
           </div>

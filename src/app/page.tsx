@@ -1992,7 +1992,7 @@ export default function HomePage() {
               <div className="animate-marquee-slow flex items-stretch gap-6 sm:gap-8 cursor-grab active:cursor-grabbing hover:[animation-play-state:paused]">
                 {[
                   {
-                    quote: "If surviving 12th boards was a movie, Karunya was the director, scriptwriter, and stunt double all in one. From breaking down the toughest topics with infinite patience to hyping me up when I had doubts, she made sure I came out swinging. Proud to be student #1! ❤️",
+                    quote: "If surviving 12th boards was a movie, Karunya was the director, scriptwriter, and stunt double all in one. From breaking down the toughest topics with infinite patience to hyping me up when I had doubts, she made sure I came out swinging. Proud to be student #1!",
                     name: "T.G. Sivadharani",
                     role: "BSc Costume Design & Fashion",
                     sub: "PSGR Krishnammal College"
@@ -2016,7 +2016,7 @@ export default function HomePage() {
                     sub: "Tutoring Hub Learner"
                   },
                   {
-                    quote: "If surviving 12th boards was a movie, Karunya was the director, scriptwriter, and stunt double all in one. From breaking down the toughest topics with infinite patience to hyping me up when I had doubts, she made sure I came out swinging. Proud to be student #1! ❤️",
+                    quote: "If surviving 12th boards was a movie, Karunya was the director, scriptwriter, and stunt double all in one. From breaking down the toughest topics with infinite patience to hyping me up when I had doubts, she made sure I came out swinging. Proud to be student #1!",
                     name: "T.G. Sivadharani",
                     role: "BSc Costume Design & Fashion",
                     sub: "PSGR Krishnammal College"
