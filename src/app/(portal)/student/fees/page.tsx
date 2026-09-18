@@ -28,8 +28,8 @@ import { downloadReceiptPDF } from "@/lib/download";
 import { cn } from "@/components/ui/button";
 
 export default function StudentFeesPage() {
-  const { data, refetch } = useFastFetch("/api/student/payments");
-  const { data: authData } = useFastFetch("/api/auth/me");
+  const { data, refetch, isLoading: isPaymentsLoading } = useFastFetch("/api/student/payments");
+  const { data: authData, isLoading: isAuthLoading } = useFastFetch("/api/auth/me");
   const [isPaying, setIsPaying] = useState(false);
   const [showPayModal, setShowPayModal] = useState(false);
   const [isQrUnlocked, setIsQrUnlocked] = useState(false);
@@ -39,10 +39,47 @@ export default function StudentFeesPage() {
   const [copiedUpi, setCopiedUpi] = useState(false);
   const [downloadingReceiptId, setDownloadingReceiptId] = useState<string | null>(null);
 
+  // Synchronous cached fee verification state to eliminate the 1-second "Pending Dues" flash
+  const [cachedHasPaid, setCachedHasPaid] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return localStorage.getItem("mantif_student_fee_cleared") === "true";
+    } catch {
+      return false;
+    }
+  });
+
   const trial = authData?.user?.trial;
-  const hasPaid = !!trial?.hasPaid;
+  const isPaidFromPayments = Boolean(
+    (data?.history && data.history.length > 0 && !data?.currentFee) ||
+    data?.history?.some((p: any) => p.status === "PAID")
+  );
+
+  // Instant resolved state: authData -> cached payments -> localStorage
+  const hasPaid = authData?.user
+    ? Boolean(trial?.hasPaid)
+    : data
+      ? isPaidFromPayments
+      : cachedHasPaid;
+
   const isTrialActive = !hasPaid && !!trial?.isTrialActive;
   const isTrialExpired = !hasPaid && !!trial?.isTrialExpired;
+  const isInitialLoading = !authData && !data && !cachedHasPaid;
+
+  useEffect(() => {
+    if (authData?.user) {
+      const paid = Boolean(trial?.hasPaid);
+      setCachedHasPaid(paid);
+      try {
+        localStorage.setItem("mantif_student_fee_cleared", paid ? "true" : "false");
+      } catch {}
+    } else if (data) {
+      setCachedHasPaid(isPaidFromPayments);
+      try {
+        localStorage.setItem("mantif_student_fee_cleared", isPaidFromPayments ? "true" : "false");
+      } catch {}
+    }
+  }, [authData, trial?.hasPaid, data, isPaidFromPayments]);
 
   // Track dismissal of payment confirmed banner
   const latestPaidId = data?.history?.[0]?._id || (authData?.user?._id ? `user_${authData.user._id}` : "confirmed");
@@ -337,45 +374,63 @@ export default function StudentFeesPage() {
 
         <div className="py-2 sm:px-6 space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Tuition Status</span>
-          <p className={cn(
-            "text-2xl sm:text-3xl font-black flex items-center gap-1.5 font-mono",
-            hasPaid
-              ? "text-emerald-600 dark:text-emerald-400"
-              : isTrialActive
-                ? "text-[#004b79] dark:text-[#dfb74a]"
-                : "text-amber-600 dark:text-amber-400"
-          )}>
-            <CheckCircle2 className="w-6 h-6 shrink-0" />
-            <span>
-              {hasPaid ? "Cleared" : isTrialActive ? "2-Day Trial" : "Pending Dues"}
-            </span>
-          </p>
-          <p className="text-xs text-slate-500 font-medium">
-            {hasPaid
-              ? "No outstanding invoices"
-              : isTrialActive
-                ? `Complimentary access (${trial?.remainingHours || 48}h left)`
-                : `₹${monthlyFee.toLocaleString("en-IN")} invoice due to unlock`}
-          </p>
+          {isInitialLoading ? (
+            <div className="space-y-1.5 py-1">
+              <div className="h-7 w-28 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
+              <div className="h-3.5 w-36 bg-slate-100 dark:bg-slate-800/60 rounded animate-pulse" />
+            </div>
+          ) : (
+            <>
+              <p className={cn(
+                "text-2xl sm:text-3xl font-black flex items-center gap-1.5 font-mono",
+                hasPaid
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : isTrialActive
+                    ? "text-[#004b79] dark:text-[#dfb74a]"
+                    : "text-amber-600 dark:text-amber-400"
+              )}>
+                <CheckCircle2 className="w-6 h-6 shrink-0" />
+                <span>
+                  {hasPaid ? "Cleared" : isTrialActive ? "2-Day Trial" : "Pending Dues"}
+                </span>
+              </p>
+              <p className="text-xs text-slate-500 font-medium">
+                {hasPaid
+                  ? "No outstanding invoices"
+                  : isTrialActive
+                    ? `Complimentary access (${trial?.remainingHours || 48}h left)`
+                    : `₹${monthlyFee.toLocaleString("en-IN")} invoice due to unlock`}
+              </p>
+            </>
+          )}
         </div>
 
         <div className="py-2 sm:px-6 space-y-1">
           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Portal Access</span>
-          <p className={cn(
-            "text-2xl sm:text-3xl font-black",
-            isTrialExpired
-              ? "text-rose-600 dark:text-rose-400"
-              : "text-[#004b79] dark:text-[#dfb74a]"
-          )}>
-            {isTrialExpired ? "Locked" : isTrialActive ? "Trial Access" : "Full Access"}
-          </p>
-          <p className="text-xs text-slate-500 font-medium">
-            {isTrialExpired
-              ? "Submit UTR below to unlock"
-              : isTrialActive
-                ? `Unrestricted for ${trial?.remainingHours || 48} more hours`
-                : "Live classrooms & notes unlocked"}
-          </p>
+          {isInitialLoading ? (
+            <div className="space-y-1.5 py-1">
+              <div className="h-7 w-28 bg-slate-200 dark:bg-slate-800 rounded-lg animate-pulse" />
+              <div className="h-3.5 w-36 bg-slate-100 dark:bg-slate-800/60 rounded animate-pulse" />
+            </div>
+          ) : (
+            <>
+              <p className={cn(
+                "text-2xl sm:text-3xl font-black",
+                isTrialExpired
+                  ? "text-rose-600 dark:text-rose-400"
+                  : "text-[#004b79] dark:text-[#dfb74a]"
+              )}>
+                {isTrialExpired ? "Locked" : isTrialActive ? "Trial Access" : "Full Access"}
+              </p>
+              <p className="text-xs text-slate-500 font-medium">
+                {isTrialExpired
+                  ? "Submit UTR below to unlock"
+                  : isTrialActive
+                    ? `Unrestricted for ${trial?.remainingHours || 48} more hours`
+                    : "Live classrooms & notes unlocked"}
+              </p>
+            </>
+          )}
         </div>
       </div>
 
