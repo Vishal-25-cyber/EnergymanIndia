@@ -282,6 +282,11 @@ export default function StudentFeesPage() {
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
               <span>2-Day Free Trial Active</span>
             </div>
+          ) : hasPaid && remainingDays > 2 ? (
+            <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Fees Cleared</span>
+            </div>
           ) : (
             <button
               type="button"
@@ -289,7 +294,7 @@ export default function StudentFeesPage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white transition-all cursor-pointer shadow-sm"
             >
               <QrCode className="w-4 h-4" />
-              <span>Founder's Payment Details</span>
+              <span>Founder&apos;s Payment Details</span>
             </button>
           )}
         </div>
