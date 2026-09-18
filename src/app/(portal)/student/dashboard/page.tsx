@@ -36,32 +36,49 @@ export default function StudentDashboardPage() {
   const isTrialActive = !hasPaid && !!trial?.isTrialActive;
   const student = data?.student;
 
-  // Track dismissal of payment confirmed banner so it shows once on confirmation and then stays hidden
-  const latestPaidId = paymentData?.history?.[0]?._id || (authUser?._id ? `user_${authUser._id}` : "confirmed");
-  const userKey = student?.id || authUser?._id || "student";
-  const dismissKey = `mantif_payment_confirmed_dismissed_${userKey}_${latestPaidId}`;
+  // 1-Month (30 Days) Tuition Duration & Expiry Calculation
+  const latestPaid = paymentData?.history?.[0];
+  const paidDateRaw = latestPaid?.paidDate || latestPaid?.createdAt;
+  const baseDate = paidDateRaw ? new Date(paidDateRaw) : new Date();
+  const coverageExpiryDate = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+  const now = new Date();
+  const diffCoverageMs = coverageExpiryDate.getTime() - now.getTime();
+  const remainingDays = Math.max(0, Math.ceil(diffCoverageMs / (1000 * 60 * 60 * 24)));
 
-  const [isPaymentBannerDismissed, setIsPaymentBannerDismissed] = useState<boolean>(true);
+  // Show duration remaining alert during the last 1 week (7 days) before month ends
+  const isExpiringSoon = hasPaid && remainingDays <= 7 && remainingDays > 0;
+
+  // Track if success message was shown at once
+  const latestPaidId = latestPaid?._id || (authUser?._id ? `user_${authUser._id}` : "confirmed");
+  const userKey = student?.id || authUser?._id || "student";
+  const seenKey = `mantif_payment_confirmed_seen_${userKey}_${latestPaidId}`;
+
+  const [hasSeenSuccessOnce, setHasSeenSuccessOnce] = useState<boolean>(true);
   const [mounted, setMounted] = useState<boolean>(false);
 
   useEffect(() => {
     setMounted(true);
     try {
-      const isDismissed = localStorage.getItem(dismissKey) === "true";
-      setIsPaymentBannerDismissed(isDismissed);
+      const isSeen = localStorage.getItem(seenKey) === "true";
+      setHasSeenSuccessOnce(isSeen);
     } catch {
-      setIsPaymentBannerDismissed(false);
+      setHasSeenSuccessOnce(true);
     }
-  }, [dismissKey]);
+  }, [seenKey]);
 
   const handleDismissPaymentBanner = () => {
     try {
-      localStorage.setItem(dismissKey, "true");
+      localStorage.setItem(seenKey, "true");
     } catch {}
-    setIsPaymentBannerDismissed(true);
+    setHasSeenSuccessOnce(true);
   };
 
-  const shouldShowPaymentBanner = mounted && hasPaid && !isPaymentBannerDismissed;
+  // Only show the success banner at most once right after payment (within 24h of payment)
+  const isRecentlyPaid = paidDateRaw
+    ? Date.now() - new Date(paidDateRaw).getTime() < 24 * 60 * 60 * 1000
+    : false;
+
+  const shouldShowPaymentBanner = mounted && hasPaid && isRecentlyPaid && !hasSeenSuccessOnce;
 
   const rawName = student?.name || (authUser?.role === "STUDENT" ? authUser?.name : null) || "Student";
   const safeName = typeof rawName === "string" && rawName.trim() ? rawName : "Student";
@@ -165,7 +182,7 @@ export default function StudentDashboardPage() {
         </div>
       </div>
 
-      {/* ── PAYMENT SUCCESSFUL CARD (PROFESSIONAL DISMISSIBLE DESIGN) ── */}
+      {/* ── PAYMENT SUCCESSFUL CARD (ONLY SHOWN ONCE IMMEDIATELY AFTER PAYMENT) ── */}
       {shouldShowPaymentBanner && (
         <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-emerald-500/[0.08] via-teal-500/[0.04] to-emerald-500/[0.02] dark:from-emerald-950/40 dark:via-slate-900/60 dark:to-slate-900/40 border border-emerald-500/30 dark:border-emerald-500/25 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all animate-in fade-in zoom-in-95 duration-200">
           {/* Top Emerald Gradient Accent Line */}
@@ -212,6 +229,41 @@ export default function StudentDashboardPage() {
             >
               <X className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── 1 WEEK REMAINING DURATION ALERT CARD ── */}
+      {isExpiringSoon && (
+        <div className="relative overflow-hidden p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/[0.08] via-amber-500/[0.04] to-transparent dark:from-amber-950/40 dark:via-slate-900/60 dark:to-slate-900/40 border border-amber-500/30 dark:border-amber-500/25 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all animate-in fade-in duration-200">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600" />
+          <div className="flex items-center gap-3.5 pr-6 sm:pr-0">
+            <div className="relative w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-300/80 dark:border-amber-800 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 shadow-xs">
+              <Clock className="w-5 h-5 stroke-[2.5]" />
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-100">
+                  Monthly Tuition · {remainingDays} Day{remainingDays === 1 ? "" : "s"} Remaining
+                </h3>
+                <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800 shadow-xs">
+                  Renewal Due Soon
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                Your current monthly tuition coverage is active until {coverageExpiryDate.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 justify-end">
+            <Link
+              href="/student/fees"
+              className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#004b79] hover:bg-[#003b60] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-xs hover:shadow-md active:scale-95 cursor-pointer"
+            >
+              <span>View Tuition &amp; Fees</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
         </div>
       )}
