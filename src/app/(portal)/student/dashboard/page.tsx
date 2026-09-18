@@ -19,6 +19,8 @@ import {
   Award,
   Copy,
   Check,
+  Radio,
+  ChevronRight,
 } from "lucide-react";
 import { useFastFetch } from "@/lib/api-cache";
 import { formatStudentId } from "@/lib/id-generator";
@@ -76,6 +78,11 @@ export default function StudentDashboardPage() {
     evaluated: 0,
     averageScore: null,
   };
+
+  // Real today's sessions from API
+  const todayClasses = data?.todayClasses || [];
+  const activeOrUpcomingClass = todayClasses.find((c: any) => c.status === "LIVE") || todayClasses[0];
+  const isClassLiveNow = activeOrUpcomingClass?.status === "LIVE";
 
   const todayFormatted = new Intl.DateTimeFormat("en-US", {
     weekday: "long",
@@ -196,6 +203,51 @@ export default function StudentDashboardPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* ── 2. SPOTLIGHT: NEXT SCHEDULED CLASS / TIMETABLE WIDGET ── */}
+        <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/90 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-xs ${
+              isClassLiveNow 
+                ? "bg-rose-50 dark:bg-rose-950/60 border border-rose-300 text-rose-600 animate-pulse" 
+                : "bg-blue-50 dark:bg-blue-950/60 border border-blue-200 text-[#004b79] dark:text-[#dfb74a]"
+            }`}>
+              {isClassLiveNow ? <Radio className="w-6 h-6" /> : <Clock className="w-6 h-6" />}
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  {isClassLiveNow ? "Session Now Live" : "Daily Academic Timetable"}
+                </span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                  isClassLiveNow
+                    ? "bg-rose-100 dark:bg-rose-900/60 text-rose-700 dark:text-rose-300 border border-rose-200"
+                    : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200"
+                }`}>
+                  {isClassLiveNow ? "Live In Session" : "Regular Batch Schedule"}
+                </span>
+              </div>
+              <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-slate-100">
+                {activeOrUpcomingClass?.subject 
+                  ? `${activeOrUpcomingClass.subject} — ${activeOrUpcomingClass.topic || "Core Curriculum"}`
+                  : `Assigned Batch: ${batchName}`}
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {activeOrUpcomingClass?.startTime && activeOrUpcomingClass?.endTime
+                  ? `Today • ${activeOrUpcomingClass.startTime} to ${activeOrUpcomingClass.endTime} • Faculty: ${activeOrUpcomingClass.teacherId?.name || "Assigned Specialist"}`
+                  : `Monday through Saturday • Daily live batches with dedicated faculty mentorship`}
+              </p>
+            </div>
+          </div>
+
+          <Link
+            href="/student/classes"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-[#004b79] hover:text-white dark:hover:bg-[#004b79] text-slate-700 dark:text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+          >
+            <span>View Full Schedule</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
 
         {/* ── 1 WEEK REMAINING DURATION ALERT CARD (IF EXPIRING SOON) ── */}
@@ -427,6 +479,7 @@ export default function StudentDashboardPage() {
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2.5 flex-wrap">
+                      <div className="w-2 h-2 rounded-full bg-[#004b79] dark:bg-[#dfb74a]" />
                       <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-slate-100">
                         {sub.name}
                       </h3>
@@ -558,7 +611,16 @@ export default function StudentDashboardPage() {
                 </div>
               </div>
 
-
+              {/* Verified Accreditation Seal */}
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                  Official Student Credential
+                </span>
+                <span className="font-mono text-[10px] text-slate-400">
+                  MANTIF Verified
+                </span>
+              </div>
 
             </div>
           </div>
