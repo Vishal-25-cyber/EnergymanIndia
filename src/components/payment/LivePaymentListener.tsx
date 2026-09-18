@@ -4,13 +4,13 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { PaymentSuccessModal, PaymentSuccessData } from "./PaymentSuccessModal";
 import { invalidateCache } from "@/lib/api-cache";
 
-// SessionStorage key for deduplication across tab navigation
-const NOTIFIED_PAYMENTS_KEY = "acuity_notified_payments";
+// LocalStorage key for deduplication across all sessions and reloads
+const NOTIFIED_PAYMENTS_KEY = "acuity_notified_payments_v2";
 
 function getNotifiedPaymentIds(): Set<string> {
   if (typeof window === "undefined") return new Set();
   try {
-    const raw = sessionStorage.getItem(NOTIFIED_PAYMENTS_KEY);
+    const raw = localStorage.getItem(NOTIFIED_PAYMENTS_KEY);
     return raw ? new Set(JSON.parse(raw)) : new Set();
   } catch {
     return new Set();
@@ -22,7 +22,7 @@ function markPaymentNotified(paymentId: string) {
   try {
     const set = getNotifiedPaymentIds();
     set.add(paymentId);
-    sessionStorage.setItem(NOTIFIED_PAYMENTS_KEY, JSON.stringify(Array.from(set)));
+    localStorage.setItem(NOTIFIED_PAYMENTS_KEY, JSON.stringify(Array.from(set)));
   } catch {
     // Ignore storage quota errors
   }
@@ -115,27 +115,31 @@ export function LivePaymentListener() {
       const data = await res.json();
       if (!data.success) return;
 
+      const hadPendingVerification = isPendingVerificationActiveRef.current;
+
       if (data.pendingVerification) {
         isPendingVerificationActiveRef.current = true;
       } else {
         isPendingVerificationActiveRef.current = false;
       }
 
-      // Check if any recently paid payment has not yet shown success modal
-      if (data.latestPaid && data.latestPaid.status === "PAID") {
+      // Automatically mark current paid payment as notified in localStorage so it never pops up on reload/open
+      if (data.latestPaid?.id) {
+        markPaymentNotified(data.latestPaid.id);
+      }
+
+      // Only show popup modal if the user was actively waiting for pending verification in this session
+      if (hadPendingVerification && data.latestPaid && data.latestPaid.status === "PAID") {
         const notified = getNotifiedPaymentIds();
         if (!notified.has(data.latestPaid.id)) {
-          const paidTime = data.latestPaid.paidDate ? new Date(data.latestPaid.paidDate).getTime() : Date.now();
-          const isRecent = Date.now() - paidTime < 24 * 60 * 60 * 1000;
-          if (isRecent) {
-            handlePaymentPaid({
-              paymentId: data.latestPaid.id,
-              courseName: data.latestPaid.courseName,
-              amount: data.latestPaid.amount,
-              transactionId: data.latestPaid.transactionId,
-              billingMonth: data.latestPaid.billingMonth,
-            });
-          }
+          markPaymentNotified(data.latestPaid.id);
+          handlePaymentPaid({
+            paymentId: data.latestPaid.id,
+            courseName: data.latestPaid.courseName,
+            amount: data.latestPaid.amount,
+            transactionId: data.latestPaid.transactionId,
+            billingMonth: data.latestPaid.billingMonth,
+          });
         }
       }
     } catch {
