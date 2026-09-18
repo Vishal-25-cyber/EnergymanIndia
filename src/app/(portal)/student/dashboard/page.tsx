@@ -5,6 +5,7 @@ import Link from "next/link";
 import {
   Calendar,
   FileText,
+  CheckCircle2,
   BookOpen,
   CalendarCheck2,
   User,
@@ -15,6 +16,7 @@ import {
   Clock,
   GraduationCap,
   Hash,
+  ArrowRight,
 } from "lucide-react";
 import { useFastFetch } from "@/lib/api-cache";
 import { formatStudentId } from "@/lib/id-generator";

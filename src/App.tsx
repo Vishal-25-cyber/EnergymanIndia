@@ -49,6 +49,62 @@ const AdminSettingsPage = lazy(() => import("./app/(portal)/admin/settings/page"
 // Live Classroom (Lazy)
 const ClassroomPage = lazy(() => import("./app/classroom/[classId]/page"));
 
+class PortalErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Portal Runtime Caught Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+          <div className="max-w-md w-full p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl text-center space-y-4">
+            <div className="w-12 h-12 mx-auto rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center font-bold text-lg">
+              !
+            </div>
+            <h2 className="text-lg font-black text-slate-900 dark:text-slate-100">Portal View Recovered</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              An unexpected render issue occurred. Click reload to refresh your session state.
+            </p>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  this.setState({ hasError: false });
+                  window.location.reload();
+                }}
+                className="px-4 py-2 rounded-xl bg-[#004b79] text-white text-xs font-bold hover:bg-[#003b60] transition-colors cursor-pointer"
+              >
+                Reload Page
+              </button>
+              <a
+                href="/student/dashboard"
+                onClick={() => this.setState({ hasError: false })}
+                className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                Dashboard
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function RouteLoadingFallback() {
   return (
     <div className="min-h-[50vh] w-full flex items-center justify-center bg-transparent text-slate-400 py-16">
@@ -141,7 +197,7 @@ function RouteSEOAndScroll() {
 
 export default function App() {
   return (
-    <>
+    <PortalErrorBoundary>
       <RouteSEOAndScroll />
       <Suspense fallback={<RouteLoadingFallback />}>
         <Routes>
@@ -206,7 +262,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
-    </>
+    </PortalErrorBoundary>
   );
 }
 
