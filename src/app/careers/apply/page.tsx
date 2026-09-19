@@ -157,7 +157,6 @@ export default function CareerApplyPage() {
           body: JSON.stringify({
             _subject: mailSubject,
             _replyto: email.trim(),
-            _cc: "solairaj495@gmail.com",
             Candidate_Name: name.trim(),
             Email_Address: email.trim(),
             Phone_WhatsApp: phone.trim(),
