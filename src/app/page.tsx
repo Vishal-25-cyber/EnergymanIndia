@@ -2777,27 +2777,18 @@ export default function HomePage() {
 
             </div>
 
-            {/* Positions Available (Clean Role Cards with Apply Now) */}
+            {/* Positions Available (Clean Role Cards with 1 Common Apply Now Button) */}
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
-                <div>
-                  <h3 className="text-lg sm:text-xl font-black text-[#002137]">
-                    Available Positions
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                    Explore active openings and click Apply Now to submit your application.
-                  </p>
-                </div>
-                <Link
-                  href="/careers/apply"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#002137] hover:bg-[#004b79] text-white text-xs font-bold transition-all shadow-xs shrink-0 self-start sm:self-auto"
-                >
-                  <span>Apply Now</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+              <div className="border-b border-slate-200/80 pb-3 text-center sm:text-left">
+                <h3 className="text-lg sm:text-xl font-black text-[#002137]">
+                  Available Positions
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 font-medium">
+                  Review the active roles below and click Apply Now to submit your application.
+                </p>
               </div>
 
-              {/* Roles Cards Grid */}
+              {/* Roles Cards Grid (Cards without individual buttons) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {[
                   {
@@ -2869,19 +2860,20 @@ export default function HomePage() {
                           {pos.desc}
                         </p>
                       </div>
-
-                      <div className="pt-3 border-t border-slate-100">
-                        <Link
-                          href={`/careers/apply?role=${encodeURIComponent(pos.title)}`}
-                          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#002137] hover:bg-[#004b79] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-                        >
-                          <span>Apply Now</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                      </div>
                     </div>
                   );
                 })}
+              </div>
+
+              {/* Single Common Apply Now Button */}
+              <div className="pt-4 flex justify-center text-center">
+                <Link
+                  href="/careers/apply"
+                  className="w-full sm:w-auto min-w-[220px] px-8 py-3.5 rounded-2xl bg-[#002137] hover:bg-[#004b79] text-white text-sm sm:text-base font-bold shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer inline-flex items-center justify-center gap-2.5"
+                >
+                  <span>Apply Now</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
             </div>
 
