@@ -16,6 +16,7 @@ import {
   Brain,
   Film,
   TrendingUp,
+  ArrowRight,
 } from "lucide-react";
 import { useSearchParams } from "@/lib/router-compat-nav";
 
@@ -113,7 +114,7 @@ export default function CareerApplyPage() {
     const mailSubject = `Career Application: ${role} - ${name.trim()}`;
     const mailBody =
       `Dear MANTIF Team,\n\n` +
-      `I am applying for the ${role} (Internship) position.\n\n` +
+      `I am applying for the ${role} (Internship) position at MANTIF.\n\n` +
       `Applicant Information:\n` +
       `- Full Name: ${name.trim()}\n` +
       `- Email: ${email.trim()}\n` +
@@ -132,31 +133,21 @@ export default function CareerApplyPage() {
           name: name.trim(),
           email: email.trim(),
           phone: phone.trim(),
-          classLevel: qualification.trim() || "Internship Candidate",
+          classLevel: qualification.trim() || role,
           subject: mailSubject,
-          message: `${mailBody}\n\n[Target Delivery: info@gmail.com, info@mantif.com]`,
+          message: mailBody,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
-        setErrorMsg(data.error || "Failed to submit application. Please email info@gmail.com directly.");
+        setErrorMsg(data.error || "Failed to submit application. Please try again or contact info@mantif.com.");
         return;
       }
 
-      // Automatically launch user's email client addressed to info@gmail.com and info@mantif.com
-      const mailtoUrl = `mailto:info@gmail.com,info@mantif.com?subject=${encodeURIComponent(
-        mailSubject
-      )}&body=${encodeURIComponent(mailBody)}`;
-
-      try {
-        window.open(mailtoUrl, "_blank");
-      } catch {
-        // Fallback if popup blocker intervenes
-      }
-
+      // Submission recorded & emailed to info@mantif.com in real time. Do NOT launch external mail client.
       setSuccessMsg(
-        `Your application for ${role} has been submitted successfully and routed to info@gmail.com and info@mantif.com. Our hiring team will review your profile and reach out shortly.`
+        `Your application for ${role} has been submitted successfully! We have received your application at info@mantif.com.`
       );
       setName("");
       setEmail("");
@@ -165,7 +156,7 @@ export default function CareerApplyPage() {
       setPortfolio("");
       setMessage("");
     } catch {
-      setErrorMsg("Unable to connect to server. You can email your resume directly to info@gmail.com.");
+      setErrorMsg("Unable to connect to server. Please try again or reach out to info@mantif.com.");
     } finally {
       setLoading(false);
     }
@@ -194,11 +185,11 @@ export default function CareerApplyPage() {
           </Link>
 
           <a
-            href="mailto:info@gmail.com"
+            href="mailto:info@mantif.com"
             className="text-xs font-bold text-[#8c6924] hover:underline flex items-center gap-1.5"
           >
             <Mail className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">info@gmail.com</span>
+            <span className="hidden sm:inline">info@mantif.com</span>
           </a>
         </div>
       </header>
@@ -231,12 +222,12 @@ export default function CareerApplyPage() {
                   Submit Your Application
                 </h2>
                 <p className="text-xs text-slate-500 font-medium">
-                  Submissions are received at <strong className="text-[#002137]">info@gmail.com</strong>.
+                  Submissions are received directly at <strong className="text-[#002137]">info@mantif.com</strong>.
                 </p>
               </div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold self-start sm:self-auto">
                 <Send className="w-3 h-3 text-[#004b79]" />
-                <span>Quick Review</span>
+                <span>Instant Delivery</span>
               </div>
             </div>
 
@@ -260,33 +251,26 @@ export default function CareerApplyPage() {
                       Application Submitted Successfully!
                     </h3>
                     <p className="text-xs sm:text-sm text-emerald-800 font-medium">
-                      Received via <strong>info@gmail.com</strong> and recorded in our system.
+                      Received at <strong>info@mantif.com</strong> and recorded in our admissions system.
                     </p>
                   </div>
                 </div>
 
                 <p className="text-xs sm:text-sm text-emerald-900/90 leading-relaxed font-normal">
-                  Our team will evaluate your portfolio and reach out to you via WhatsApp / Email regarding the interview discussion.
+                  Thank you for applying to MANTIF. Our team will evaluate your portfolio and reach out to you via WhatsApp or Email regarding the interview discussion.
                 </p>
 
                 <div className="pt-3 flex flex-wrap items-center gap-3">
-                  <a
-                    href={`mailto:info@gmail.com?subject=${encodeURIComponent(`Career Application: ${role}`)}`}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all shadow-xs"
-                  >
-                    <Mail className="w-3.5 h-3.5" />
-                    <span>Send Resume via Email directly</span>
-                  </a>
                   <button
                     type="button"
                     onClick={() => setSuccessMsg("")}
-                    className="px-4 py-2.5 rounded-xl border border-emerald-300 hover:bg-emerald-100 text-emerald-900 text-xs font-bold transition-colors cursor-pointer"
+                    className="px-5 py-2.5 rounded-xl bg-[#002137] hover:bg-[#004b79] text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
                   >
                     Submit Another Application
                   </button>
                   <Link
                     to="/"
-                    className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
+                    className="px-5 py-2.5 rounded-xl border border-emerald-300 hover:bg-emerald-100 text-emerald-900 text-xs font-bold transition-colors"
                   >
                     Return to Homepage
                   </Link>
@@ -408,13 +392,10 @@ export default function CareerApplyPage() {
 
                 {/* Bottom Actions */}
                 <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100">
-                  <a
-                    href={`mailto:info@gmail.com?subject=${encodeURIComponent(`Career Application Inquiry: ${role}`)}`}
-                    className="text-xs font-bold text-[#8c6924] hover:underline flex items-center gap-1.5"
-                  >
-                    <Mail className="w-3.5 h-3.5" />
-                    <span>Prefer email? Send directly to info@gmail.com</span>
-                  </a>
+                  <span className="text-xs text-slate-500 font-medium flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-[#8c6924]" />
+                    <span>Delivers in real-time to info@mantif.com</span>
+                  </span>
 
                   <button
                     type="submit"
@@ -448,10 +429,6 @@ export default function CareerApplyPage() {
         <div className="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>&copy; {new Date().getFullYear()} MANTIF Education. All rights reserved.</span>
           <div className="flex items-center gap-4">
-            <a href="mailto:info@gmail.com" className="hover:text-white transition-colors">
-              info@gmail.com
-            </a>
-            <span>•</span>
             <a href="mailto:info@mantif.com" className="hover:text-white transition-colors">
               info@mantif.com
             </a>
