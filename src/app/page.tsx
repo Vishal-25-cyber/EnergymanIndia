@@ -196,7 +196,7 @@ const careerOpenings: CareerOpening[] = [
   },
   {
     id: "academic-tutors",
-    title: "Academic Tutors (Math / Science / English)",
+    title: "Academic Tutors",
     category: "TUTOR",
     department: "Academics & Pedagogy",
     roleType: "Internship / Faculty Specialist",
@@ -2800,7 +2800,7 @@ export default function HomePage() {
                     icon: Brain,
                   },
                   {
-                    title: "Academic Tutors (Math / Science / English)",
+                    title: "Academic Tutors",
                     icon: GraduationCap,
                   },
                   {

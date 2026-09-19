@@ -34,7 +34,7 @@ const AVAILABLE_ROLES = [
     icon: Brain,
   },
   {
-    title: "Academic Tutors (Math / Science / English)",
+    title: "Academic Tutors",
     type: "Internship / Faculty Specialist",
     dept: "Academics & Pedagogy",
     icon: GraduationCap,
