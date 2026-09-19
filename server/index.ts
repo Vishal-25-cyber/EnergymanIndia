@@ -11,6 +11,33 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust reverse proxy (Render / Cloudflare) so req.secure and x-forwarded-proto are honored
+app.set("trust proxy", 1);
+
+// Automatic HTTPS Redirection and HSTS (Strict-Transport-Security) for Mobile & Desktop Browsers
+app.use((req: any, res: any, next: any) => {
+  // Enforce HSTS so Chrome, Safari, and mobile browsers always force HTTPS without interstitial warnings
+  res.setHeader(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains; preload"
+  );
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+
+  // If a request arrives via plain HTTP behind Render/Cloudflare proxy, redirect immediately to HTTPS
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  if (
+    (process.env.NODE_ENV === "production" || process.env.RENDER) &&
+    forwardedProto &&
+    forwardedProto !== "https"
+  ) {
+    const host = req.headers.host || "mantif.com";
+    return res.redirect(301, `https://${host}${req.url}`);
+  }
+
+  next();
+});
+
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
