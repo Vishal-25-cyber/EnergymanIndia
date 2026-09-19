@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
 import {
   Bell,
   Check,
@@ -52,12 +51,7 @@ const getTypeStyle = (type: string) => {
 export function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [mounted, setMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Close dropdown whenever user touches or clicks anywhere outside
   useEffect(() => {
@@ -75,13 +69,13 @@ export function NotificationBell() {
       }
     };
 
-    document.addEventListener("mousedown", handleOutsideInteraction, true);
-    document.addEventListener("touchstart", handleOutsideInteraction, { capture: true, passive: true });
+    document.addEventListener("mousedown", handleOutsideInteraction);
+    document.addEventListener("touchstart", handleOutsideInteraction);
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("mousedown", handleOutsideInteraction, true);
-      document.removeEventListener("touchstart", handleOutsideInteraction, true);
+      document.removeEventListener("mousedown", handleOutsideInteraction);
+      document.removeEventListener("touchstart", handleOutsideInteraction);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen]);
@@ -108,30 +102,42 @@ export function NotificationBell() {
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const markAsRead = async (notificationId: string, e?: React.MouseEvent) => {
-    if (e) e.stopPropagation();
-    setNotifications((prev) => prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n)));
+  const markAsRead = async (notificationId: string, e?: React.MouseEvent | React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    // Optimistically mark as read immediately
+    setNotifications((prev) =>
+      prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n))
+    );
     try {
       await fetch("/api/notifications", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ notificationId }),
       });
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
     }
   };
 
-  const markAllAsRead = async () => {
+  const markAllAsRead = async (e?: React.MouseEvent | React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     try {
       await fetch("/api/notifications", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ markAll: true }),
       });
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error("Failed to mark all notifications as read:", err);
     }
   };
 
@@ -161,8 +167,8 @@ export function NotificationBell() {
       <div
         className={`group relative flex items-start gap-2.5 p-3 rounded-xl transition-all duration-150 border ${
           n.read
-            ? "bg-transparent border-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/40"
-            : "bg-white dark:bg-slate-800/70 border-slate-200 dark:border-slate-700/80 shadow-xs hover:shadow-md"
+            ? "bg-slate-50/40 dark:bg-slate-900/30 border-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/40 opacity-80 hover:opacity-100"
+            : "bg-white dark:bg-slate-800/80 border-slate-200/90 dark:border-slate-700/80 shadow-xs hover:shadow-md"
         }`}
       >
         <Link
@@ -171,7 +177,7 @@ export function NotificationBell() {
             markAsRead(n._id);
             onClose();
           }}
-          className="flex-1 flex items-start gap-2.5 min-w-0"
+          className="flex-1 flex items-start gap-2.5 min-w-0 cursor-pointer"
         >
           <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5 ${style.bg}`}>
             <Icon className={`w-4 h-4 ${style.iconColor}`} />
@@ -180,7 +186,7 @@ export function NotificationBell() {
             <div className="flex items-start justify-between gap-1.5 mb-0.5">
               <p
                 className={`text-xs font-bold leading-tight truncate ${
-                  n.read ? "text-slate-500 dark:text-slate-400" : "text-slate-900 dark:text-slate-100"
+                  n.read ? "text-slate-500 dark:text-slate-400 font-medium" : "text-slate-900 dark:text-slate-100"
                 }`}
               >
                 {n.title}
@@ -199,20 +205,29 @@ export function NotificationBell() {
           </div>
         </Link>
 
-        {/* Individual Mark As Read Button */}
-        <div className="shrink-0 flex items-center pt-1">
+        {/* Individual Mark As Read / Checked Button */}
+        <div className="shrink-0 flex items-center pt-0.5 relative z-20">
           {!n.read ? (
             <button
               type="button"
-              onClick={(e) => markAsRead(n._id, e)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                markAsRead(n._id, e);
+              }}
               title="Mark as read"
               aria-label="Mark as read"
-              className="w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-700/80 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 border border-slate-200 dark:border-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-700/80 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-300 border border-slate-300 dark:border-slate-600 flex items-center justify-center transition-all cursor-pointer shadow-xs hover:scale-105 active:scale-95"
             >
               <Check className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
           ) : (
-            <span className="w-2 h-2 rounded-full bg-slate-200 dark:bg-slate-700 my-2 mr-1" />
+            <div
+              title="Marked as read"
+              className="w-7 h-7 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/50 flex items-center justify-center shadow-2xs"
+            >
+              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+            </div>
           )}
         </div>
       </div>
@@ -241,58 +256,49 @@ export function NotificationBell() {
 
       {/* ── NOTIFICATIONS DROPDOWN (SCROLLABLE, INDIVIDUAL READ, NO VIEW ALL BUTTON) ── */}
       {isOpen && (
-        <>
-          {mounted && typeof document !== "undefined" && createPortal(
-            <div
-              className="fixed inset-0 z-40 bg-transparent cursor-default"
-              onClick={() => setIsOpen(false)}
-              onTouchStart={() => setIsOpen(false)}
-            />,
-            document.body
-          )}
-          <div
-            className="absolute right-0 mt-2 w-80 sm:w-[360px] bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl z-50 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
-            style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.1)" }}
-          >
-            {/* Header */}
-            <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-900/60">
-              <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg bg-[#004b79]/10 dark:bg-[#004b79]/25 flex items-center justify-center">
-                  <Bell className="w-3.5 h-3.5 text-[#004b79] dark:text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-xs font-black text-slate-900 dark:text-slate-100 leading-none">Notifications</p>
-                  <p className="text-[10px] text-slate-400 mt-0.5">
-                    {unreadCount > 0 ? `${unreadCount} unread` : "All caught up"}
-                  </p>
-                </div>
+        <div
+          className="absolute right-0 mt-2 w-80 sm:w-[360px] bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl z-50 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+          style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.1)" }}
+        >
+          {/* Header */}
+          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/80 dark:bg-slate-900/60">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-[#004b79]/10 dark:bg-[#004b79]/25 flex items-center justify-center">
+                <Bell className="w-3.5 h-3.5 text-[#004b79] dark:text-blue-400" />
               </div>
-              {unreadCount > 0 && (
-                <button
-                  onClick={markAllAsRead}
-                  className="text-[10px] font-bold text-[#004b79] dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
-                >
-                  <CheckCheck className="w-3 h-3" />
-                  <span>Mark all read</span>
-                </button>
-              )}
+              <div>
+                <p className="text-xs font-black text-slate-900 dark:text-slate-100 leading-none">Notifications</p>
+                <p className="text-[10px] text-slate-400 mt-0.5">
+                  {unreadCount > 0 ? `${unreadCount} unread` : "All caught up"}
+                </p>
+              </div>
             </div>
-
-            {/* Scrollable Notification Items List */}
-            <div className="p-2 space-y-1 max-h-[380px] overflow-y-auto overscroll-contain divide-y divide-slate-100/60 dark:divide-slate-800/40">
-              {notifications.length === 0 ? (
-                <div className="py-10 text-center">
-                  <Inbox className="w-7 h-7 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
-                  <p className="text-xs font-medium text-slate-400">No notifications yet</p>
-                </div>
-              ) : (
-                notifications.map((n) => (
-                  <NotifCard key={n._id} n={n} onClose={() => setIsOpen(false)} />
-                ))
-              )}
-            </div>
+            {unreadCount > 0 && (
+              <button
+                type="button"
+                onClick={markAllAsRead}
+                className="text-[10px] font-bold text-[#004b79] dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
+              >
+                <CheckCheck className="w-3 h-3" />
+                <span>Mark all read</span>
+              </button>
+            )}
           </div>
-        </>
+
+          {/* Scrollable Notification Items List */}
+          <div className="p-2 space-y-1 max-h-[380px] overflow-y-auto overscroll-contain divide-y divide-slate-100/60 dark:divide-slate-800/40">
+            {notifications.length === 0 ? (
+              <div className="py-10 text-center">
+                <Inbox className="w-7 h-7 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+                <p className="text-xs font-medium text-slate-400">No notifications yet</p>
+              </div>
+            ) : (
+              notifications.map((n) => (
+                <NotifCard key={n._id} n={n} onClose={() => setIsOpen(false)} />
+              ))
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import connectToDatabase from "@/lib/db/mongoose";
 import { getSession } from "@/lib/auth/session";
 import Notification from "@/models/Notification";
@@ -11,7 +12,14 @@ export async function GET(req: NextRequest) {
     }
 
     await connectToDatabase();
-    const notifications = await Notification.find({ userId: session.userId })
+    
+    // Support matching both string and ObjectId userId
+    const userConditions: any[] = [{ userId: session.userId }];
+    if (mongoose.Types.ObjectId.isValid(session.userId)) {
+      userConditions.push({ userId: new mongoose.Types.ObjectId(session.userId) });
+    }
+
+    const notifications = await Notification.find({ $or: userConditions })
       .sort({ createdAt: -1 })
       .limit(30)
       .lean();
@@ -34,10 +42,25 @@ export async function PUT(req: NextRequest) {
     const body = await req.json().catch(() => ({}));
     const { notificationId, markAll = false } = body;
 
+    const userConditions: any[] = [{ userId: session.userId }];
+    if (mongoose.Types.ObjectId.isValid(session.userId)) {
+      userConditions.push({ userId: new mongoose.Types.ObjectId(session.userId) });
+    }
+
     if (markAll) {
-      await Notification.updateMany({ userId: session.userId, read: false }, { $set: { read: true } });
+      await Notification.updateMany(
+        { $or: userConditions, read: false },
+        { $set: { read: true } }
+      );
     } else if (notificationId) {
-      await Notification.updateOne({ _id: notificationId, userId: session.userId }, { $set: { read: true } });
+      const idFilter = mongoose.Types.ObjectId.isValid(notificationId)
+        ? new mongoose.Types.ObjectId(notificationId)
+        : notificationId;
+
+      await Notification.updateOne(
+        { _id: idFilter },
+        { $set: { read: true } }
+      );
     }
 
     return NextResponse.json({ success: true });
