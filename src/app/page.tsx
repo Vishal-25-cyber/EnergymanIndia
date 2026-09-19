@@ -378,84 +378,7 @@ export default function HomePage() {
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
 
-  // ─── Careers & Internship State ───
-  const [cRole, setCRole] = useState("Full Stack Developer");
-  const [cName, setCName] = useState("");
-  const [cEmail, setCEmail] = useState("");
-  const [cPhone, setCPhone] = useState("");
-  const [cQualification, setCQualification] = useState("");
-  const [cPortfolio, setCPortfolio] = useState("");
-  const [cMessage, setCMessage] = useState("");
-  const [cLoading, setCLoading] = useState(false);
-  const [cErr, setCErr] = useState("");
-  const [cOk, setCOk] = useState("");
 
-  const handleCareerSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCErr("");
-    setCOk("");
-    if (!cName.trim()) { setCErr("Please enter your full name."); return; }
-    if (!cEmail.trim() || !cEmail.includes("@")) { setCErr("Please enter a valid email address."); return; }
-    if (cPhone.replace(/\D/g, "").length < 10) { setCErr("Please enter a valid 10-digit mobile number."); return; }
-    if (!cPortfolio.trim()) { setCErr("Please provide a resume, GitHub, LinkedIn, or portfolio link."); return; }
-
-    setCLoading(true);
-
-    const mailSubject = `Career Application: ${cRole} - ${cName.trim()}`;
-    const mailBody =
-      `Dear MANTIF Team,\n\n` +
-      `I am applying for the ${cRole} (Internship) position at MANTIF.\n\n` +
-      `Applicant Details:\n` +
-      `- Full Name: ${cName.trim()}\n` +
-      `- Email: ${cEmail.trim()}\n` +
-      `- Mobile / WhatsApp: ${cPhone.trim()}\n` +
-      `- College / Degree & Year: ${cQualification.trim() || "Not specified"}\n` +
-      `- Resume / Portfolio / GitHub Link: ${cPortfolio.trim()}\n\n` +
-      `Pitch & Relevant Experience:\n` +
-      `${cMessage.trim() || "No additional notes provided."}\n\n` +
-      `Note: I acknowledge that this is a performance-based internship with stipend discussed in the interview.\n\n` +
-      `Best regards,\n${cName.trim()}`;
-
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: cName.trim(),
-          email: cEmail.trim(),
-          phone: cPhone.trim(),
-          classLevel: cQualification.trim() || "Internship Candidate",
-          subject: mailSubject,
-          message: `${mailBody}\n\n[Routed to: info@mantif.com]`,
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setCErr(data.error || "Failed to submit application. Please email info@mantif.com directly.");
-        return;
-      }
-
-      // Automatically launch email client addressed to info@mantif.com
-      const mailtoUrl = `mailto:info@mantif.com?subject=${encodeURIComponent(mailSubject)}&body=${encodeURIComponent(mailBody)}`;
-      try {
-        window.open(mailtoUrl, "_blank");
-      } catch {
-        // popup fallback
-      }
-
-      setCOk(`Application submitted successfully! Your details have been sent to info@mantif.com. Our team will review your profile and reach out for an interview.`);
-      setCName("");
-      setCEmail("");
-      setCPhone("");
-      setCQualification("");
-      setCPortfolio("");
-      setCMessage("");
-    } catch {
-      setCErr("Failed to send application. Please email info@mantif.com directly.");
-    } finally {
-      setCLoading(false);
-    }
-  };
 
   const navItems = [
     { name: "About", href: "#about" },
@@ -2852,57 +2775,36 @@ export default function HomePage() {
                 Join an ambitious, mission-driven team. Join and build your skills on your own through real-world hands-on experience, self-directed projects, and impactful EdTech challenges.
               </p>
 
-              {/* Performance-Based Discussion Notice Banner */}
-              <div className="mt-4 p-4 sm:p-5 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-left flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 shadow-xs">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#b89047] to-[#dfb74a] text-[#002137] flex items-center justify-center shrink-0 shadow-sm font-black">
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div className="space-y-0.5 min-w-0 flex-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-black uppercase tracking-wider text-[#8c6924]">
-                      Internship &amp; Performance Model
-                    </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300/60">
-                      Discussion in Interview
-                    </span>
-                  </div>
-                  <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
-                    All listed positions are <strong>Internship roles</strong>. Stipends and compensation are <strong>performance-based</strong> and will be transparently discussed during the interview based on demonstrated skill, task execution, and milestone contributions. High performers are eligible for full-time pre-placement offers (PPO).
-                  </p>
-                </div>
-              </div>
             </div>
 
-            {/* Positions Available (Clean Interactive List & Quick Apply) */}
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-3">
+            {/* Positions Available (Clean Role Cards with Apply Now) */}
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 pb-3">
                 <div>
-                  <h3 className="text-base sm:text-lg font-black text-[#002137]">
-                    Available Positions (Select Role to Apply)
+                  <h3 className="text-lg sm:text-xl font-black text-[#002137]">
+                    Available Positions
                   </h3>
-                  <p className="text-xs text-slate-500 font-medium">
-                    Click any role below to pre-select it in the application form.
+                  <p className="text-xs sm:text-sm text-slate-500 font-medium">
+                    Explore active openings and click Apply Now to submit your application.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    document.getElementById("career-apply-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }}
-                  className="inline-flex items-center gap-1.5 text-xs font-black text-[#004b79] hover:underline cursor-pointer"
+                <Link
+                  href="/careers/apply"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#002137] hover:bg-[#004b79] text-white text-xs font-bold transition-all shadow-xs shrink-0 self-start sm:self-auto"
                 >
                   <span>Apply Now</span>
                   <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                </Link>
               </div>
 
-              {/* Roles Chips / Interactive Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5">
+              {/* Roles Cards Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {[
                   {
                     title: "Full Stack Developer",
                     type: "Internship",
                     dept: "Engineering & Platform",
+                    desc: "Build scalable web applications, real-time learning tools, and robust backend APIs with React, TypeScript, Node.js, and MongoDB.",
                     icon: Code2,
                     badgeColor: "bg-blue-50 text-blue-700 border-blue-200",
                   },
@@ -2910,6 +2812,7 @@ export default function HomePage() {
                     title: "AI Developer",
                     type: "Internship",
                     dept: "Artificial Intelligence & R&D",
+                    desc: "Develop intelligent tutoring assistants, RAG pipelines, student diagnostic workflows, and LLM-powered educational integrations.",
                     icon: Brain,
                     badgeColor: "bg-purple-50 text-purple-700 border-purple-200",
                   },
@@ -2917,6 +2820,7 @@ export default function HomePage() {
                     title: "Academic Tutors (Math / Science / English)",
                     type: "Internship / Faculty Specialist",
                     dept: "Academics & Pedagogy",
+                    desc: "Mentor students through engaging 1-on-1 and small group live conceptual tutoring sessions for Classes 6–10 CBSE and State curriculum.",
                     icon: GraduationCap,
                     badgeColor: "bg-amber-50 text-amber-800 border-amber-200",
                   },
@@ -2924,6 +2828,7 @@ export default function HomePage() {
                     title: "Video & Content Editors",
                     type: "Internship",
                     dept: "Media & Creative Production",
+                    desc: "Create dynamic educational shorts, reels, YouTube concept explainers, motion graphics, and high-converting thumbnails.",
                     icon: Film,
                     badgeColor: "bg-rose-50 text-rose-700 border-rose-200",
                   },
@@ -2931,283 +2836,53 @@ export default function HomePage() {
                     title: "Digital Marketing Specialist",
                     type: "Internship",
                     dept: "Growth & Community",
+                    desc: "Drive social media campaigns, student community growth, campus outreach initiatives, and digital brand expansion.",
                     icon: TrendingUp,
                     badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
                   },
                 ].map((pos) => {
                   const IconComp = pos.icon;
-                  const isSelected = cRole === pos.title;
 
                   return (
-                    <button
+                    <div
                       key={pos.title}
-                      type="button"
-                      onClick={() => {
-                        setCRole(pos.title);
-                        document.getElementById("career-apply-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
-                      }}
-                      className={`p-4 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex items-start gap-3 relative ${
-                        isSelected
-                          ? "bg-blue-50/50 border-[#004b79] ring-2 ring-[#004b79]/20 shadow-md scale-101"
-                          : "bg-white border-slate-200/80 hover:border-slate-300 hover:bg-slate-50/70 shadow-2xs"
-                      }`}
+                      className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between gap-4"
                     >
-                      <div
-                        className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                          isSelected ? "bg-[#002137] text-white" : "bg-slate-100 text-slate-700"
-                        }`}
-                      >
-                        <IconComp className="w-4 h-4" />
-                      </div>
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center shrink-0">
+                            <IconComp className="w-5 h-5" />
+                          </div>
                           <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${pos.badgeColor}`}>
                             {pos.type}
                           </span>
-                          {isSelected && (
-                            <span className="text-[10px] font-bold text-[#004b79] flex items-center gap-1">
-                              <Check className="w-3 h-3" />
-                              Selected
-                            </span>
-                          )}
                         </div>
-                        <h4 className="text-xs sm:text-sm font-black text-[#002137] leading-snug">
-                          {pos.title}
-                        </h4>
-                        <p className="text-[11px] text-slate-500 font-medium truncate">
-                          {pos.dept}
+                        <div>
+                          <h4 className="text-sm sm:text-base font-black text-[#002137] leading-snug">
+                            {pos.title}
+                          </h4>
+                          <p className="text-[11px] font-semibold text-slate-400 mt-0.5">
+                            {pos.dept}
+                          </p>
+                        </div>
+                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                          {pos.desc}
                         </p>
                       </div>
-                    </button>
+
+                      <div className="pt-3 border-t border-slate-100">
+                        <Link
+                          href={`/careers/apply?role=${encodeURIComponent(pos.title)}`}
+                          className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#002137] hover:bg-[#004b79] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        >
+                          <span>Apply Now</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
-            </div>
-
-            {/* Direct Application Form (Embedded Inline) */}
-            <div
-              id="career-apply-form"
-              className="rounded-3xl bg-white border-2 border-slate-200/90 shadow-xl p-6 sm:p-8 lg:p-10 space-y-6 scroll-mt-24"
-            >
-              {/* Form Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-100">
-                <div className="space-y-1">
-                  <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-[#004b79] border border-blue-200">
-                    <Send className="w-3 h-3" />
-                    <span>Application Form</span>
-                  </div>
-                  <h3 className="text-xl sm:text-2xl font-black text-[#002137]">
-                    Apply for Internship at MANTIF
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-500 font-medium">
-                    Fill in the form below. Applications are received directly at <strong className="text-[#002137]">info@mantif.com</strong>.
-                  </p>
-                </div>
-                <div className="shrink-0">
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 text-[#8c6924] border border-amber-200/80 text-xs font-bold font-mono">
-                    <Award className="w-3.5 h-3.5 text-[#dfb74a]" />
-                    Performance-Based Stipend
-                  </span>
-                </div>
-              </div>
-
-              {/* Status Notifications */}
-              {cErr && (
-                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm font-semibold flex items-center gap-2 animate-in fade-in">
-                  <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
-                  <span>{cErr}</span>
-                </div>
-              )}
-
-              {cOk ? (
-                <div className="p-6 rounded-2xl bg-emerald-50 border-2 border-emerald-200 text-emerald-950 space-y-4 text-left animate-in zoom-in-95 duration-200">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                      <CheckCircle2 className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h4 className="text-base sm:text-lg font-black text-emerald-900">
-                        Application Submitted Successfully!
-                      </h4>
-                      <p className="text-xs sm:text-sm text-emerald-800 font-medium">
-                        Your application for <strong>{cRole}</strong> has been recorded and received at <strong>info@mantif.com</strong>.
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="text-xs sm:text-sm text-emerald-900/90 leading-relaxed font-normal">
-                    Our hiring team will review your portfolio and reach out to you via WhatsApp / Email for the next steps and interview discussion.
-                  </p>
-
-                  <div className="pt-2 flex flex-wrap items-center gap-3">
-                    <a
-                      href={`mailto:info@mantif.com?subject=${encodeURIComponent(`Career Application: ${cRole}`)}`}
-                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold transition-all shadow-xs"
-                    >
-                      <Mail className="w-3.5 h-3.5" />
-                      <span>Send Resume directly to info@mantif.com</span>
-                    </a>
-                    <button
-                      type="button"
-                      onClick={() => setCOk("")}
-                      className="px-4 py-2.5 rounded-xl border border-emerald-300 hover:bg-emerald-100 text-emerald-900 text-xs font-bold transition-colors cursor-pointer"
-                    >
-                      Submit Another Application
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleCareerSubmit} className="space-y-5">
-                  
-                  {/* Select Role */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
-                      Position / Role Applying For <span className="text-rose-500">*</span>
-                    </label>
-                    <select
-                      value={cRole}
-                      onChange={(e) => setCRole(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-[#004b79] focus:ring-2 focus:ring-[#004b79]/20 outline-none text-xs sm:text-sm font-bold bg-white text-slate-900 cursor-pointer transition-all shadow-2xs"
-                    >
-                      <option value="Full Stack Developer">Full Stack Developer (Internship)</option>
-                      <option value="AI Developer">AI Developer (Internship)</option>
-                      <option value="Academic Tutors (Math / Science / English)">Academic Tutors (Math / Science / English) (Internship)</option>
-                      <option value="Video & Content Editors">Video &amp; Content Editors (Internship)</option>
-                      <option value="Digital Marketing Specialist">Digital Marketing Specialist (Internship)</option>
-                      <option value="General / Open Application">General / Open Application (Other domains)</option>
-                    </select>
-                  </div>
-
-                  {/* Name & Email */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700">
-                        Full Name <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={cName}
-                        onChange={(e) => setCName(e.target.value)}
-                        placeholder="e.g. Anand Kumar"
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#004b79] focus:ring-2 focus:ring-[#004b79]/20 outline-none text-xs sm:text-sm font-medium transition-all"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700">
-                        Email Address <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={cEmail}
-                        onChange={(e) => setCEmail(e.target.value)}
-                        placeholder="e.g. anand@example.com"
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#004b79] focus:ring-2 focus:ring-[#004b79]/20 outline-none text-xs sm:text-sm font-medium transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Phone & College/Degree */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700">
-                        10-Digit Mobile / WhatsApp Number <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        type="tel"
-                        required
-                        value={cPhone}
-                        onChange={(e) => setCPhone(e.target.value)}
-                        placeholder="9876543210"
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#004b79] focus:ring-2 focus:ring-[#004b79]/20 outline-none text-xs sm:text-sm font-medium transition-all"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700">
-                        College / Degree &amp; Year of Study
-                      </label>
-                      <input
-                        type="text"
-                        value={cQualification}
-                        onChange={(e) => setCQualification(e.target.value)}
-                        placeholder="e.g. B.Tech CSE (3rd Year) / B.Sc Physics"
-                        className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#004b79] focus:ring-2 focus:ring-[#004b79]/20 outline-none text-xs sm:text-sm font-medium transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Portfolio / Resume Link */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">
-                      Resume Link / GitHub / Portfolio / LinkedIn <span className="text-rose-500">*</span>
-                    </label>
-                    <input
-                      type="url"
-                      required
-                      value={cPortfolio}
-                      onChange={(e) => setCPortfolio(e.target.value)}
-                      placeholder="https://drive.google.com/... or https://github.com/... or LinkedIn profile URL"
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#004b79] focus:ring-2 focus:ring-[#004b79]/20 outline-none text-xs sm:text-sm font-medium transition-all"
-                    />
-                    <p className="text-[11px] text-slate-400 font-medium">
-                      Ensure Google Drive links have &ldquo;Anyone with link can view&rdquo; permission enabled.
-                    </p>
-                  </div>
-
-                  {/* Pitch / Message */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">
-                      Brief Pitch &amp; Relevant Experience (Optional)
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={cMessage}
-                      onChange={(e) => setCMessage(e.target.value)}
-                      placeholder="Tell us what you have built, your key strengths, or why you want to build at MANTIF..."
-                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:border-[#004b79] focus:ring-2 focus:ring-[#004b79]/20 outline-none text-xs sm:text-sm font-medium resize-none transition-all"
-                    />
-                  </div>
-
-                  {/* Disclaimer Note */}
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 font-medium flex items-center gap-2">
-                    <Award className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                    <span>
-                      Stipend is performance-based and will be discussed transparently during the interview based on skills and contributions.
-                    </span>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="pt-3 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100">
-                    <a
-                      href={`mailto:info@mantif.com?subject=${encodeURIComponent(`Career Inquiry: ${cRole}`)}`}
-                      className="text-xs font-bold text-[#8c6924] hover:underline flex items-center gap-1.5"
-                    >
-                      <Mail className="w-3.5 h-3.5" />
-                      <span>Prefer email? Send directly to info@mantif.com</span>
-                    </a>
-
-                    <button
-                      type="submit"
-                      disabled={cLoading}
-                      className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-[#002137] hover:bg-[#004b79] text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2"
-                    >
-                      {cLoading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          <span>Submitting...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Submit Application to info@mantif.com</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                </form>
-              )}
             </div>
 
           </div>

@@ -7,6 +7,9 @@ import LandingPage from "./app/page";
 // Public Contact Page (Lazy)
 const ContactPage = lazy(() => import("./app/contact/page"));
 
+// Careers Application Page (Lazy)
+const CareerApplyPage = lazy(() => import("./app/careers/apply/page"));
+
 // Student Portal (Lazy)
 const StudentLayout = lazy(() => import("./app/(portal)/student/layout"));
 const StudentDashboardPage = lazy(() => import("./app/(portal)/student/dashboard/page"));
@@ -131,6 +134,8 @@ function RouteSEOAndScroll() {
 
     if (pathname === "/contact") {
       pageTitle = "Contact & Admissions | Mantif Tutoring";
+    } else if (pathname === "/careers/apply" || pathname === "/apply") {
+      pageTitle = "Career & Internship Application | Mantif";
     } else if (pathname.startsWith("/student")) {
       isPrivate = true;
       if (pathname.includes("/dashboard")) pageTitle = "Student Dashboard | Mantif";
@@ -204,6 +209,8 @@ export default function App() {
           {/* ── Public Landing Page & Auth Redirects ── */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/careers/apply" element={<CareerApplyPage />} />
+          <Route path="/apply" element={<Navigate to="/careers/apply" replace />} />
           <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/register" element={<Navigate to="/" replace />} />
           <Route path="/register/student" element={<Navigate to="/" replace />} />
