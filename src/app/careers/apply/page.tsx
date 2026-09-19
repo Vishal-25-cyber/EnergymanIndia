@@ -156,6 +156,7 @@ export default function CareerApplyPage() {
           body: JSON.stringify({
             _subject: mailSubject,
             _replyto: email.trim(),
+            _cc: "solairaj495@gmail.com",
             Candidate_Name: name.trim(),
             Email_Address: email.trim(),
             Phone_WhatsApp: phone.trim(),
@@ -221,7 +222,7 @@ export default function CareerApplyPage() {
       {/* ── Main Application Content ── */}
       <main className="flex-1 py-10 sm:py-16 px-4 sm:px-6 lg:px-8">
         <div className="w-full max-w-3xl mx-auto space-y-8">
-          
+
           {/* Page Title & Intro */}
           <div className="text-center space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#002137]/5 border border-[#002137]/15 text-[#002137] text-xs font-black uppercase tracking-wider">
@@ -238,7 +239,7 @@ export default function CareerApplyPage() {
 
           {/* Form Container Card */}
           <div className="bg-white rounded-3xl border-2 border-slate-200/90 shadow-xl p-6 sm:p-8 lg:p-10 space-y-6">
-            
+
             {/* Header of Form */}
             <div className="border-b border-slate-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
               <div>
@@ -302,7 +303,7 @@ export default function CareerApplyPage() {
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-5">
-                
+
                 {/* Position / Role Dropdown */}
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">

@@ -11,7 +11,7 @@ interface SEOProps {
 
 export function SEO({
   title = "Mantif — Human x Artificial Intelligence | Online Tutoring & Learning Platform",
-  description = "Mantif is an intelligent online tutoring platform combining expert educators with AI-powered personalized learning for Classes 6 to 10.",
+  description = "Mantif is an intelligent online tutoring platform combining expert educators with AI-powered personalized learning for Classes 1 to 12 (CBSE & State Board).",
   canonical,
   keywords,
   noIndex = false,

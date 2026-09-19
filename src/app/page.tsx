@@ -203,7 +203,7 @@ const careerOpenings: CareerOpening[] = [
     workMode: "Online Live Tutoring",
     openings: "4 Openings",
     compensationNote: "Performance-based stipend (Discussed during interview based on lecture delivery, student ratings & teaching hours)",
-    shortDesc: "Conduct engaging, concept-first live online classes for students in Classes 6 to 10 across CBSE and State Board curricula.",
+    shortDesc: "Conduct engaging, concept-first live online classes for students in Classes 1 to 12 across CBSE and State Board curricula.",
     skills: ["CBSE & State Board", "Mathematics", "Science (Physics, Chemistry, Biology)", "English", "Interactive Whiteboard", "Concept Breakdown"],
     responsibilities: [
       "Conduct interactive live video tutoring sessions for small student cohorts.",
@@ -680,7 +680,7 @@ export default function HomePage() {
 
   return (
     <div
-      className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-50 text-slate-900 selection:bg-[#dfb74a]/20 selection:text-[#002137]"
+      className="min-h-screen w-full max-w-full overflow-x-hidden bg-slate-50 text-slate-900 selection:bg-[#002137] selection:text-white"
       style={{ fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" }}
     >
       {/* Skip to Main Content for Accessibility (WCAG 2.4.1) */}
@@ -918,7 +918,7 @@ export default function HomePage() {
                     style={{ fontFamily: "'Montserrat', 'Outfit', 'Inter', sans-serif" }}
                   >
                     M<span className="text-[#8c6924]">Λ</span>NTIF
-                    <span className="sr-only"> — Intelligent Online Tutoring &amp; Learning Platform for Classes 6 to 10</span>
+                    <span className="sr-only"> — Intelligent Online Tutoring &amp; Learning Platform for Classes 1 to 12 (CBSE &amp; State Board)</span>
                   </h1>
                   <p className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-[#8c6924] tracking-tight">
                     Human x Artificial Intelligence
@@ -1637,14 +1637,66 @@ export default function HomePage() {
             </div>
 
             {/* ══════════════════════════════════════════════════════════════
-                VERTICAL 1: FREELANCING
-                (Fullstack, Digital Marketing, Video Editing, Video Shooting)
+                VERTICAL 1: ONLINE TUTORING (OUR FLAGSHIP EDTECH PLATFORM)
             ══════════════════════════════════════════════════════════════ */}
             <div className="space-y-8 pt-2">
               {/* Centered Topic Header */}
               <div className="text-center space-y-1.5 max-w-2xl mx-auto">
                 <span className="text-[11px] font-black uppercase tracking-widest text-[#8c6924]">
-                  01 / DIGITAL SOLUTIONS &amp; CREATIVE AGENCY
+                  01 / OUR FLAGSHIP EDTECH PLATFORM
+                </span>
+                <h3 className="text-3xl sm:text-4xl font-black text-[#002137] tracking-tight">
+                  Online Tutoring
+                </h3>
+                <p className="text-xs sm:text-sm text-[#8c6924] font-bold tracking-normal max-w-xl mx-auto">
+                  Live interactive tuition and personalized mentoring for Classes 1 to 12 (CBSE &amp; State Board).
+                </p>
+              </div>
+
+              {/* Simple, Non-Messy 4 Pillars */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80 border-y border-slate-200/80 py-4">
+                {[
+                  {
+                    title: "Live Interactive Classes",
+                    desc: "Daily small-batch online sessions with subject specialists and two-way doubt solving."
+                  },
+                  {
+                    title: "Proctored Monitoring Tests",
+                    desc: "Structured proctored online examinations ensuring academic integrity, test readiness, and deep conceptual evaluation."
+                  },
+                  {
+                    title: "Curated Study Notes",
+                    desc: "Clear chapter summaries, formula cheat sheets, and solved question banks for every topic."
+                  },
+                  {
+                    title: "Monitoring Dashboards",
+                    desc: "Real-time student and parent dashboards tracking attendance, evaluation reports, and academic growth."
+                  }
+                ].map((item, idx) => (
+                  <div key={idx} className="py-6 px-4 sm:px-6 lg:px-7 space-y-2 text-left first:pl-0 last:pr-0">
+                    <span className="font-mono text-xs font-black text-[#8c6924]">
+                      0{idx + 1}.
+                    </span>
+                    <h4 className="text-base font-black text-[#002137] tracking-tight">
+                      {item.title}
+                    </h4>
+                    <p className="text-xs sm:text-[13px] text-slate-600 font-medium leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ══════════════════════════════════════════════════════════════
+                VERTICAL 2: FREELANCING SERVICES
+                (Fullstack, Digital Marketing, Video Editing, Video Shooting)
+            ══════════════════════════════════════════════════════════════ */}
+            <div className="space-y-8 pt-8 border-t border-slate-200/80">
+              {/* Centered Topic Header */}
+              <div className="text-center space-y-1.5 max-w-2xl mx-auto">
+                <span className="text-[11px] font-black uppercase tracking-widest text-[#8c6924]">
+                  02 / DIGITAL SOLUTIONS &amp; CREATIVE AGENCY
                 </span>
                 <h3 className="text-3xl sm:text-4xl font-black text-[#002137] tracking-tight">
                   Freelancing Services
@@ -1730,18 +1782,16 @@ export default function HomePage() {
                 </div>
 
               </div>
-
-
             </div>
 
             {/* ══════════════════════════════════════════════════════════════
-                VERTICAL 2: GUIDANCE FOR IDEATION
+                VERTICAL 3: GUIDANCE FOR IDEATION
             ══════════════════════════════════════════════════════════════ */}
             <div className="space-y-8 pt-8 border-t border-slate-200/80">
               {/* Centered Topic Header */}
               <div className="text-center space-y-1.5 max-w-2xl mx-auto">
                 <span className="text-[11px] font-black uppercase tracking-widest text-[#8c6924]">
-                  02 / PROJECT &amp; IDEA SUPPORT
+                  03 / PROJECT &amp; IDEA SUPPORT
                 </span>
                 <h3 className="text-3xl sm:text-4xl font-black text-[#002137] tracking-tight">
                   Guidance for Ideation
@@ -1787,87 +1837,6 @@ export default function HomePage() {
                     </p>
                   </div>
                 ))}
-              </div>
-
-
-            </div>
-
-            {/* ══════════════════════════════════════════════════════════════
-                VERTICAL 3: ONLINE TUTORING (OUR PROJECT)
-            ══════════════════════════════════════════════════════════════ */}
-            <div className="space-y-8 pt-8 border-t border-slate-200/80">
-              {/* Centered Topic Header */}
-              <div className="text-center space-y-1.5 max-w-2xl mx-auto">
-                <span className="text-[11px] font-black uppercase tracking-widest text-[#8c6924]">
-                  03 / OUR FLAGSHIP EDTECH PLATFORM
-                </span>
-                <h3 className="text-3xl sm:text-4xl font-black text-[#002137] tracking-tight">
-                  Online Tutoring
-                </h3>
-                <p className="text-xs sm:text-sm text-[#8c6924] font-bold tracking-normal max-w-xl mx-auto">
-                  Live interactive tuition and AI diagnostics for Classes 6 to 10.
-                </p>
-              </div>
-
-              {/* Simple, Non-Messy 4 Pillars (Reduced Content) */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-slate-200/80 border-y border-slate-200/80 py-4">
-                {[
-                  {
-                    title: "Live Interactive Classes",
-                    desc: "Daily small-batch online sessions with subject specialists and two-way doubt solving."
-                  },
-                  {
-                    title: "AI Diagnostic Quizzes",
-                    desc: "Chapter-wise automated evaluations to spot concept gaps before school examinations."
-                  },
-                  {
-                    title: "Curated Study Notes",
-                    desc: "Clear chapter summaries, formula cheat sheets, and solved question banks for every topic."
-                  },
-                  {
-                    title: "Parent Progress Tracking",
-                    desc: "Regular attendance updates, test score reports, and continuous academic feedback."
-                  }
-                ].map((item, idx) => (
-                  <div key={idx} className="py-6 px-4 sm:px-6 lg:px-7 space-y-2 text-left first:pl-0 last:pr-0">
-                    <span className="font-mono text-xs font-black text-[#8c6924]">
-                      0{idx + 1}.
-                    </span>
-                    <h4 className="text-base font-black text-[#002137] tracking-tight">
-                      {item.title}
-                    </h4>
-                    <p className="text-xs sm:text-[13px] text-slate-600 font-medium leading-relaxed">
-                      {item.desc}
-                    </p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Simple Bottom Strip */}
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="space-y-0.5 text-center sm:text-left">
-                  <p className="text-xs sm:text-sm font-bold text-[#002137]">
-                    Classes 6 to 10 • Mathematics, Science, English &amp; AI
-                  </p>
-                  <p className="text-[11px] text-slate-500 font-medium">
-                    Learn more about our comprehensive curriculum and student ecosystem.
-                  </p>
-                </div>
-                <div className="flex items-center shrink-0">
-                  <a
-                    href="#about"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                      window.history.pushState(null, "", "#about");
-                    }}
-                    className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#002137] hover:bg-[#004b79] text-white text-xs sm:text-sm font-bold shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                  >
-                    <GraduationCap className="w-4 h-4 text-[#dfb74a]" />
-                    <span>Explore</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-[#dfb74a]" />
-                  </a>
-                </div>
               </div>
             </div>
 
