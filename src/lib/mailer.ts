@@ -8,9 +8,15 @@ export interface SendMailOptions {
   replyTo?: string;
 }
 
+export interface MailerResult {
+  success: boolean;
+  provider: "gmail-smtp" | "custom-smtp" | "formsubmit" | "none";
+  message?: string;
+}
+
 /**
  * Creates a nodemailer transporter based on environment configuration.
- * Supports GoDaddy Workspace Email (default for mantif.com), Gmail, or generic SMTP.
+ * Supports Gmail (App Password), Microsoft 365, GoDaddy Workspace, or generic SMTP.
  */
 function createTransporter() {
   const host = process.env.SMTP_HOST || "smtpout.secureserver.net";
@@ -18,29 +24,38 @@ function createTransporter() {
   const user = process.env.SMTP_USER || process.env.EMAIL_USER || "info@mantif.com";
   const pass = process.env.SMTP_PASS || process.env.EMAIL_PASS || process.env.SMTP_PASSWORD;
 
+  // Option 1: Gmail with 16-character App Password (highest deliverability)
   if (process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) {
-    return nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-    });
+    return {
+      type: "gmail-smtp" as const,
+      client: nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.GMAIL_USER,
+          pass: process.env.GMAIL_APP_PASSWORD.replace(/\s+/g, ""),
+        },
+      }),
+    };
   }
 
+  // Option 2: Custom SMTP credentials (e.g. smtp.office365.com or GoDaddy)
   if (user && pass) {
-    return nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: {
-        user,
-        pass,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
+    return {
+      type: "custom-smtp" as const,
+      client: nodemailer.createTransport({
+        host,
+        port,
+        secure: port === 465,
+        auth: {
+          user,
+          pass,
+        },
+        tls: {
+          rejectUnauthorized: false,
+        },
+        connectionTimeout: 7000,
+      }),
+    };
   }
 
   return null;
@@ -48,38 +63,73 @@ function createTransporter() {
 
 /**
  * Sends an email notification in real time to info@mantif.com.
+ * Uses a multi-tiered fallback:
+ * Tier 1: Configured SMTP (Gmail or custom SMTP)
+ * Tier 2: HTTP FormSubmit Relay directly to info@mantif.com
  */
-export async function sendEmailNotification(options: SendMailOptions): Promise<{ success: boolean; message?: string }> {
+export async function sendEmailNotification(options: SendMailOptions): Promise<MailerResult> {
   const recipient = options.to || process.env.NOTIFICATION_EMAIL || "info@mantif.com";
   const fromAddress = process.env.SMTP_FROM || `"MANTIF Careers" <${process.env.SMTP_USER || "info@mantif.com"}>`;
 
-  const transporter = createTransporter();
+  const transporterObj = createTransporter();
 
-  if (!transporter) {
-    console.warn(
-      `[Mailer] SMTP credentials not fully configured in environment. Inquiries are stored in MongoDB. ` +
-      `To deliver live emails to ${recipient}, configure SMTP_HOST, SMTP_PORT, SMTP_USER, and SMTP_PASS in .env`
-    );
-    return {
-      success: false,
-      message: "SMTP credentials not configured in environment.",
-    };
+  // ── TIER 1: SMTP DISPATCH ──
+  if (transporterObj) {
+    try {
+      const info = await transporterObj.client.sendMail({
+        from: fromAddress,
+        to: recipient,
+        replyTo: options.replyTo,
+        subject: options.subject,
+        text: options.text,
+        html: options.html,
+      });
+
+      console.log(`[Mailer] Real-time email delivered via ${transporterObj.type} to ${recipient}. MessageId: ${info.messageId}`);
+      return { success: true, provider: transporterObj.type, message: info.messageId };
+    } catch (smtpError: any) {
+      console.warn(`[Mailer] ${transporterObj.type} failed (${smtpError?.message}), falling back to HTTP relay...`);
+    }
   }
 
+  // ── TIER 2: HTTP FORMSUBMIT RELAY ──
   try {
-    const info = await transporter.sendMail({
-      from: fromAddress,
-      to: recipient,
-      replyTo: options.replyTo,
-      subject: options.subject,
-      text: options.text,
-      html: options.html,
+    const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Origin: "https://mantif.com",
+        Referer: "https://mantif.com/",
+      },
+      body: JSON.stringify({
+        _subject: options.subject,
+        _replyto: options.replyTo,
+        name: options.replyTo || "Applicant",
+        email: options.replyTo || recipient,
+        message: options.text,
+        _template: "table",
+      }),
     });
 
-    console.log(`[Mailer] Real-time email delivered successfully to ${recipient}. MessageId: ${info.messageId}`);
-    return { success: true, message: info.messageId };
-  } catch (error: any) {
-    console.error(`[Mailer] Failed to deliver real-time email to ${recipient}:`, error);
-    return { success: false, message: error?.message || "Email dispatch failed" };
+    const data = await res.json().catch(() => ({}));
+    if (data?.success === "true" || data?.success === true) {
+      console.log(`[Mailer] Real-time email dispatched via FormSubmit HTTP relay to ${recipient}.`);
+      return { success: true, provider: "formsubmit", message: "Delivered via FormSubmit" };
+    } else {
+      console.warn(`[Mailer] FormSubmit HTTP relay status:`, data?.message || JSON.stringify(data));
+      return {
+        success: false,
+        provider: "formsubmit",
+        message: data?.message || "FormSubmit pending confirmation at info@mantif.com",
+      };
+    }
+  } catch (httpError: any) {
+    console.error(`[Mailer] HTTP FormSubmit relay error:`, httpError?.message);
+    return {
+      success: false,
+      provider: "none",
+      message: httpError?.message || "All mail delivery providers failed.",
+    };
   }
 }

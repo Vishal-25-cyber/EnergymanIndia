@@ -145,7 +145,31 @@ export default function CareerApplyPage() {
         return;
       }
 
-      // Submission recorded & emailed to info@mantif.com in real time. Do NOT launch external mail client.
+      // Submission recorded in database. Also trigger client-side FormSubmit relay to info@mantif.com
+      try {
+        fetch("https://formsubmit.co/ajax/info@mantif.com", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            _subject: mailSubject,
+            _replyto: email.trim(),
+            Candidate_Name: name.trim(),
+            Email_Address: email.trim(),
+            Phone_WhatsApp: phone.trim(),
+            Applied_Role: role,
+            Degree_College: qualification.trim() || "Not specified",
+            Resume_Portfolio_Link: portfolio.trim(),
+            Message_Pitch: message.trim() || "None",
+            _template: "table",
+          }),
+        }).catch((err) => console.warn("[Client FormSubmit relay]", err));
+      } catch (err) {
+        // non-blocking
+      }
+
       setSuccessMsg(
         `Your application for ${role} has been submitted successfully! We have received your application at info@mantif.com.`
       );

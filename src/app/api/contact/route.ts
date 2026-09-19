@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Dispatch real-time email notification to info@mantif.com
-    await sendEmailNotification({
+    const emailResult = await sendEmailNotification({
       to: "info@mantif.com",
       replyTo: email.trim(),
       subject: subject || `Career Application / Inquiry: ${name.trim()}`,
@@ -64,10 +64,13 @@ export async function POST(req: NextRequest) {
       `,
     });
 
+    console.log(`[Contact API] Email delivery status:`, emailResult);
+
     return NextResponse.json({
       success: true,
       message: "Application submitted successfully! Received and routed to info@mantif.com.",
       inquiryId: inquiry._id,
+      emailDelivery: emailResult,
     });
   } catch (error: any) {
     console.error("Contact Inquiry Error:", error);
