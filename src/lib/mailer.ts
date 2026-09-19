@@ -92,9 +92,8 @@ export async function sendEmailNotification(options: SendMailOptions): Promise<M
     }
   }
 
-  // ── TIER 2: HTTP FORMSUBMIT RELAY (WITH CC BACKUP) ──
+  // ── TIER 2: HTTP FORMSUBMIT RELAY (DIRECT TO info@mantif.com ONLY) ──
   try {
-    const ccAddress = process.env.NOTIFICATION_CC || "solairaj495@gmail.com";
     const res = await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(recipient)}`, {
       method: "POST",
       headers: {
@@ -106,7 +105,6 @@ export async function sendEmailNotification(options: SendMailOptions): Promise<M
       body: JSON.stringify({
         _subject: options.subject,
         _replyto: options.replyTo,
-        _cc: ccAddress,
         name: options.replyTo || "Applicant",
         email: options.replyTo || recipient,
         message: options.text,
