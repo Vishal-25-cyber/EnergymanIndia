@@ -2788,48 +2788,28 @@ export default function HomePage() {
                 </p>
               </div>
 
-              {/* Roles Cards Grid (Cards without individual buttons) */}
+              {/* Roles Cards Grid (Clean Centered Cards: Center Icon + Position Title Only) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {[
                   {
                     title: "Full Stack Developer",
-                    type: "Internship",
-                    dept: "Engineering & Platform",
-                    desc: "Build scalable web applications, real-time learning tools, and robust backend APIs with React, TypeScript, Node.js, and MongoDB.",
                     icon: Code2,
-                    badgeColor: "bg-blue-50 text-blue-700 border-blue-200",
                   },
                   {
                     title: "AI Developer",
-                    type: "Internship",
-                    dept: "Artificial Intelligence & R&D",
-                    desc: "Develop intelligent tutoring assistants, RAG pipelines, student diagnostic workflows, and LLM-powered educational integrations.",
                     icon: Brain,
-                    badgeColor: "bg-purple-50 text-purple-700 border-purple-200",
                   },
                   {
                     title: "Academic Tutors (Math / Science / English)",
-                    type: "Internship / Faculty Specialist",
-                    dept: "Academics & Pedagogy",
-                    desc: "Mentor students through engaging 1-on-1 and small group live conceptual tutoring sessions for Classes 6–10 CBSE and State curriculum.",
                     icon: GraduationCap,
-                    badgeColor: "bg-amber-50 text-amber-800 border-amber-200",
                   },
                   {
                     title: "Video & Content Editors",
-                    type: "Internship",
-                    dept: "Media & Creative Production",
-                    desc: "Create dynamic educational shorts, reels, YouTube concept explainers, motion graphics, and high-converting thumbnails.",
                     icon: Film,
-                    badgeColor: "bg-rose-50 text-rose-700 border-rose-200",
                   },
                   {
                     title: "Digital Marketing Specialist",
-                    type: "Internship",
-                    dept: "Growth & Community",
-                    desc: "Drive social media campaigns, student community growth, campus outreach initiatives, and digital brand expansion.",
                     icon: TrendingUp,
-                    badgeColor: "bg-emerald-50 text-emerald-700 border-emerald-200",
                   },
                 ].map((pos) => {
                   const IconComp = pos.icon;
@@ -2837,29 +2817,14 @@ export default function HomePage() {
                   return (
                     <div
                       key={pos.title}
-                      className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-md transition-all duration-200 flex flex-col justify-between gap-4"
+                      className="p-6 sm:p-8 rounded-2xl bg-white border border-slate-200/90 hover:border-slate-300 shadow-2xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex flex-col items-center justify-center text-center gap-3.5"
                     >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center shrink-0">
-                            <IconComp className="w-5 h-5" />
-                          </div>
-                          <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md border ${pos.badgeColor}`}>
-                            {pos.type}
-                          </span>
-                        </div>
-                        <div>
-                          <h4 className="text-sm sm:text-base font-black text-[#002137] leading-snug">
-                            {pos.title}
-                          </h4>
-                          <p className="text-[11px] font-semibold text-slate-400 mt-0.5">
-                            {pos.dept}
-                          </p>
-                        </div>
-                        <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                          {pos.desc}
-                        </p>
+                      <div className="w-14 h-14 rounded-2xl bg-[#002137] text-[#dfb74a] flex items-center justify-center shadow-sm">
+                        <IconComp className="w-7 h-7" />
                       </div>
+                      <h4 className="text-base sm:text-lg font-black text-[#002137] leading-snug">
+                        {pos.title}
+                      </h4>
                     </div>
                   );
                 })}
