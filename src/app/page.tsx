@@ -1579,38 +1579,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Foundation Quote (Directly on canvas with light accent divider line) */}
-            <div className="pt-2 border-t border-slate-200/80 text-center space-y-1">
-              <p className="text-lg sm:text-xl lg:text-2xl font-black text-[#002137] tracking-tight">
-                “Tutoring Hub gave us the foundation.
-              </p>
-              <p className="text-lg sm:text-xl lg:text-2xl font-black text-[#8c6924] tracking-tight">
-                MANTIF is taking it forward.”
-              </p>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex flex-wrap items-center justify-center gap-4 pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode("SIGNUP");
-                  setStep(1);
-                  document.getElementById("about")?.scrollIntoView({ behavior: "smooth" });
-                }}
-                className="px-8 py-3 rounded-xl bg-[#002137] hover:bg-[#003659] text-white text-sm sm:text-base font-extrabold transition-all shadow-md shadow-[#002137]/15 hover:shadow-lg hover:-translate-y-0.5 cursor-pointer flex items-center gap-2 group"
-              >
-                <span>Sign Up on MANTIF</span>
-                <ArrowRight className="w-4 h-4 text-[#dfb74a] group-hover:translate-x-1 transition-transform" />
-              </button>
-              <a
-                href="#contact"
-                className="px-8 py-3 rounded-xl bg-white border border-slate-300 hover:bg-slate-50 text-slate-800 text-sm sm:text-base font-extrabold transition-all shadow-2xs hover:-translate-y-0.5 cursor-pointer"
-              >
-                Contact Us
-              </a>
-            </div>
-
           </div>
         </section>
 

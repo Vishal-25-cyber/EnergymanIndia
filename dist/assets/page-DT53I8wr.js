@@ -1,1 +1,0 @@
-import{j as t}from"./vendor-react-DJd2GGQD.js";import{d as a}from"./index-C0yPdNdO.js";import{J as m}from"./JitsiClassroom-Bp3kKnkH.js";import"./vendor-livekit-CVdCQK6Q.js";function c(){const s=a(),o=(s==null?void 0:s.classId)||"mantif-live-classroom";return t.jsx(m,{classId:o})}export{c as default};
