@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { PortalSidebar } from "@/components/layout/PortalSidebar";
+import { PortalHeader } from "@/components/layout/PortalHeader";
 import { useFastFetch } from "@/lib/api-cache";
 
 export default function TeacherLayout({ children }: { children?: React.ReactNode }) {
@@ -37,6 +38,7 @@ export default function TeacherLayout({ children }: { children?: React.ReactNode
       <PortalSidebar role="TEACHER" />
 
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto" id="teacher-portal-scroll-area">
+        <PortalHeader userRole="TEACHER" />
         <div className="flex-1 transition-opacity duration-150 ease-out">
           {children || <Outlet />}
         </div>

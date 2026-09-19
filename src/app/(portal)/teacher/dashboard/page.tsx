@@ -11,7 +11,6 @@ import {
   Clock,
 } from "lucide-react";
 import { useFastFetch } from "@/lib/api-cache";
-import { PortalHeader } from "@/components/layout/PortalHeader";
 import { formatStaffId } from "@/lib/id-generator";
 
 export default function TeacherDashboardPage() {
@@ -52,11 +51,7 @@ export default function TeacherDashboardPage() {
   }).format(new Date());
 
   return (
-    <>
-      {/* ── NAVBAR ── */}
-      <PortalHeader userRole="TEACHER" />
-
-      <main className="w-full max-w-7xl mx-auto p-6 sm:p-8 space-y-8 animate-in fade-in duration-150 select-none">
+    <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-150 select-none">
 
         {/* ── 1. WELCOME HEADER (PERFECT ALIGNMENT, EXACT NAME) ── */}
         <div className="flex flex-row items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
@@ -192,6 +187,5 @@ export default function TeacherDashboardPage() {
         </div>
 
       </main>
-    </>
   );
 }

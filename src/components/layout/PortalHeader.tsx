@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NotificationBell } from "./NotificationBell";
 import { useFastFetch } from "@/lib/api-cache";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, Menu } from "lucide-react";
 
 interface PortalHeaderProps {
   userName?: string;
@@ -51,27 +51,35 @@ export default function PortalHeader({
   };
 
   return (
-    <header className="h-16 px-6 sm:px-8 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm flex items-center justify-between sticky top-0 z-40">
-      {/* ── LEFT: REFINED TITLE ── */}
-      <div className="flex items-center gap-2.5">
-        <div className="w-2 h-2 rounded-full bg-[#004b79] dark:bg-[#dfb74a]" />
-        <h2 className="font-bold text-base sm:text-lg text-slate-900 dark:text-slate-100 tracking-tight">
+    <header className="h-16 px-3 sm:px-6 lg:px-8 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm flex items-center justify-between sticky top-0 z-40">
+      {/* ── LEFT: MOBILE MENU TRIGGER + REFINED TITLE ── */}
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent("toggle-portal-sidebar"))}
+          aria-label="Toggle navigation menu"
+          className="lg:hidden w-9 h-9 rounded-xl flex items-center justify-center text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0 border border-slate-200 dark:border-slate-700 active:scale-95"
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+        <div className="w-2 h-2 rounded-full bg-[#004b79] dark:bg-[#dfb74a] shrink-0 hidden xs:block" />
+        <h2 className="font-bold text-sm sm:text-base lg:text-lg text-slate-900 dark:text-slate-100 tracking-tight truncate">
           {getPageTitle()}
         </h2>
       </div>
 
       {/* ── RIGHT: NOTIFICATIONS + REFINED USER PROFILE ── */}
-      <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
         <NotificationBell />
 
-        <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
+        <div className="h-5 sm:h-6 w-px bg-slate-200 dark:bg-slate-800" />
 
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-[#002137] dark:bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-slate-100 dark:ring-slate-800">
+        <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-[#002137] dark:bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-xs ring-2 ring-slate-100 dark:ring-slate-800 shrink-0">
             {safeName.charAt(0).toUpperCase()}
           </div>
           <div className="hidden sm:flex flex-col text-left">
-            <span className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-tight">
+            <span className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-tight truncate max-w-[130px]">
               {safeName}
             </span>
             <span className="text-[10px] font-medium text-slate-400 leading-tight">

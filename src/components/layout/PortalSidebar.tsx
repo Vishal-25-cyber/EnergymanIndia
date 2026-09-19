@@ -25,6 +25,7 @@ import {
   History,
   LogOut,
   Lock,
+  X,
 } from "lucide-react";
 import { cn } from "@/components/ui/button";
 import { warmupPortalCache, prefetchApi, invalidateCache, clearAuthAndCaches, useFastFetch } from "@/lib/api-cache";
@@ -172,10 +173,42 @@ export function PortalSidebar({ role }: SidebarProps) {
 
   const links = role === "STUDENT" ? studentLinks : role === "TEACHER" ? teacherLinks : adminLinks;
 
+  const [mobileOpen, setMobileOpen] = React.useState(false);
+
   // Pre-warm data into in-memory cache once on mount for instant transitions
   useEffect(() => {
     warmupPortalCache(role);
   }, [role]);
+
+  // Listen to custom toggle/close events for mobile drawer
+  useEffect(() => {
+    const handleToggle = () => setMobileOpen((prev) => !prev);
+    const handleClose = () => setMobileOpen(false);
+
+    window.addEventListener("toggle-portal-sidebar", handleToggle);
+    window.addEventListener("close-portal-sidebar", handleClose);
+
+    return () => {
+      window.removeEventListener("toggle-portal-sidebar", handleToggle);
+      window.removeEventListener("close-portal-sidebar", handleClose);
+    };
+  }, []);
+
+  // Close mobile drawer on route change
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  // Close mobile drawer on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    if (mobileOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [mobileOpen]);
 
   const handleHoverPrefetch = (item: any) => {
     if (item.href) {
@@ -199,20 +232,20 @@ export function PortalSidebar({ role }: SidebarProps) {
     }
   };
 
-  return (
-    <aside className="w-64 border-r border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#001726] flex flex-col h-screen sticky top-0 shrink-0 select-none z-30">
-      {/* Sidebar Header (Static Brand Header - Not a button/link to home page) */}
-      <div className="h-20 flex items-center justify-between px-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#00121e]/50 shrink-0">
+  const renderSidebarContent = (isMobile: boolean = false) => (
+    <>
+      {/* Sidebar Header */}
+      <div className="h-16 lg:h-20 flex items-center justify-between px-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#00121e]/50 shrink-0">
         <div className="flex items-center gap-3 min-w-0 select-none cursor-default">
           <img
             src="/images/mantif_icon.png?v=3"
             alt="Mantif Logo"
-            className="w-10 h-10 object-contain shrink-0"
+            className="w-9 h-9 lg:w-10 lg:h-10 object-contain shrink-0"
           />
           <div className="flex flex-col justify-center min-w-0">
             <div className="flex items-center gap-1.5">
               <span
-                className="font-black text-[18px] tracking-[0.14em] text-[#002137] dark:text-white leading-tight select-none truncate"
+                className="font-black text-[16px] lg:text-[18px] tracking-[0.14em] text-[#002137] dark:text-white leading-tight select-none truncate"
                 style={{ fontFamily: "'Montserrat', 'Outfit', 'Inter', sans-serif" }}
               >
                 M<span className="text-[#b89047] dark:text-[#dfb74a]">Λ</span>NTIF
@@ -226,6 +259,17 @@ export function PortalSidebar({ role }: SidebarProps) {
             </p>
           </div>
         </div>
+
+        {isMobile && (
+          <button
+            type="button"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close navigation menu"
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
       </div>
 
       {/* Navigation Links */}
@@ -243,6 +287,9 @@ export function PortalSidebar({ role }: SidebarProps) {
               key={item.href}
               href={item.href}
               prefetch={true}
+              onClick={() => {
+                if (isMobile) setMobileOpen(false);
+              }}
               onMouseEnter={() => handleHoverPrefetch(item)}
               onFocus={() => handleHoverPrefetch(item)}
               className={cn(
@@ -302,6 +349,9 @@ export function PortalSidebar({ role }: SidebarProps) {
           </p>
           <Link
             href="/student/fees"
+            onClick={() => {
+              if (isMobile) setMobileOpen(false);
+            }}
             className="mt-2 block text-center py-1 px-2 rounded-lg bg-[#004b79] hover:bg-[#003b60] text-white font-bold text-[11px] transition-colors"
           >
             Pay Tuition &amp; QR →
@@ -319,6 +369,32 @@ export function PortalSidebar({ role }: SidebarProps) {
           <span>Sign Out</span>
         </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* ── DESKTOP SIDEBAR (Visible on lg screens and up) ── */}
+      <aside className="hidden lg:flex w-64 border-r border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#001726] flex-col h-screen sticky top-0 shrink-0 select-none z-30">
+        {renderSidebarContent(false)}
+      </aside>
+
+      {/* ── MOBILE DRAWER (Visible when opened on small screens) ── */}
+      {mobileOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs lg:hidden animate-in fade-in duration-200"
+            onClick={() => setMobileOpen(false)}
+            aria-hidden="true"
+          />
+
+          {/* Drawer Panel */}
+          <aside className="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] border-r border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#001726] flex flex-col h-full select-none lg:hidden shadow-2xl animate-in slide-in-from-left duration-200">
+            {renderSidebarContent(true)}
+          </aside>
+        </>
+      )}
+    </>
   );
 }

@@ -257,7 +257,7 @@ export function NotificationBell() {
       {/* ── NOTIFICATIONS DROPDOWN (SCROLLABLE, INDIVIDUAL READ, NO VIEW ALL BUTTON) ── */}
       {isOpen && (
         <div
-          className="absolute right-0 mt-2 w-80 sm:w-[360px] bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl z-50 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+          className="fixed sm:absolute inset-x-3 sm:inset-x-auto sm:right-0 top-16 sm:top-auto sm:mt-2 sm:w-[360px] max-w-[calc(100vw-1.5rem)] bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl z-50 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
           style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.1)" }}
         >
           {/* Header */}
