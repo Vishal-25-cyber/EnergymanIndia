@@ -187,6 +187,7 @@ button ::selection {
   display: flex;
   width: max-content;
   animation: marquee-scroll 40s linear infinite;
+  cursor: default;
 }
 
 .animate-marquee-slow:hover {

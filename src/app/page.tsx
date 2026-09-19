@@ -11,7 +11,7 @@ import {
   Mail, MapPin, Copy, MessageSquare, Send, Sparkles,
   Building, ExternalLink, Quote, Heart, Cpu, Brain,
   Compass, School, UserCheck, Star, Image as ImageIcon,
-  Menu, X, Laptop, Rocket, Maximize2, Play, Video, Film,
+  Menu, X, Laptop, Rocket, Maximize2, Play, Pause, Video, Film,
   ChevronDown, ChevronUp, Plus, Code2, TrendingUp, Camera,
   Lightbulb, Layers, Briefcase
 } from "lucide-react";
@@ -289,6 +289,10 @@ export default function HomePage() {
 
   // Gallery Lightbox Modal State
   const [selectedGalleryIdx, setSelectedGalleryIdx] = useState<number | null>(null);
+
+  // Testimonials Carousel Controls State
+  const [isTestimonialsPaused, setIsTestimonialsPaused] = useState(false);
+  const testimonialScrollRef = React.useRef<HTMLDivElement>(null);
 
   // Our Works / Services State
   const [selectedSchoolModal, setSelectedSchoolModal] = useState<any | null>(null);
@@ -1627,13 +1631,10 @@ export default function HomePage() {
           <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 lg:space-y-14">
 
             {/* Section Header */}
-            <div className="text-center space-y-2.5 max-w-3xl mx-auto">
+            <div className="text-center max-w-3xl mx-auto">
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-[#002137] tracking-tight">
                 Our Works
               </h2>
-              <p className="text-sm sm:text-base font-bold text-[#8c6924] tracking-normal max-w-2xl mx-auto">
-                Digital engineering, ideation support, online tutoring, and AI workshops.
-              </p>
             </div>
 
             {/* ══════════════════════════════════════════════════════════════
@@ -2106,80 +2107,136 @@ export default function HomePage() {
             </div>
 
             {/* Smooth Slow-Moving Carousel Container */}
-            <div className="relative w-full overflow-hidden py-2">
+            <div className="relative w-full py-2">
               {/* Left & Right Fade Masks */}
               <div className="pointer-events-none absolute inset-y-0 left-0 w-16 sm:w-28 bg-gradient-to-r from-slate-50 to-transparent z-10" />
               <div className="pointer-events-none absolute inset-y-0 right-0 w-16 sm:w-28 bg-gradient-to-l from-slate-50 to-transparent z-10" />
 
-              {/* Continuous Marquee Track */}
-              <div className="animate-marquee-slow flex items-stretch gap-6 sm:gap-8 cursor-grab active:cursor-grabbing hover:[animation-play-state:paused]">
-                {[
-                  {
-                    quote: "If surviving 12th boards was a movie, Karunya was the director, scriptwriter, and stunt double all in one. From breaking down the toughest topics with infinite patience to hyping me up when I had doubts, she made sure I came out swinging. Proud to be student #1!",
-                    name: "T.G. Sivadharani",
-                    role: "BSc Costume Design & Fashion",
-                    sub: "PSGR Krishnammal College"
-                  },
-                  {
-                    quote: "Thank you for all the support and guidance throughout my time at Mantif. Your teaching made a huge difference in how I understand subjects. Your patience and dedication made tough topics easy to grasp, and I feel confident for my future!",
-                    name: "S. Darshan",
-                    role: "XII Standard",
-                    sub: "Board Exam Cohort"
-                  },
-                  {
-                    quote: "Mantif Tutoring wasn't just about academics; it helped me develop my personality, confidence, and key skills. The supportive atmosphere made learning enjoyable. I truly thankful for all the memories of Mantif.",
-                    name: "Kanishka C",
-                    role: "XII Standard",
-                    sub: "Classroom Alumna"
-                  },
-                  {
-                    quote: "Tuition here is always jolly! It’s not boring notes; Mantif Tutoring Hub is a place where we study, have fun, and share our thoughts freely. Serious learning with lots of care and friendship — that’s why it’s so special.",
-                    name: "R. Manikandan",
-                    role: "XI Standard",
-                    sub: "Tutoring Hub Learner"
-                  },
-                  {
-                    quote: "If surviving 12th boards was a movie, Karunya was the director, scriptwriter, and stunt double all in one. From breaking down the toughest topics with infinite patience to hyping me up when I had doubts, she made sure I came out swinging. Proud to be student #1!",
-                    name: "T.G. Sivadharani",
-                    role: "BSc Costume Design & Fashion",
-                    sub: "PSGR Krishnammal College"
-                  },
-                  {
-                    quote: "Thank you for all the support and guidance throughout my time at Mantif. Your teaching made a huge difference in how I understand subjects. Your patience and dedication made tough topics easy to grasp, and I feel confident for my future!",
-                    name: "S. Darshan",
-                    role: "XII Standard",
-                    sub: "Board Exam Cohort"
-                  },
-                  {
-                    quote: "Mantif Tutoring wasn't just about academics; it helped me develop my personality, confidence, and key skills. The supportive atmosphere made learning enjoyable. I truly thankful for all the memories of Mantif.",
-                    name: "Kanishka C",
-                    role: "XII Standard",
-                    sub: "Classroom Alumna"
-                  },
-                  {
-                    quote: "Tuition here is always jolly! It’s not boring notes; Mantif Tutoring Hub is a place where we study, have fun, and share our thoughts freely. Serious learning with lots of care and friendship — that’s why it’s so special.",
-                    name: "R. Manikandan",
-                    role: "XI Standard",
-                    sub: "Tutoring Hub Learner"
-                  }
-                ].map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="w-[300px] sm:w-[340px] md:w-[380px] min-h-[300px] sm:min-h-[320px] shrink-0 p-6 sm:p-7 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-[#004b79]/40 transition-all flex flex-col justify-between space-y-4 select-none"
-                  >
-                    <div className="space-y-3">
-                      <Quote className="w-6 h-6 text-[#dfb74a] shrink-0" />
-                      <p className="text-slate-700 text-xs sm:text-[13.5px] leading-relaxed font-medium italic">
-                        “{item.quote.replace(/^“|”$/g, '')}”
-                      </p>
+              {/* Scrollable Container with Continuous Marquee Track */}
+              <div
+                ref={testimonialScrollRef}
+                className="w-full overflow-x-auto no-scrollbar scroll-smooth cursor-default"
+              >
+                <div
+                  className={`animate-marquee-slow flex items-stretch gap-6 sm:gap-8 cursor-default ${isTestimonialsPaused ? "[animation-play-state:paused]" : "hover:[animation-play-state:paused]"}`}
+                >
+                  {[
+                    {
+                      quote: "If surviving 12th boards was a movie, Karunya was the director, scriptwriter, and stunt double all in one. From breaking down the toughest topics with infinite patience to hyping me up when I had doubts, she made sure I came out swinging. Proud to be student #1!",
+                      name: "T.G. Sivadharani",
+                      role: "BSc Costume Design & Fashion",
+                      sub: "PSGR Krishnammal College"
+                    },
+                    {
+                      quote: "Thank you for all the support and guidance throughout my time at Mantif. Your teaching made a huge difference in how I understand subjects. Your patience and dedication made tough topics easy to grasp, and I feel confident for my future!",
+                      name: "S. Darshan",
+                      role: "XII Standard",
+                      sub: "Board Exam Cohort"
+                    },
+                    {
+                      quote: "Mantif Tutoring wasn't just about academics; it helped me develop my personality, confidence, and key skills. The supportive atmosphere made learning enjoyable. I truly thankful for all the memories of Mantif.",
+                      name: "Kanishka C",
+                      role: "XII Standard",
+                      sub: "Classroom Alumna"
+                    },
+                    {
+                      quote: "Tuition here is always jolly! It’s not boring notes; Mantif Tutoring Hub is a place where we study, have fun, and share our thoughts freely. Serious learning with lots of care and friendship — that’s why it’s so special.",
+                      name: "R. Manikandan",
+                      role: "XI Standard",
+                      sub: "Tutoring Hub Learner"
+                    },
+                    {
+                      quote: "If surviving 12th boards was a movie, Karunya was the director, scriptwriter, and stunt double all in one. From breaking down the toughest topics with infinite patience to hyping me up when I had doubts, she made sure I came out swinging. Proud to be student #1!",
+                      name: "T.G. Sivadharani",
+                      role: "BSc Costume Design & Fashion",
+                      sub: "PSGR Krishnammal College"
+                    },
+                    {
+                      quote: "Thank you for all the support and guidance throughout my time at Mantif. Your teaching made a huge difference in how I understand subjects. Your patience and dedication made tough topics easy to grasp, and I feel confident for my future!",
+                      name: "S. Darshan",
+                      role: "XII Standard",
+                      sub: "Board Exam Cohort"
+                    },
+                    {
+                      quote: "Mantif Tutoring wasn't just about academics; it helped me develop my personality, confidence, and key skills. The supportive atmosphere made learning enjoyable. I truly thankful for all the memories of Mantif.",
+                      name: "Kanishka C",
+                      role: "XII Standard",
+                      sub: "Classroom Alumna"
+                    },
+                    {
+                      quote: "Tuition here is always jolly! It’s not boring notes; Mantif Tutoring Hub is a place where we study, have fun, and share our thoughts freely. Serious learning with lots of care and friendship — that’s why it’s so special.",
+                      name: "R. Manikandan",
+                      role: "XI Standard",
+                      sub: "Tutoring Hub Learner"
+                    }
+                  ].map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="w-[300px] sm:w-[340px] md:w-[380px] min-h-[300px] sm:min-h-[320px] shrink-0 p-6 sm:p-7 rounded-3xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-[#004b79]/40 transition-all flex flex-col justify-between space-y-4 cursor-default"
+                    >
+                      <div className="space-y-3">
+                        <Quote className="w-6 h-6 text-[#dfb74a] shrink-0" />
+                        <p className="text-slate-700 text-xs sm:text-[13.5px] leading-relaxed font-medium italic">
+                          “{item.quote.replace(/^“|”$/g, '')}”
+                        </p>
+                      </div>
+                      <div className="pt-3.5 border-t border-slate-100 space-y-0.5 shrink-0">
+                        <h3 className="font-black text-sm sm:text-base text-[#002137]">{item.name}</h3>
+                        <p className="text-xs sm:text-sm font-bold text-[#8c6924]">{item.role}</p>
+                        <p className="text-[11px] sm:text-xs text-slate-500 font-medium">{item.sub}</p>
+                      </div>
                     </div>
-                    <div className="pt-3.5 border-t border-slate-100 space-y-0.5 shrink-0">
-                      <h3 className="font-black text-sm sm:text-base text-[#002137]">{item.name}</h3>
-                      <p className="text-xs sm:text-sm font-bold text-[#8c6924]">{item.role}</p>
-                      <p className="text-[11px] sm:text-xs text-slate-500 font-medium">{item.sub}</p>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+
+              {/* Navigation Controls (Previous / Next Arrow Buttons & Pause/Play) */}
+              <div className="flex items-center justify-center gap-3 pt-6 z-20 relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsTestimonialsPaused(true);
+                    if (testimonialScrollRef.current) {
+                      testimonialScrollRef.current.scrollBy({ left: -360, behavior: "smooth" });
+                    }
+                  }}
+                  aria-label="Previous Testimonials"
+                  className="w-10 h-10 rounded-full bg-white border border-slate-300 text-slate-700 hover:text-[#002137] hover:border-[#004b79] hover:bg-slate-50 shadow-xs hover:shadow-md flex items-center justify-center transition-all cursor-pointer"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsTestimonialsPaused(!isTestimonialsPaused)}
+                  className="px-4 py-2 rounded-full bg-white border border-slate-300 text-slate-700 hover:text-[#002137] hover:border-[#004b79] text-xs font-bold shadow-xs hover:shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  {isTestimonialsPaused ? (
+                    <>
+                      <Play className="w-3.5 h-3.5 text-[#8c6924]" />
+                      <span>Resume Auto-Scroll</span>
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="w-3.5 h-3.5 text-[#004b79]" />
+                      <span>Pause Auto-Scroll</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsTestimonialsPaused(true);
+                    if (testimonialScrollRef.current) {
+                      testimonialScrollRef.current.scrollBy({ left: 360, behavior: "smooth" });
+                    }
+                  }}
+                  aria-label="Next Testimonials"
+                  className="w-10 h-10 rounded-full bg-white border border-slate-300 text-slate-700 hover:text-[#002137] hover:border-[#004b79] hover:bg-slate-50 shadow-xs hover:shadow-md flex items-center justify-center transition-all cursor-pointer"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
               </div>
             </div>
 
