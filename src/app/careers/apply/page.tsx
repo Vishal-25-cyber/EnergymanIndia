@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Briefcase,
   ArrowLeft,
@@ -60,6 +60,7 @@ const AVAILABLE_ROLES = [
 ];
 
 export default function CareerApplyPage() {
+  const navigate = useNavigate();
   const searchParams = useSearchParams();
   const initialRoleParam = searchParams.get("role") || "";
 
@@ -193,11 +194,16 @@ export default function CareerApplyPage() {
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80 shadow-2xs">
         <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link
-            to="/#careers"
-            className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-600 hover:text-[#002137] transition-colors"
+            to="/"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate("/");
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="inline-flex items-center gap-2 text-xs sm:text-sm font-bold text-slate-600 hover:text-[#002137] transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back to Careers</span>
+            <span>Back</span>
           </Link>
 
           <Link to="/" className="flex items-center gap-2">

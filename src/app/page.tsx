@@ -397,7 +397,7 @@ export default function HomePage() {
       const targetEl = document.getElementById(targetId) || (targetId === "our-side" ? document.getElementById("our-works") : null);
       if (targetEl) {
         targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
-        window.history.pushState(null, "", href);
+        window.history.replaceState(null, "", href);
       }
       setMobileMenuOpen(false);
     }
@@ -932,7 +932,7 @@ export default function HomePage() {
 
               {/* 3 Core Pillars Alone (Wide, Attractive & Balanced) */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1 w-full">
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-[#004b79]/40 transition-all space-y-2.5">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-[#004b79]/40 transition-all space-y-2.5 flex flex-col items-center text-center">
                   <div className="w-10 h-10 rounded-xl bg-blue-50 text-[#004b79] flex items-center justify-center font-bold">
                     <Cpu className="w-5 h-5" />
                   </div>
@@ -942,7 +942,7 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-[#b89047]/40 transition-all space-y-2.5">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-[#b89047]/40 transition-all space-y-2.5 flex flex-col items-center text-center">
                   <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
                     <Brain className="w-5 h-5" />
                   </div>
@@ -952,7 +952,7 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-500/40 transition-all space-y-2.5">
+                <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-500/40 transition-all space-y-2.5 flex flex-col items-center text-center">
                   <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
                     <Award className="w-5 h-5" />
                   </div>
@@ -1710,11 +1710,11 @@ export default function HomePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 divide-y md:divide-y-0 md:divide-x divide-slate-200/80 border-y border-slate-200/80 py-4">
                 
                 {/* Service 1: Full Stack */}
-                <div className="py-6 px-4 sm:px-6 lg:px-7 space-y-3.5 text-left first:pl-0 last:pr-0">
+                <div className="py-6 px-4 sm:px-6 lg:px-7 space-y-3.5 flex flex-col items-center text-center">
                   <div className="w-12 h-12 rounded-2xl bg-[#002137] text-white flex items-center justify-center shadow-md">
                     <Code2 className="w-6 h-6 text-[#dfb74a]" />
                   </div>
-                  <div>
+                  <div className="flex flex-col items-center text-center">
                     <span className="text-[10px] font-black uppercase tracking-wider text-[#8c6924]">
                       Engineering
                     </span>
@@ -1728,11 +1728,11 @@ export default function HomePage() {
                 </div>
 
                 {/* Service 2: Digital Marketing */}
-                <div className="py-6 px-4 sm:px-6 lg:px-7 space-y-3.5 text-left">
+                <div className="py-6 px-4 sm:px-6 lg:px-7 space-y-3.5 flex flex-col items-center text-center">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#8c6924] to-[#dfb74a] text-[#002137] flex items-center justify-center shadow-md">
                     <TrendingUp className="w-6 h-6 text-[#002137]" />
                   </div>
-                  <div>
+                  <div className="flex flex-col items-center text-center">
                     <span className="text-[10px] font-black uppercase tracking-wider text-[#8c6924]">
                       Growth
                     </span>
@@ -1746,11 +1746,11 @@ export default function HomePage() {
                 </div>
 
                 {/* Service 3: Video Editing */}
-                <div className="py-6 px-4 sm:px-6 lg:px-7 space-y-3.5 text-left">
+                <div className="py-6 px-4 sm:px-6 lg:px-7 space-y-3.5 flex flex-col items-center text-center">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-950 to-indigo-700 text-white flex items-center justify-center shadow-md">
                     <Film className="w-6 h-6 text-indigo-200" />
                   </div>
-                  <div>
+                  <div className="flex flex-col items-center text-center">
                     <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700">
                       Post-Production
                     </span>
@@ -1764,11 +1764,11 @@ export default function HomePage() {
                 </div>
 
                 {/* Service 4: Video Shooting */}
-                <div className="py-6 px-4 sm:px-6 lg:px-7 space-y-3.5 text-left">
+                <div className="py-6 px-4 sm:px-6 lg:px-7 space-y-3.5 flex flex-col items-center text-center">
                   <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#002137] to-[#004b79] text-white flex items-center justify-center shadow-md">
                     <Camera className="w-6 h-6 text-[#dfb74a]" />
                   </div>
-                  <div>
+                  <div className="flex flex-col items-center text-center">
                     <span className="text-[10px] font-black uppercase tracking-wider text-[#004b79]">
                       Cinematography
                     </span>
@@ -2803,6 +2803,11 @@ export default function HomePage() {
               <div className="pt-4 flex justify-center text-center">
                 <Link
                   href="/careers/apply"
+                  onClick={() => {
+                    if (typeof window !== "undefined" && window.location.hash) {
+                      window.history.replaceState(null, "", window.location.pathname);
+                    }
+                  }}
                   className="w-full sm:w-auto min-w-[220px] px-8 py-3.5 rounded-2xl bg-[#002137] hover:bg-[#004b79] text-white text-sm sm:text-base font-bold shadow-md hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer inline-flex items-center justify-center gap-2.5"
                 >
                   <span>Apply Now</span>
