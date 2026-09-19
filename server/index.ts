@@ -139,8 +139,11 @@ import * as AdminStaffAttendance from "../src/app/api/admin/staff-attendance/rou
 import * as AdminFinance from "../src/app/api/admin/finance/route";
 import * as AdminAnalytics from "../src/app/api/admin/analytics/route";
 import * as AdminSettings from "../src/app/api/admin/settings/route";
+import * as AdminInquiries from "../src/app/api/admin/inquiries/route";
 
 app.get("/api/admin/dashboard", adaptRoute(AdminDashboard.GET));
+app.get("/api/admin/inquiries", adaptRoute(AdminInquiries.GET));
+app.patch("/api/admin/inquiries", adaptRoute(AdminInquiries.PATCH));
 
 app.get("/api/admin/students", adaptRoute(AdminStudents.GET));
 app.post("/api/admin/students", adaptRoute(AdminStudents.POST));
