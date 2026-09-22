@@ -90,6 +90,16 @@ export interface ITeacherProfile {
   preferredBatchIds?: (string | IBatch)[];
 }
 
+export interface IBatchScheduleItem {
+  day: string; // "Monday", "Tuesday", etc.
+  subject: string;
+  topic?: string;
+  startTime?: string;
+  endTime?: string;
+  teacherId?: string | IUser;
+  isEnabled?: boolean;
+}
+
 export interface IBatch {
   _id: string;
   name: string; // e.g. "6:00 PM – 7:00 PM"
@@ -99,6 +109,7 @@ export interface IBatch {
   capacity: number;
   gracePeriodMinutes: number; // default: 5
   assignedTeacherIds?: (string | IUser)[];
+  weeklySchedule?: IBatchScheduleItem[];
   isActive: boolean;
   createdAt: Date;
 }

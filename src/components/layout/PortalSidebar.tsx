@@ -235,12 +235,12 @@ export function PortalSidebar({ role }: SidebarProps) {
   const renderSidebarContent = (isMobile: boolean = false) => (
     <>
       {/* Sidebar Header */}
-      <div className="h-16 lg:h-20 flex items-center justify-between px-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#00121e]/50 shrink-0">
-        <div className="flex items-center gap-3 min-w-0 select-none cursor-default">
+      <div className="h-[64px] sm:h-[70px] lg:h-[72px] flex items-center justify-between px-5 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#00121e]/50 shrink-0">
+        <div className="flex items-center gap-3.5 min-w-0 select-none cursor-default">
           <img
             src="/images/mantif_icon.png?v=3"
             alt="Mantif Logo"
-            className="w-9 h-9 lg:w-10 lg:h-10 object-contain shrink-0"
+            className="w-10 h-10 lg:w-11 lg:h-11 object-contain shrink-0"
           />
           <div className="flex flex-col justify-center min-w-0">
             <div className="flex items-center gap-1.5">
@@ -337,27 +337,6 @@ export function PortalSidebar({ role }: SidebarProps) {
         })}
       </nav>
 
-      {/* Trial Status Quick Card for Students */}
-      {isStudent && isTrialExpired && (
-        <div className="mx-2.5 mb-2 p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 select-none">
-          <div className="flex items-center gap-1.5 font-bold text-xs text-amber-700 dark:text-amber-400">
-            <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-            <span>Trial Ended</span>
-          </div>
-          <p className="text-[10.5px] text-amber-800/80 dark:text-amber-300/80 mt-1 leading-tight">
-            Tuition fee payment required to unlock classes.
-          </p>
-          <Link
-            href="/student/fees"
-            onClick={() => {
-              if (isMobile) setMobileOpen(false);
-            }}
-            className="mt-2 block text-center py-1 px-2 rounded-lg bg-[#004b79] hover:bg-[#003b60] text-white font-bold text-[11px] transition-colors"
-          >
-            Pay Tuition &amp; QR →
-          </Link>
-        </div>
-      )}
 
       {/* Footer: Sign Out */}
       <div className="p-2.5 border-t border-slate-200 dark:border-slate-800 shrink-0">

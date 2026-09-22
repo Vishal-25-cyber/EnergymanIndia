@@ -13,22 +13,28 @@ import {
   FileCheck2,
   Search,
   Shuffle,
+  Edit3,
+  CalendarDays,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { ScheduleSwapModal } from "@/components/classroom/ScheduleSwapModal";
+import { EditClassModal } from "@/components/classroom/EditClassModal";
+import { BatchTimetableModal } from "@/components/classroom/BatchTimetableModal";
 import { sortClassesByPriority } from "@/lib/class-timing";
 import { useClassLiveTimer } from "@/lib/use-class-timer";
 
 function TeacherScheduleClassRow({
   cls,
   handlePublishClass,
+  setEditModalClass,
   setSwapModalClass,
   setCancelModalClass,
   setDeleteModalClass,
 }: {
   cls: any;
   handlePublishClass: (id: string) => void;
+  setEditModalClass: (cls: any) => void;
   setSwapModalClass: (cls: any) => void;
   setCancelModalClass: (cls: any) => void;
   setDeleteModalClass: (cls: any) => void;
@@ -141,6 +147,17 @@ function TeacherScheduleClassRow({
           </Link>
         )}
 
+        {!isCancelled && !isCompleted && (
+          <button
+            onClick={() => setEditModalClass(cls)}
+            className="px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Edit Subject, Topic or Timing"
+          >
+            <Edit3 className="w-3.5 h-3.5 text-[#004b79] dark:text-[#dfb74a]" />
+            <span>Edit</span>
+          </button>
+        )}
+
         {!isCancelled && !isCompleted && !isDraft && (
           <button
             onClick={() => setSwapModalClass(cls)}
@@ -183,6 +200,8 @@ export default function TeacherSchedulePage() {
   const [cancelModalClass, setCancelModalClass] = useState<any>(null);
   const [deleteModalClass, setDeleteModalClass] = useState<any>(null);
   const [swapModalClass, setSwapModalClass] = useState<any>(null);
+  const [editModalClass, setEditModalClass] = useState<any>(null);
+  const [isTimetableModalOpen, setIsTimetableModalOpen] = useState(false);
 
   const getAuthHeaders = () => {
     const token =
@@ -331,12 +350,22 @@ export default function TeacherSchedulePage() {
           </p>
         </div>
 
-        <Link href="/teacher/live-class/create">
-          <button className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white transition-colors cursor-pointer shadow-sm">
-            <Plus className="w-3.5 h-3.5" />
-            <span>Create New Class</span>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <button
+            onClick={() => setIsTimetableModalOpen(true)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition-colors cursor-pointer shadow-2xs"
+          >
+            <CalendarDays className="w-3.5 h-3.5 text-[#004b79] dark:text-[#dfb74a]" />
+            <span>Configure Batch Timetable</span>
           </button>
-        </Link>
+
+          <Link href="/teacher/live-class/create">
+            <button className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white transition-colors cursor-pointer shadow-sm">
+              <Plus className="w-3.5 h-3.5" />
+              <span>Create New Class</span>
+            </button>
+          </Link>
+        </div>
       </div>
 
       {actionMessage && (
@@ -391,6 +420,7 @@ export default function TeacherSchedulePage() {
                 key={cls._id}
                 cls={cls}
                 handlePublishClass={handlePublishClass}
+                setEditModalClass={setEditModalClass}
                 setSwapModalClass={setSwapModalClass}
                 setCancelModalClass={setCancelModalClass}
                 setDeleteModalClass={setDeleteModalClass}
@@ -455,6 +485,25 @@ export default function TeacherSchedulePage() {
             </div>
           </div>
         </Modal>
+      )}
+
+      {/* Edit Class Modal */}
+      {editModalClass && (
+        <EditClassModal
+          isOpen={!!editModalClass}
+          onClose={() => setEditModalClass(null)}
+          sessionDoc={editModalClass}
+          onSuccess={loadClasses}
+        />
+      )}
+
+      {/* Configure Batch Weekly Timetable Modal */}
+      {isTimetableModalOpen && (
+        <BatchTimetableModal
+          isOpen={isTimetableModalOpen}
+          onClose={() => setIsTimetableModalOpen(false)}
+          onSuccess={loadClasses}
+        />
       )}
     </main>
   );

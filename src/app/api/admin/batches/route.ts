@@ -87,7 +87,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { batchId, name, startTime, endTime, days, capacity, gracePeriodMinutes, isActive, assignedTeacherIds } =
+    const { batchId, name, startTime, endTime, days, capacity, gracePeriodMinutes, isActive, assignedTeacherIds, weeklySchedule } =
       await req.json();
 
     if (!batchId) {
@@ -107,6 +107,7 @@ export async function PATCH(req: NextRequest) {
         ...(gracePeriodMinutes !== undefined && { gracePeriodMinutes: Number(gracePeriodMinutes) }),
         ...(isActive !== undefined && { isActive }),
         ...(assignedTeacherIds && { assignedTeacherIds }),
+        ...(weeklySchedule && { weeklySchedule }),
       },
       { new: true }
     );

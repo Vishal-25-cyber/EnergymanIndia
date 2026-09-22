@@ -3,6 +3,8 @@ import connectToDatabase from "@/lib/db/mongoose";
 import { getSession } from "@/lib/auth/session";
 import StudentProfile from "@/models/StudentProfile";
 import LiveSession from "@/models/LiveSession";
+import User from "@/models/User";
+import Batch from "@/models/Batch";
 import { getStudentFeeAccessStatus } from "@/lib/fee-guard";
 import { sortClassesByPriority } from "@/lib/class-timing";
 
@@ -35,7 +37,15 @@ export async function GET(req: NextRequest) {
       });
     }
 
-    let profile: any = await StudentProfile.findOne({ userId: session.userId }).populate("batchId").lean();
+    let profile: any = await StudentProfile.findOne({ userId: session.userId })
+      .populate({
+        path: "batchId",
+        populate: [
+          { path: "assignedTeacherIds", select: "name email avatarUrl phone" },
+          { path: "weeklySchedule.teacherId", select: "name email avatarUrl phone" },
+        ],
+      })
+      .lean();
     if (!profile) {
       profile = await StudentProfile.create({
         userId: session.userId,
@@ -126,27 +136,97 @@ export async function GET(req: NextRequest) {
     const hasLiveClassNow = dbClasses.some((c: any) => c.status === "LIVE");
     const activeLiveClass = dbClasses.find((c: any) => c.status === "LIVE");
 
+    // Determine the actual teacher name assigned to this batch or school
+    const batchDoc = profile?.batchId;
+    const assignedTeachers = Array.isArray(batchDoc?.assignedTeacherIds) ? batchDoc.assignedTeacherIds : [];
+    let defaultTeacherName = assignedTeachers[0]?.name;
+    if (!defaultTeacherName) {
+      const anyTeacher = await User.findOne({ role: "TEACHER", status: { $ne: "SUSPENDED" } }).select("name email").lean();
+      defaultTeacherName = anyTeacher?.name || "Assigned Faculty";
+    }
+
     // Build real dynamic weekly schedule from actual database LiveSession records
-    const weeklySchedule = dbClasses.map((c: any) => {
+    const dbDayMap = new Map<string, any>();
+    for (const c of dbClasses) {
       let dayName = "Monday";
       if (c.date) {
         try {
           dayName = new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone: "Asia/Kolkata" }).format(new Date(c.date));
         } catch {}
       }
+      if (!dbDayMap.has(dayName) || c.status === "LIVE") {
+        dbDayMap.set(dayName, {
+          _id: c._id?.toString(),
+          day: dayName,
+          date: c.date,
+          time: c.startTime && c.endTime ? `${c.startTime} – ${c.endTime}` : batchName,
+          startTime: c.startTime || batchStart,
+          endTime: c.endTime || batchEnd,
+          subject: c.subject || "Academic Live Session",
+          topic: c.topic || c.title || "Live Class",
+          faculty: (c.teacherId as any)?.name || defaultTeacherName,
+          status: c.status || "SCHEDULED",
+          roomId: c.livekitRoomId || `mantif-session-${c._id}`,
+          description: c.description || "",
+          isConfigured: true,
+        });
+      }
+    }
+
+    // Retrieve the staff/teacher configured weekly schedule from the Batch document
+    const DAYS_ORDER = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const batchWeeklyItems = Array.isArray(batchDoc?.weeklySchedule) ? batchDoc.weeklySchedule : [];
+    const batchScheduleByDay = new Map<string, any>();
+    for (const item of batchWeeklyItems) {
+      if (item?.day) {
+        batchScheduleByDay.set(item.day.toLowerCase(), item);
+      }
+    }
+
+    // Construct the schedule strictly from what the teacher/staff fixed
+    const weeklySchedule = DAYS_ORDER.map((dayName) => {
+      const dbMatch = dbDayMap.get(dayName);
+      const batchItem = batchScheduleByDay.get(dayName.toLowerCase());
+
+      if (dbMatch) {
+        return {
+          ...dbMatch,
+          faculty: dbMatch.faculty || defaultTeacherName,
+        };
+      }
+
+      if (batchItem && batchItem.isEnabled !== false && batchItem.subject) {
+        const itemTeacher = (typeof batchItem.teacherId === "object" && batchItem.teacherId?.name)
+          ? batchItem.teacherId.name
+          : defaultTeacherName;
+
+        return {
+          day: dayName,
+          time: batchItem.startTime && batchItem.endTime ? `${batchItem.startTime} – ${batchItem.endTime}` : batchName,
+          startTime: batchItem.startTime || batchStart,
+          endTime: batchItem.endTime || batchEnd,
+          subject: batchItem.subject,
+          topic: batchItem.topic || "Regular Curriculum Session",
+          faculty: itemTeacher,
+          status: "SCHEDULED",
+          roomId: `mantif-batch-${batchStart.replace(":", "")}-${(batchId || "sess").toString().slice(-6)}`,
+          description: "Scheduled class fixed by faculty",
+          isConfigured: true,
+        };
+      }
+
       return {
-        _id: c._id?.toString(),
         day: dayName,
-        date: c.date,
-        time: c.startTime && c.endTime ? `${c.startTime} – ${c.endTime}` : batchName,
-        startTime: c.startTime || batchStart,
-        endTime: c.endTime || batchEnd,
-        subject: c.subject || "Academic Live Session",
-        topic: c.topic || c.title || "Live Class",
-        faculty: (c.teacherId as any)?.name || "Assigned Faculty",
-        status: c.status || "SCHEDULED",
-        roomId: c.livekitRoomId || `mantif-session-${c._id}`,
-        description: c.description || "",
+        time: batchName,
+        startTime: batchStart,
+        endTime: batchEnd,
+        subject: "No Class Scheduled",
+        topic: "Rest Day or Self-Study Session",
+        faculty: defaultTeacherName,
+        status: "OFF",
+        roomId: "",
+        description: "No live session scheduled by faculty for this day.",
+        isConfigured: false,
       };
     });
 

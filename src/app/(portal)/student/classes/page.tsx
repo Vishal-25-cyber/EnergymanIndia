@@ -95,34 +95,85 @@ export default function StudentClassesPage() {
   const isClassCurrentlyLive = Boolean(liveClassDoc && liveClassDoc.status === "LIVE");
   const liveOrTodayDbClass = liveClassDoc || todayDbClass;
 
-  const rawWeeklySchedule = (
-    Array.isArray(data?.weeklySchedule) ? data.weeklySchedule : []
-  ).map((item: any) => {
-    const isToday = currentDay.toLowerCase() === item.day?.toLowerCase() || liveDay.toLowerCase() === item.day?.toLowerCase();
-    if (isToday && activeDoc) {
-      const resolvedStatus = isClassCurrentlyLive ? "LIVE" : (item.status === "COMPLETED" || activeDoc.status === "COMPLETED" ? "COMPLETED" : item.status || "SCHEDULED");
-      return {
-        ...item,
-        subject: activeDoc.subject || item.subject,
-        topic: activeDoc.topic || activeDoc.title || item.topic,
-        faculty: (typeof activeDoc.teacherId === "object" && activeDoc.teacherId?.name) || item.faculty,
-        startTime: activeDoc.startTime || item.startTime,
-        endTime: activeDoc.endTime || item.endTime,
-        time: activeDoc.startTime && activeDoc.endTime ? `${activeDoc.startTime} – ${activeDoc.endTime}` : item.time,
-        status: resolvedStatus,
-        roomId: activeDoc.livekitRoomId || activeDoc.meetingId || item.roomId || timing.permanentRoomId,
-      };
-    }
-    return item;
-  });
+  const DAY_ORDER: Record<string, number> = {
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
+    sunday: 7,
+  };
 
-  // Client-side deduplication safeguard to guarantee identical classes are never duplicated
-  const seenWeeklyKeys = new Set<string>();
-  const weeklySchedule = rawWeeklySchedule.filter((item: any) => {
-    const key = `${item.date || item.day}_${item.startTime || item.time}_${(item.subject || "").trim().toLowerCase()}_${(item.topic || "").trim().toLowerCase()}`;
-    if (seenWeeklyKeys.has(key)) return false;
-    seenWeeklyKeys.add(key);
-    return true;
+  const todayOrder = DAY_ORDER[liveDay.toLowerCase()] || DAY_ORDER[currentDay.toLowerCase()] || 2;
+
+  // Real schedule strictly as fixed by teacher & staff
+  const apiScheduleList = Array.isArray(data?.weeklySchedule) ? data.weeklySchedule : [];
+
+  const weeklySchedule = apiScheduleList.map((item: any) => {
+    const isToday = liveDay.toLowerCase() === item.day?.toLowerCase() || currentDay.toLowerCase() === item.day?.toLowerCase();
+    const itemDayOrder = DAY_ORDER[item.day?.toLowerCase()] || 1;
+
+    const subject = (isToday && activeDoc?.subject) || item.subject;
+    const topic = (isToday && (activeDoc?.topic || activeDoc?.title)) || item.topic;
+    const faculty = (isToday && typeof activeDoc?.teacherId === "object" && activeDoc.teacherId?.name) 
+      || item.faculty 
+      || "Assigned Faculty";
+    const time = item.time || batchName;
+    const startTime = (isToday && activeDoc?.startTime) || item.startTime || batch?.startTime || "18:00";
+    const endTime = (isToday && activeDoc?.endTime) || item.endTime || batch?.endTime || "19:00";
+    const roomId = (isToday && activeDoc?.livekitRoomId) || item.roomId || timing.permanentRoomId;
+    const description = item.description || "";
+
+    let status = item.status || "SCHEDULED";
+    let isLive = false;
+
+    if (item.status === "OFF") {
+      status = "OFF";
+    } else if (itemDayOrder < todayOrder) {
+      status = "COMPLETED";
+    } else if (itemDayOrder > todayOrder) {
+      status = "SCHEDULED";
+    } else {
+      // Today!
+      if (isClassCurrentlyLive || item.status === "LIVE") {
+        status = "LIVE";
+        isLive = true;
+      } else if (todayCompletedClass || item.status === "COMPLETED") {
+        status = "COMPLETED";
+      } else {
+        const [sh = "0", sm = "0"] = startTime.split(":");
+        const [eh = "23", em = "59"] = endTime.split(":");
+        const startMin = parseInt(sh, 10) * 60 + parseInt(sm, 10);
+        const endMin = parseInt(eh, 10) * 60 + parseInt(em, 10);
+
+        if (currentMinutes > endMin) {
+          status = "COMPLETED";
+        } else if (currentMinutes >= startMin - 15 && currentMinutes <= endMin) {
+          status = "LIVE";
+          isLive = true;
+        } else {
+          status = "UPCOMING";
+        }
+      }
+    }
+
+    return {
+      ...item,
+      day: item.day,
+      time,
+      startTime,
+      endTime,
+      subject,
+      topic,
+      faculty,
+      status,
+      isLive,
+      roomId,
+      description,
+      isToday,
+      isConfigured: item.isConfigured !== false && item.status !== "OFF",
+    };
   });
 
   const todayScheduleItem =
@@ -373,168 +424,122 @@ export default function StudentClassesPage() {
                   </div>
                 )}
               </div>
-
             </div>
           </div>
 
-          {/* ── 3. WEEKLY SCHEDULE TABLE (CARDLESS HAIRLINE DESIGN) ── */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                  Weekly Class Schedule & Timetable
+          {/* ── 3. WEEKLY SCHEDULE TABLE (CARDLESS CLEAN TABLE DESIGN) ── */}
+          <div className="space-y-4 pt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <CalendarDays className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                  Weekly Class Timetable (Monday – Saturday)
                 </h2>
               </div>
-              <span className="text-xs font-mono text-slate-400">Monday – Saturday</span>
+              <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                Batch Timing: <strong className="text-slate-800 dark:text-slate-200">{batchName}</strong>
+              </span>
             </div>
 
-            {weeklySchedule.length === 0 ? (
-              <div className="py-12 text-center space-y-2 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
-                <CalendarDays className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
-                <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">No Live Classes Scheduled</p>
-                <p className="text-xs text-slate-400">When your faculty schedules online live classes for your batch, your timetable will appear here.</p>
-              </div>
-            ) : (
-              <>
-                {/* Table Header */}
-                <div className="hidden md:grid grid-cols-12 gap-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-850">
-                  <div className="col-span-2">Day & Timing</div>
-                  <div className="col-span-5">Subject & Topic</div>
-                  <div className="col-span-3">Faculty Instructor</div>
-                  <div className="col-span-2 text-right">Class Status</div>
-                </div>
+            {/* Table Column Headers */}
+            <div className="hidden md:grid grid-cols-12 gap-4 py-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-800">
+              <div className="col-span-3">Day &amp; Batch Time</div>
+              <div className="col-span-5">Subject &amp; Curriculum Topic</div>
+              <div className="col-span-2">Faculty Mentor</div>
+              <div className="col-span-2 text-right">Class Status</div>
+            </div>
 
-                {/* Schedule Rows (No Boxed Cards) */}
-                <div className="divide-y divide-slate-100 dark:divide-slate-850">
-                  {weeklySchedule.map((item: any, idx: number) => {
-                    const isToday = currentDay.toLowerCase() === item.day.toLowerCase();
-                    const canJoinToday = isToday && timing.canJoin;
-                    const accent = getSubjectAccent(item.subject);
+            {/* Schedule Rows (Completely Cardless, Divider List) */}
+            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+              {weeklySchedule.map((item: any, idx: number) => {
+                const isToday = item.isToday;
+                const accent = getSubjectAccent(item.subject);
 
-                    return (
-                      <div
-                        key={idx}
-                        className={`py-3.5 grid grid-cols-1 md:grid-cols-12 gap-4 items-center transition-colors ${isToday ? "bg-indigo-50/20 dark:bg-indigo-950/10" : ""
-                          }`}
-                      >
-                        {/* Col 1: Day & Time */}
-                        <div className="col-span-2 space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                              {item.day}
-                            </span>
-                            {isToday && (
-                              <span className="px-1.5 py-0.2 rounded text-[10px] font-bold uppercase bg-indigo-600 text-white">
-                                Today
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
-                            {item.time || batchName}
-                          </p>
-                        </div>
-
-                        {/* Col 2: Subject & Topic */}
-                        <div className="col-span-5 space-y-0.5">
-                          <div className="flex items-center gap-2">
-                            <span className={`w-2 h-2 rounded-full ${accent.dot} shrink-0`} />
-                            <span className={`text-xs font-bold ${accent.text}`}>
-                              {item.subject}
-                            </span>
-                          </div>
-                          <p className="font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-200">
-                            {item.topic}
-                          </p>
-                          <p className="text-[11px] text-slate-400 truncate">
-                            {item.description}
-                          </p>
-                        </div>
-
-                        {/* Col 3: Faculty */}
-                        <div className="col-span-3">
-                          <p className="font-medium text-xs sm:text-sm text-slate-800 dark:text-slate-200">
-                            {item.faculty}
-                          </p>
-                          <p className="text-[10px] text-slate-400">Faculty Specialist</p>
-                        </div>
-
-                        {/* Col 4: Status / Join Action */}
-                        <div className="col-span-2 flex items-center justify-start md:justify-end">
-                          {(() => {
-                            const isCompleted = item.status === "COMPLETED" || (item.date && item.date < todayDateStr);
-                            if (isCompleted) {
-                              return (
-                                <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
-                                  COMPLETED
-                                </span>
-                              );
-                            }
-
-                            const isLive = item.status === "LIVE" || (isToday && isClassCurrentlyLive);
-                            if (isLive) {
-                              return (
-                                <Link href={`/classroom/${item.roomId || activeRoomId}`}>
-                                  <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors cursor-pointer shadow-xs animate-pulse">
-                                    <Video className="w-3.5 h-3.5" />
-                                    <span>Join Live</span>
-                                  </button>
-                                </Link>
-                              );
-                            }
-
-                            if (isToday) {
-                              const [sh = "0", sm = "0"] = (item.startTime || "").split(":");
-                              const [eh = "23", em = "59"] = (item.endTime || "").split(":");
-                              const startMin = parseInt(sh, 10) * 60 + parseInt(sm, 10);
-                              const endMin = parseInt(eh, 10) * 60 + parseInt(em, 10);
-
-                              if (currentMinutes > endMin) {
-                                return (
-                                  <span className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">
-                                    COMPLETED
-                                  </span>
-                                );
-                              }
-
-                              if (currentMinutes >= (startMin - 15) && currentMinutes <= endMin) {
-                                return (
-                                  <Link href={`/classroom/${item.roomId || activeRoomId}`}>
-                                    <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors cursor-pointer shadow-xs">
-                                      <Video className="w-3.5 h-3.5" />
-                                      <span>Join Live</span>
-                                    </button>
-                                  </Link>
-                                );
-                              }
-
-                              if (currentMinutes < startMin) {
-                                const diff = startMin - currentMinutes;
-                                const h = Math.floor(diff / 60);
-                                const m = diff % 60;
-                                const cd = h > 0 ? `${h}h ${m}m` : `${m}m`;
-                                return (
-                                  <div className="flex items-center gap-1.5 text-xs font-mono text-amber-600 dark:text-amber-400">
-                                    <Lock className="w-3.5 h-3.5" />
-                                    <span className="text-[11px] font-medium">Starts in {cd}</span>
-                                  </div>
-                                );
-                              }
-                            }
-
-                            return (
-                              <span className="text-xs font-medium text-slate-400">
-                                {item.status || "Scheduled"}
-                              </span>
-                            );
-                          })()}
-                        </div>
+                return (
+                  <div
+                    key={idx}
+                    className={`py-4 grid grid-cols-1 md:grid-cols-12 gap-3 md:gap-4 items-center transition-colors ${
+                      isToday ? "bg-indigo-50/20 dark:bg-indigo-950/10 rounded-xl px-2.5 md:px-1" : ""
+                    }`}
+                  >
+                    {/* Col 1: Day & Batch Time */}
+                    <div className="col-span-3 space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                          {item.day}
+                        </span>
+                        {isToday && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-indigo-600 text-white shrink-0">
+                            Today
+                          </span>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              </>
-            )}
+                      <p className="text-xs font-mono font-medium text-slate-600 dark:text-slate-400">
+                        {item.time || batchName}
+                      </p>
+                    </div>
+
+                    {/* Col 2: Subject & Topic */}
+                    <div className="col-span-5 space-y-0.5">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-2 h-2 rounded-full ${item.status === "OFF" ? "bg-slate-300 dark:bg-slate-700" : accent.dot} shrink-0`} />
+                        <span className={`text-xs font-bold ${item.status === "OFF" ? "text-slate-500 dark:text-slate-400" : accent.text}`}>
+                          {item.subject}
+                        </span>
+                      </div>
+                      <p className={`font-semibold text-xs sm:text-sm ${item.status === "OFF" ? "text-slate-500 dark:text-slate-400" : "text-slate-800 dark:text-slate-200"}`}>
+                        {item.topic}
+                      </p>
+                      {item.description && item.status !== "OFF" && (
+                        <p className="text-[11px] text-slate-400 line-clamp-1">
+                          {item.description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Col 3: Faculty */}
+                    <div className="col-span-2">
+                      <p className="font-medium text-xs sm:text-sm text-slate-800 dark:text-slate-200">
+                        {item.faculty}
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        {item.status === "OFF" ? "No Session" : "Assigned Faculty"}
+                      </p>
+                    </div>
+
+                    {/* Col 4: Status / Join Action */}
+                    <div className="col-span-2 flex items-center justify-start md:justify-end">
+                      {item.status === "COMPLETED" ? (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
+                          <Check className="w-3.5 h-3.5 text-slate-400 stroke-[2.5]" />
+                          <span>COMPLETED</span>
+                        </span>
+                      ) : item.status === "LIVE" ? (
+                        <Link href={`/classroom/${item.roomId || activeRoomId}`}>
+                          <button className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors cursor-pointer shadow-xs animate-pulse">
+                            <Video className="w-3.5 h-3.5" />
+                            <span>Join Live</span>
+                          </button>
+                        </Link>
+                      ) : isToday && item.status === "UPCOMING" ? (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-mono font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200/70 dark:border-amber-800/50">
+                          <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          <span>Starts at {item.startTime}</span>
+                        </div>
+                      ) : item.status === "OFF" ? (
+                        <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                          Rest Day
+                        </span>
+                      ) : (
+                        <span className="text-xs font-medium text-slate-400 dark:text-slate-500">
+                          Scheduled
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </>
       )}

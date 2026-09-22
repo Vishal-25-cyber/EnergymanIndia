@@ -12,6 +12,7 @@ import {
   ShieldAlert,
   Info,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -141,6 +142,39 @@ export function NotificationBell() {
     }
   };
 
+  const deleteNotification = async (notificationId: string, e?: React.MouseEvent | React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    // Optimistically remove from state immediately
+    setNotifications((prev) => prev.filter((n) => n._id !== notificationId));
+    try {
+      await fetch(`/api/notifications?id=${encodeURIComponent(notificationId)}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error("Failed to delete notification:", err);
+    }
+  };
+
+  const deleteAllNotifications = async (e?: React.MouseEvent | React.SyntheticEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setNotifications([]);
+    try {
+      await fetch("/api/notifications?all=true", {
+        method: "DELETE",
+        credentials: "include",
+      });
+    } catch (err) {
+      console.error("Failed to clear all notifications:", err);
+    }
+  };
+
   const formatTimeAgo = (dateStr?: string) => {
     if (!dateStr) return "";
     try {
@@ -159,17 +193,16 @@ export function NotificationBell() {
     }
   };
 
-  // ── Reusable notification card with individual mark-as-read button ─────────
+  // ── Reusable notification card with individual mark-as-read and delete buttons ─────────
   const NotifCard = ({ n, onClose }: { n: NotificationItem; onClose: () => void }) => {
     const style = getTypeStyle(n.type);
     const Icon = style.icon;
     return (
       <div
-        className={`group relative flex items-start gap-2.5 p-3 rounded-xl transition-all duration-150 border ${
-          n.read
+        className={`group relative flex items-start gap-2.5 p-3 rounded-xl transition-all duration-150 border ${n.read
             ? "bg-slate-50/40 dark:bg-slate-900/30 border-transparent hover:bg-slate-100/60 dark:hover:bg-slate-800/40 opacity-80 hover:opacity-100"
             : "bg-white dark:bg-slate-800/80 border-slate-200/90 dark:border-slate-700/80 shadow-xs hover:shadow-md"
-        }`}
+          }`}
       >
         <Link
           href={n.linkUrl || "#"}
@@ -185,9 +218,8 @@ export function NotificationBell() {
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-1.5 mb-0.5">
               <p
-                className={`text-xs font-bold leading-tight truncate ${
-                  n.read ? "text-slate-500 dark:text-slate-400 font-medium" : "text-slate-900 dark:text-slate-100"
-                }`}
+                className={`text-xs font-bold leading-tight truncate ${n.read ? "text-slate-500 dark:text-slate-400 font-medium" : "text-slate-900 dark:text-slate-100"
+                  }`}
               >
                 {n.title}
               </p>
@@ -196,17 +228,16 @@ export function NotificationBell() {
               </span>
             </div>
             <p
-              className={`text-[11px] leading-relaxed line-clamp-2 ${
-                n.read ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-300"
-              }`}
+              className={`text-[11px] leading-relaxed line-clamp-2 ${n.read ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-300"
+                }`}
             >
               {n.message}
             </p>
           </div>
         </Link>
 
-        {/* Individual Mark As Read / Checked Button */}
-        <div className="shrink-0 flex items-center pt-0.5 relative z-20">
+        {/* Individual Actions: Mark As Read + Delete Buttons */}
+        <div className="shrink-0 flex items-center gap-1.5 pt-0.5 relative z-20">
           {!n.read ? (
             <button
               type="button"
@@ -217,18 +248,33 @@ export function NotificationBell() {
               }}
               title="Mark as read"
               aria-label="Mark as read"
-              className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-700/80 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-300 border border-slate-300 dark:border-slate-600 flex items-center justify-center transition-all cursor-pointer shadow-xs hover:scale-105 active:scale-95"
+              className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/80 hover:bg-emerald-100 dark:hover:bg-emerald-950/60 text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-600 flex items-center justify-center transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
             >
               <Check className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
           ) : (
             <div
               title="Marked as read"
-              className="w-7 h-7 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/50 flex items-center justify-center shadow-2xs"
+              className="w-7 h-7 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/50 flex items-center justify-center shadow-2xs"
             >
               <Check className="w-3.5 h-3.5 stroke-[2.5]" />
             </div>
           )}
+
+          {/* Delete Button */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              deleteNotification(n._id, e);
+            }}
+            title="Delete notification"
+            aria-label="Delete notification"
+            className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700/80 hover:bg-rose-100 dark:hover:bg-rose-950/60 text-slate-400 hover:text-rose-600 dark:hover:text-rose-300 border border-slate-200 dark:border-slate-600 flex items-center justify-center transition-all cursor-pointer shadow-2xs hover:scale-105 active:scale-95"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
     );
@@ -240,15 +286,14 @@ export function NotificationBell() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         aria-label="View notifications"
-        className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all relative cursor-pointer ${
-          isOpen
+        className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-all relative cursor-pointer ${isOpen
             ? "bg-[#004b79] text-white shadow-lg"
             : "bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200"
-        }`}
+          }`}
       >
-        <Bell className="w-4 h-4" />
+        <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-md">
+          <span className="absolute -top-1 -right-1 min-w-[20px] h-[20px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center shadow-md">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -257,7 +302,7 @@ export function NotificationBell() {
       {/* ── NOTIFICATIONS DROPDOWN (SCROLLABLE, INDIVIDUAL READ, NO VIEW ALL BUTTON) ── */}
       {isOpen && (
         <div
-          className="fixed sm:absolute inset-x-3 sm:inset-x-auto sm:right-0 top-16 sm:top-auto sm:mt-2 sm:w-[360px] max-w-[calc(100vw-1.5rem)] bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl z-50 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
+          className="fixed sm:absolute inset-x-3 sm:inset-x-auto sm:right-0 top-[96px] sm:top-full sm:mt-3 sm:w-[360px] max-w-[calc(100vw-1.5rem)] bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl z-50 overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150"
           style={{ boxShadow: "0 20px 60px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.1)" }}
         >
           {/* Header */}
@@ -273,16 +318,31 @@ export function NotificationBell() {
                 </p>
               </div>
             </div>
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={markAllAsRead}
-                className="text-[10px] font-bold text-[#004b79] dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
-              >
-                <CheckCheck className="w-3 h-3" />
-                <span>Mark all read</span>
-              </button>
-            )}
+            {/* Header Actions */}
+            <div className="flex items-center gap-1">
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={markAllAsRead}
+                  className="text-[10px] font-bold text-[#004b79] dark:text-blue-400 hover:underline flex items-center gap-1 cursor-pointer px-2 py-1 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors"
+                  title="Mark all as read"
+                >
+                  <CheckCheck className="w-3 h-3" />
+                  <span>Mark all read</span>
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={deleteAllNotifications}
+                  className="text-[10px] font-bold text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 flex items-center gap-1 cursor-pointer px-2 py-1 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                  title="Clear all notifications"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>Clear all</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Scrollable Notification Items List */}
