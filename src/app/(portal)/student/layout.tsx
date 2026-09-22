@@ -4,7 +4,6 @@ import React, { useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { PortalSidebar } from "@/components/layout/PortalSidebar";
-import { PortalHeader } from "@/components/layout/PortalHeader";
 import { LivePaymentListener } from "@/components/payment/LivePaymentListener";
 import { StudentTrialLockScreen } from "@/components/student/StudentTrialLockScreen";
 import { StudentTrialWelcomeModal } from "@/components/student/StudentTrialWelcomeModal";
@@ -68,7 +67,6 @@ export default function StudentLayout({ children }: { children?: React.ReactNode
       )}
 
       <div className="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto" id="student-portal-scroll-area">
-        <PortalHeader userRole="STUDENT" />
 
         {/* Expired 2-Day Trial Warning Banner on Fees Page */}
         {isTrialExpired && isFeesPage && (

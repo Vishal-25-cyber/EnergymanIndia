@@ -3,7 +3,6 @@
 import React from "react";
 import { Outlet } from "react-router-dom";
 import { PortalSidebar } from "@/components/layout/PortalSidebar";
-import { PortalHeader } from "@/components/layout/PortalHeader";
 
 export default function AdminLayout({ children }: { children?: React.ReactNode }) {
   return (
@@ -11,10 +10,6 @@ export default function AdminLayout({ children }: { children?: React.ReactNode }
       <PortalSidebar role="ADMIN" />
 
       <div className="flex-1 flex flex-col min-w-0" id="admin-portal-scroll-area">
-        <PortalHeader
-          userName="Mantif Admin"
-          userRole="ADMIN"
-        />
 
         <div className="flex-1 transition-opacity duration-150 ease-out">
           {children || <Outlet />}

@@ -62,7 +62,6 @@ export default function PortalHeader({
         >
           <Menu className="w-4 h-4" />
         </button>
-        <div className="w-2.5 h-2.5 rounded-full bg-[#004b79] dark:bg-[#dfb74a] shrink-0 hidden xs:block" />
         <h2 className="font-extrabold text-base sm:text-lg lg:text-xl text-slate-900 dark:text-slate-100 tracking-tight truncate">
           {getPageTitle()}
         </h2>
