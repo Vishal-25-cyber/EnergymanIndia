@@ -113,6 +113,45 @@ export async function GET(
       } catch (matErr) {
         console.warn("Material doc lookup warning:", matErr);
       }
+
+      // Check if cleanId is an Assignment document _id with an attachment
+      if (!fileBuffer) {
+        try {
+          const Assignment = (await import("@/models/Assignment")).default;
+          const asg = await Assignment.findById(cleanId).lean();
+          if (asg && asg.attachmentUrl) {
+            fileName = asg.attachmentName || `${asg.title.replace(/\s+/g, "_")}.pdf`;
+
+            const gridFsMatch = asg.attachmentUrl.match(/\/api\/materials\/file\/([0-9a-fA-F]{24})/);
+            if (gridFsMatch && gridFsMatch[1] && db) {
+              const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "materials" });
+              const files = await bucket.find({ _id: new mongoose.Types.ObjectId(gridFsMatch[1]) }).toArray();
+              if (files && files.length > 0) {
+                const fileDoc = files[0];
+                const downloadStream = bucket.openDownloadStream(fileDoc._id);
+                fileBuffer = await streamToBuffer(downloadStream);
+                contentType = fileDoc.contentType || "application/pdf";
+              }
+            }
+
+            if (!fileBuffer && asg.attachmentUrl.startsWith("data:")) {
+              const dataUrl = asg.attachmentUrl;
+              const commaIdx = dataUrl.indexOf(",");
+              if (commaIdx !== -1) {
+                const header = dataUrl.substring(0, commaIdx);
+                const base64Data = dataUrl.substring(commaIdx + 1).replace(/\s/g, "+");
+                fileBuffer = Buffer.from(base64Data, "base64");
+                const mimeMatch = header.match(/data:([^;,]+)/);
+                if (mimeMatch && mimeMatch[1]) {
+                  contentType = mimeMatch[1].toLowerCase();
+                }
+              }
+            }
+          }
+        } catch (asgErr) {
+          console.warn("Assignment doc lookup warning:", asgErr);
+        }
+      }
     }
 
     // 3. Check local disk uploads cache

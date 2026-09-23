@@ -71,7 +71,9 @@ export async function GET(req: NextRequest) {
         proctoringRequired: assignment.proctoringRequired ?? true,
         dueDate: assignment.dueDate,
         maxMarks: assignment.maxMarks || 20,
-        attachmentUrl: assignment.attachmentUrl,
+        attachmentUrl: assignment.attachmentUrl?.startsWith("data:") && assignment.attachmentUrl.length > 2048
+          ? `/api/materials/file/${assignment._id}`
+          : assignment.attachmentUrl,
         teacher: assignment.teacherId,
         submission: submission
           ? {

@@ -47,6 +47,8 @@ export default function TeacherAssignmentsPage() {
   const [isGrading, setIsGrading] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishError, setPublishError] = useState("");
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false);
+  const [uploadingFileName, setUploadingFileName] = useState("");
 
   // Safe Document Opener: prevents Chrome about:blank issues on data: URLs
   const openDocumentSafely = (fileUrl: string, fileName?: string) => {
@@ -70,17 +72,64 @@ export default function TeacherAssignmentsPage() {
     attachmentSize: "",
   });
 
-  const handleQuestionPaperUpload = (file: File) => {
+  const handleQuestionPaperUpload = async (file: File) => {
     if (!file) return;
+
+    const defaultTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
+    const sizeStr =
+      file.size > 1024 * 1024
+        ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        : `${Math.round(file.size / 1024)} KB`;
+
+    // Pre-populate title if empty
+    setFormData((prev) => ({
+      ...prev,
+      title: prev.title.trim() ? prev.title : defaultTitle,
+      attachmentName: file.name,
+      attachmentSize: sizeStr,
+    }));
+
+    setIsUploadingAttachment(true);
+    setUploadingFileName(file.name);
+    setPublishError("");
+
+    try {
+      const token = typeof window !== "undefined"
+        ? localStorage.getItem("acuity_auth_token") || sessionStorage.getItem("acuity_auth_token") || ""
+        : "";
+
+      const uploadBody = new FormData();
+      uploadBody.append("file", file);
+
+      const res = await fetch("/api/teacher/assignments/upload", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}`, "x-auth-token": token } : {}),
+        },
+        body: uploadBody,
+      });
+
+      if (res.ok) {
+        const uData = await res.json();
+        setFormData((prev) => ({
+          ...prev,
+          title: prev.title.trim() ? prev.title : defaultTitle,
+          attachmentUrl: uData.fileUrl,
+          attachmentName: uData.fileName || file.name,
+          attachmentSize: uData.fileSize || sizeStr,
+        }));
+        setIsUploadingAttachment(false);
+        return;
+      }
+    } catch (uploadErr) {
+      console.warn("Direct upload error, falling back to local encoding:", uploadErr);
+    }
+
+    // Fallback if direct endpoint fails
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUrl = e.target?.result as string;
-      const defaultTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[_-]/g, " ");
-      const sizeStr =
-        file.size > 1024 * 1024
-          ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-          : `${Math.round(file.size / 1024)} KB`;
-
       setFormData((prev) => ({
         ...prev,
         title: prev.title.trim() ? prev.title : defaultTitle,
@@ -88,6 +137,11 @@ export default function TeacherAssignmentsPage() {
         attachmentName: file.name,
         attachmentSize: sizeStr,
       }));
+      setIsUploadingAttachment(false);
+    };
+    reader.onerror = () => {
+      setIsUploadingAttachment(false);
+      setPublishError("Failed to read file.");
     };
     reader.readAsDataURL(file);
   };
@@ -326,6 +380,11 @@ export default function TeacherAssignmentsPage() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setPublishError("");
+
+    if (isUploadingAttachment) {
+      setPublishError("Please wait for the question paper file to finish uploading before publishing.");
+      return;
+    }
 
     const targetBatchId = formData.batchId || batches[0]?._id;
     if (!formData.title.trim()) {
@@ -1222,7 +1281,17 @@ export default function TeacherAssignmentsPage() {
                 Upload Question Paper (PDF / Word Doc / Image)
               </label>
 
-              {formData.attachmentUrl ? (
+              {isUploadingAttachment ? (
+                <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 flex items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <RefreshCw className="w-4 h-4 text-[#004b79] dark:text-[#dfb74a] animate-spin shrink-0" />
+                    <span className="font-bold text-slate-800 dark:text-slate-200">
+                      Uploading {uploadingFileName}...
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-semibold text-[#004b79] dark:text-[#dfb74a] animate-pulse">Fast streaming...</span>
+                </div>
+              ) : formData.attachmentUrl ? (
                 <div className="p-2.5 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 flex items-center justify-between gap-2 text-xs">
                   <div className="flex items-center gap-2 truncate">
                     <span className="px-2 py-0.5 rounded text-[10px] font-black bg-rose-500 text-white shrink-0 uppercase tracking-wider">
@@ -1294,19 +1363,21 @@ export default function TeacherAssignmentsPage() {
               <button
                 type="button"
                 onClick={() => setIsCreateModal(false)}
-                disabled={isPublishing}
+                disabled={isPublishing || isUploadingAttachment}
                 className="px-4 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={isPublishing}
+                disabled={isPublishing || isUploadingAttachment}
                 className="flex-1 py-2 text-xs font-bold rounded-xl bg-[#004b79] text-white hover:bg-[#003b60] transition-colors cursor-pointer shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {isPublishing && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                {(isPublishing || isUploadingAttachment) && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
                 <span>
-                  {isPublishing
+                  {isUploadingAttachment
+                    ? "Uploading Question Paper..."
+                    : isPublishing
                     ? "Publishing..."
                     : `Publish ${activeCategory === "TEST" ? "Proctored Test" : activeCategory === "HOMEWORK" ? "Homework" : "Assignment"}`}
                 </span>

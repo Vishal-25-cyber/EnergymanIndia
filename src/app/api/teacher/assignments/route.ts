@@ -96,8 +96,13 @@ export async function GET(req: NextRequest) {
 
     const enrichedAssignments = assignments.map((asg: any) => {
       const doc = asg.toObject ? asg.toObject() : asg;
+      let safeAttachmentUrl = doc.attachmentUrl;
+      if (safeAttachmentUrl && safeAttachmentUrl.startsWith("data:") && safeAttachmentUrl.length > 2048) {
+        safeAttachmentUrl = `/api/materials/file/${doc._id}`;
+      }
       return {
         ...doc,
+        attachmentUrl: safeAttachmentUrl,
         type: doc.type || "ASSIGNMENT",
         durationMinutes: doc.durationMinutes || 45,
         proctoringRequired: doc.proctoringRequired ?? true,
@@ -176,6 +181,46 @@ export async function POST(req: NextRequest) {
     const resolvedDescription = (description || "").trim() || `${classLevel} ${subject} — ${title.trim()}`;
     const teacherUserId = session.userId || "staff";
 
+    // Fast GridFS storage for base64 attachments so MongoDB document stays tiny and loads in milliseconds
+    let permanentAttachmentUrl = attachmentUrl || "";
+    if (attachmentUrl && attachmentUrl.startsWith("data:")) {
+      try {
+        const db = mongoose.connection.db;
+        if (db) {
+          const { Readable } = await import("stream");
+          const commaIdx = attachmentUrl.indexOf(",");
+          const header = commaIdx !== -1 ? attachmentUrl.substring(0, commaIdx) : "";
+          const base64Data = commaIdx !== -1 ? attachmentUrl.substring(commaIdx + 1).replace(/\s/g, "+") : attachmentUrl.replace(/\s/g, "+");
+          let mimeType = "application/pdf";
+          const match = header.match(/data:([^;,]+)/);
+          if (match && match[1]) mimeType = match[1].toLowerCase();
+
+          const fileBuffer = Buffer.from(base64Data, "base64");
+          const cleanFileName = (attachmentName || `${title.toLowerCase().replace(/\s+/g, "_")}.pdf`).replace(/[^a-zA-Z0-9._-]/g, "_");
+
+          const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "materials" });
+          const uploadStream = bucket.openUploadStream(cleanFileName, {
+            contentType: mimeType,
+            metadata: {
+              title,
+              uploadedBy: teacherUserId,
+              originalName: attachmentName,
+              createdAt: new Date(),
+            },
+          });
+
+          await new Promise<void>((resolve, reject) => {
+            const readable = Readable.from(fileBuffer);
+            readable.pipe(uploadStream).on("finish", () => resolve()).on("error", (err) => reject(err));
+          });
+
+          permanentAttachmentUrl = `/api/materials/file/${uploadStream.id.toString()}`;
+        }
+      } catch (gridErr) {
+        console.warn("Could not save to GridFS, keeping fallback:", gridErr);
+      }
+    }
+
     const newAssignment = await Assignment.create({
       title: title.trim(),
       description: resolvedDescription,
@@ -189,7 +234,7 @@ export async function POST(req: NextRequest) {
       testDate: finalTestDate,
       dueDate: finalDueDate,
       maxMarks: Number(maxMarks) || (taskType === "TEST" ? 50 : 20),
-      attachmentUrl: attachmentUrl || "",
+      attachmentUrl: permanentAttachmentUrl,
       attachmentName: attachmentName || "",
       attachmentSize: attachmentSize || "",
     });
