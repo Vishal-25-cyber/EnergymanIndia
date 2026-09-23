@@ -680,7 +680,7 @@ export default function HomePage() {
   };
 
   const totalSteps = signupRole === "STUDENT" ? 3 : 2;
-  const stepLabels = signupRole === "STUDENT" ? ["Account", "School", "Parent"] : ["Account", "Profile"];
+  const stepLabels = signupRole === "STUDENT" ? ["Student", "School", "Parent"] : ["Account", "Profile"];
 
   return (
     <div
@@ -1185,6 +1185,34 @@ export default function HomePage() {
                           </div>
                         </div>
 
+                        {signupRole === "STUDENT" && (
+                          <div className="grid grid-cols-2 gap-2.5">
+                            <div className="space-y-1">
+                              <label htmlFor="signup-gender" className="block text-xs font-bold text-slate-700">Gender</label>
+                              <select
+                                id="signup-gender"
+                                value={sGender}
+                                onChange={(e) => setSGender(e.target.value as any)}
+                                className="w-full px-3.5 py-2.5 sm:py-3 text-sm rounded-xl border border-slate-300 bg-slate-50/50 hover:bg-white focus:bg-white text-slate-900 font-medium cursor-pointer focus:outline-none focus:ring-3 focus:ring-[#004b79]/15 focus:border-[#004b79] transition-all"
+                              >
+                                <option value="OTHER">Prefer not to say</option>
+                                <option value="MALE">Male</option>
+                                <option value="FEMALE">Female</option>
+                              </select>
+                            </div>
+                            <div className="space-y-1">
+                              <label htmlFor="signup-dob" className="block text-xs font-bold text-slate-700">Date of Birth</label>
+                              <input
+                                id="signup-dob"
+                                type="date"
+                                value={sDob}
+                                onChange={(e) => setSdob(e.target.value)}
+                                className="w-full px-3.5 py-2.5 sm:py-3 text-sm rounded-xl border border-slate-300 bg-slate-50/50 hover:bg-white focus:bg-white text-slate-900 font-medium focus:outline-none focus:ring-3 focus:ring-[#004b79]/15 focus:border-[#004b79] transition-all"
+                              />
+                            </div>
+                          </div>
+                        )}
+
                         <div className="grid grid-cols-2 gap-2.5">
                           <div className="space-y-1">
                             <label htmlFor="signup-password" className="block text-xs font-bold text-slate-700">Password *</label>
@@ -1424,7 +1452,7 @@ export default function HomePage() {
                               value={spName}
                               onChange={(e) => setSpName(e.target.value)}
                               placeholder="Parent name"
-                              className="w-full px-4 py-2.5 sm:py-3 text-sm rounded-xl border border-slate-300 bg-slate-50/50 hover:bg-white focus:bg-white"
+                              className="w-full px-4 py-2.5 sm:py-3 text-sm rounded-xl border border-slate-300 bg-slate-50/50 hover:bg-white focus:bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-3 focus:ring-[#004b79]/15 focus:border-[#004b79] transition-all font-medium"
                             />
                           </div>
                           <div className="space-y-1">
@@ -1436,33 +1464,7 @@ export default function HomePage() {
                               value={spPhone}
                               onChange={(e) => setSpPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
                               placeholder="Parent mobile"
-                              className="w-full px-4 py-2.5 sm:py-3 text-sm rounded-xl border border-slate-300 bg-slate-50/50 hover:bg-white focus:bg-white"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                          <div className="space-y-1">
-                            <label htmlFor="signup-gender" className="block text-xs font-bold text-slate-700">Gender</label>
-                            <select
-                              id="signup-gender"
-                              value={sGender}
-                              onChange={(e) => setSGender(e.target.value as any)}
-                              className="w-full px-3.5 py-2.5 sm:py-3 text-sm rounded-xl border border-slate-300 bg-slate-50/50 hover:bg-white focus:bg-white font-medium"
-                            >
-                              <option value="OTHER">Prefer not to say</option>
-                              <option value="MALE">Male</option>
-                              <option value="FEMALE">Female</option>
-                            </select>
-                          </div>
-                          <div className="space-y-1">
-                            <label htmlFor="signup-dob" className="block text-xs font-bold text-slate-700">Date of Birth</label>
-                            <input
-                              id="signup-dob"
-                              type="date"
-                              value={sDob}
-                              onChange={(e) => setSdob(e.target.value)}
-                              className="w-full px-3.5 py-2.5 sm:py-3 text-sm rounded-xl border border-slate-300 bg-slate-50/50 hover:bg-white focus:bg-white font-medium"
+                              className="w-full px-4 py-2.5 sm:py-3 text-sm rounded-xl border border-slate-300 bg-slate-50/50 hover:bg-white focus:bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-3 focus:ring-[#004b79]/15 focus:border-[#004b79] transition-all font-medium"
                             />
                           </div>
                         </div>
