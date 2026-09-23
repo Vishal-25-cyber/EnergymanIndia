@@ -16,9 +16,9 @@ export const dynamic = "force-dynamic";
 
 const DAYS_OF_WEEK = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
-export async function GET() {
+export async function GET(req?: any) {
   try {
-    const session = await getSession();
+    const session = await getSession(req);
     if (!session || session.role !== "STUDENT") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
