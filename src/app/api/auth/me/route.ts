@@ -63,8 +63,19 @@ export async function GET(req: NextRequest) {
       const payments = await Payment.find({ studentId: user._id }).sort({ createdAt: -1 }).lean();
       const paidPayment = payments.find((p: any) => p.status === "PAID");
       const pendingPayment = payments.find((p: any) => p.status === "PENDING_VERIFICATION");
+      const unpaidPayment = payments.find((p: any) => p.status === "PENDING" || p.status === "OVERDUE");
       const hasPaid = !!paidPayment;
       const pendingVerification = !!pendingPayment;
+
+      const studentCustomFee = Number(profileData?.customMonthlyFee ?? profileData?.monthlyTuitionFee);
+      const isDeekshith =
+        (user.name && /Deekshith/i.test(user.name)) ||
+        profileData?.studentId === "STD_002" ||
+        profileData?.studentId === "#STD_002" ||
+        user.email === "srimadhu2005@gmail.com";
+      const studentFee = !isNaN(studentCustomFee) && studentCustomFee > 0
+        ? studentCustomFee
+        : (isDeekshith ? 1300 : undefined);
 
       // Calculate 2-Day (48 Hours) Free Trial
       const start = profileData?.trialStartDate || profileData?.createdAt || user.createdAt || new Date();
@@ -92,7 +103,7 @@ export async function GET(req: NextRequest) {
         hasAccess,
         pendingVerification,
         pendingTransactionId: pendingPayment?.transactionId || undefined,
-        pendingAmount: pendingPayment?.amount || undefined,
+        pendingAmount: (pendingPayment || unpaidPayment)?.amount || studentFee,
         hasSeenTrialWelcome: !!profileData?.hasSeenTrialWelcome,
         latestPaid: paidPayment
           ? {

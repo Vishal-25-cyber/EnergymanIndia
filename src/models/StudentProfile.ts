@@ -56,6 +56,8 @@ const StudentProfileSchema = new Schema<IStudentProfileDocument>(
     trialStartDate: { type: Date, default: Date.now },
     trialEndsAt: { type: Date },
     hasSeenTrialWelcome: { type: Boolean, default: false },
+    customMonthlyFee: { type: Number },
+    monthlyTuitionFee: { type: Number },
   },
   {
     timestamps: true,

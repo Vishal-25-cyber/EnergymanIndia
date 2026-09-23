@@ -7,6 +7,7 @@ import Batch from "@/models/Batch";
 import Attendance from "@/models/Attendance";
 import AssignmentSubmission from "@/models/AssignmentSubmission";
 import Payment from "@/models/Payment";
+import SystemSettings from "@/models/SystemSettings";
 import { hashPassword } from "@/lib/auth/passwords";
 import { recordAuditLog } from "@/lib/audit";
 import { isValid10DigitPhone, isValidAcuityOrGmail, sanitize10DigitPhone } from "@/lib/validations/phone";
@@ -305,9 +306,22 @@ export async function PATCH(req: NextRequest) {
       } else if (approvePayment) {
         const currentMonthStr = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date());
         const studentProfile = await StudentProfile.findOne({ userId: studentId }).lean();
+        const settings = await SystemSettings.findOne().lean();
+        const defaultFee = (settings as any)?.monthlyTuitionFee ?? (settings as any)?.monthlyFee ?? 1999;
+        const studentUser = await User.findById(studentId).lean();
+        const studentCustomFee = Number((studentProfile as any)?.customMonthlyFee ?? (studentProfile as any)?.monthlyTuitionFee);
+        const isDeekshith =
+          (studentUser?.name && /Deekshith/i.test(studentUser.name)) ||
+          studentProfile?.studentId === "STD_002" ||
+          studentProfile?.studentId === "#STD_002" ||
+          studentUser?.email === "srimadhu2005@gmail.com";
+        const feeAmount = !isNaN(studentCustomFee) && studentCustomFee > 0
+          ? studentCustomFee
+          : (isDeekshith ? 1300 : defaultFee);
+
         const createdPayment = await Payment.create({
           studentId,
-          amount: 1999,
+          amount: feeAmount,
           billingMonth: currentMonthStr,
           courseName: `${studentProfile?.currentClass || "Class 10"} ${studentProfile?.board || "CBSE"} — Core Academic Tuition`,
           dueDate: new Date(),

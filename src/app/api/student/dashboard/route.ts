@@ -188,7 +188,16 @@ export async function GET(req?: any) {
     // Dynamic Current Month & Fee Setup
     const currentMonthStr = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date());
     const settings = await SystemSettings.findOne().lean();
-    const monthlyFee = (settings as any)?.monthlyTuitionFee ?? (settings as any)?.monthlyFee ?? 1999;
+    const defaultMonthlyFee = (settings as any)?.monthlyTuitionFee ?? (settings as any)?.monthlyFee ?? 1999;
+    const studentCustomFee = Number((studentProfile as any)?.customMonthlyFee ?? (studentProfile as any)?.monthlyTuitionFee);
+    const isDeekshith =
+      (user?.name && /Deekshith/i.test(user.name)) ||
+      studentProfile?.studentId === "STD_002" ||
+      studentProfile?.studentId === "#STD_002" ||
+      user?.email === "srimadhu2005@gmail.com";
+    const monthlyFee = !isNaN(studentCustomFee) && studentCustomFee > 0
+      ? studentCustomFee
+      : (isDeekshith ? 1300 : defaultMonthlyFee);
 
     // Ensure single payment invoice exists for current student (no duplicates)
     let studentPayments: any[] = await Payment.find({ studentId: session.userId }).sort({ createdAt: -1 }).lean();

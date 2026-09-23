@@ -68,6 +68,16 @@ export async function GET() {
           : 85;
 
         // Accurate Tuition Real-Time Status
+        const studentCustomFee = Number(st.customMonthlyFee ?? st.monthlyTuitionFee);
+        const isDeekshith =
+          (st.userId?.name && /Deekshith/i.test(st.userId.name)) ||
+          st.studentId === "STD_002" ||
+          st.studentId === "#STD_002" ||
+          st.userId?.email === "srimadhu2005@gmail.com";
+        const studentFee = !isNaN(studentCustomFee) && studentCustomFee > 0
+          ? studentCustomFee
+          : (isDeekshith ? 1300 : configuredFee);
+
         const activeDoc = payments[0];
         let activeStatus = activeDoc?.status || "PENDING";
         let isPaid = activeStatus === "PAID";
@@ -89,7 +99,7 @@ export async function GET() {
             : isPaid
             ? "Paid"
             : "Unpaid Due",
-          amount: activeDoc?.amount || configuredFee,
+          amount: activeDoc?.amount || studentFee,
           billingMonth: activeDoc?.billingMonth || currentMonthStr,
           receiptNumber: activeDoc?.receiptNumber || `REC-${Date.now().toString().slice(-6)}`,
           transactionId: activeDoc?.transactionId,
@@ -109,6 +119,7 @@ export async function GET() {
         return {
           ...st,
           studentId: st.studentId || formatStudentId(st, idx),
+          customMonthlyFee: studentFee,
           attendancePercentage,
           attendedCount: presentCount,
           totalSessions,

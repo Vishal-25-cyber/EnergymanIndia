@@ -126,7 +126,7 @@ export default function StudentFeesPage() {
 
   const upiId = (data?.settings?.upiId || "karunyas001-1@okicici").trim();
   const companyName = (data?.settings?.companyName || "Mantif Tutoring").trim();
-  const rawFee = Number(data?.currentFee?.amount || data?.settings?.monthlyTuitionFee || data?.settings?.monthlyFee);
+  const rawFee = Number(data?.currentFee?.amount || data?.settings?.monthlyFee || data?.settings?.monthlyTuitionFee);
   const monthlyFee = !isNaN(rawFee) && rawFee > 0 ? rawFee : 1999;
   const customQrImage = data?.settings?.qrCodeImageUrl;
   const currentMonthStr = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date());

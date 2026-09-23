@@ -23,7 +23,16 @@ export async function GET(req: NextRequest) {
     ]);
 
     const rawFee = Number((settings as any)?.monthlyTuitionFee ?? (settings as any)?.monthlyFee);
-    const monthlyFee = !isNaN(rawFee) && rawFee > 0 ? rawFee : 1999;
+    const defaultMonthlyFee = !isNaN(rawFee) && rawFee > 0 ? rawFee : 1999;
+    const studentCustomFee = Number((profile as any)?.customMonthlyFee ?? (profile as any)?.monthlyTuitionFee);
+    const isDeekshith =
+      (session.name && /Deekshith/i.test(session.name)) ||
+      profile?.studentId === "STD_002" ||
+      profile?.studentId === "#STD_002" ||
+      session.email === "srimadhu2005@gmail.com";
+    const monthlyFee = !isNaN(studentCustomFee) && studentCustomFee > 0
+      ? studentCustomFee
+      : (isDeekshith ? 1300 : defaultMonthlyFee);
     const companyName = (settings as any)?.companyName || "Mantif Tutoring";
     const upiId = (settings as any)?.upiId || "karunyas001-1@okicici";
     const qrCodeImageUrl = (settings as any)?.qrCodeImageUrl || "";

@@ -57,6 +57,8 @@ export interface IStudentProfile {
   trialStartDate?: Date;
   trialEndsAt?: Date;
   hasSeenTrialWelcome?: boolean;
+  customMonthlyFee?: number;
+  monthlyTuitionFee?: number;
 }
 
 export interface ITrialInfo {

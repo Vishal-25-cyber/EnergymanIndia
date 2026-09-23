@@ -48,6 +48,15 @@ export async function getStudentFeeAccessStatus(userId: string): Promise<FeeAcce
   ]);
 
   const configuredFee = (settings as any)?.monthlyTuitionFee ?? (settings as any)?.monthlyFee ?? 1999;
+  const studentCustomFee = Number((profile as any)?.customMonthlyFee ?? (profile as any)?.monthlyTuitionFee);
+  const isDeekshith =
+    (user?.name && /Deekshith/i.test(user.name)) ||
+    profile?.studentId === "STD_002" ||
+    profile?.studentId === "#STD_002" ||
+    user?.email === "srimadhu2005@gmail.com";
+  const monthlyFee = !isNaN(studentCustomFee) && studentCustomFee > 0
+    ? studentCustomFee
+    : (isDeekshith ? 1300 : configuredFee);
   const currentMonthStr = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(new Date());
 
   // 1. Check if student has already PAID & Confirmed by Admin
@@ -111,11 +120,11 @@ export async function getStudentFeeAccessStatus(userId: string): Promise<FeeAcce
       isTrialActive: false,
       trialHoursRemaining: 0,
       reason: "PENDING_VERIFICATION",
-      message: `Your fee submission of ₹${pendingVerificationDoc.amount || configuredFee} for ${pendingVerificationDoc.billingMonth || currentMonthStr} is currently Under Review by the Administrator. Access will unlock once approved.`,
+      message: `Your fee submission of ₹${pendingVerificationDoc.amount || monthlyFee} for ${pendingVerificationDoc.billingMonth || currentMonthStr} is currently Under Review by the Administrator. Access will unlock once approved.`,
       unpaidFee: null,
       pendingVerification: {
         _id: pendingVerificationDoc._id.toString(),
-        amount: pendingVerificationDoc.amount || configuredFee,
+        amount: pendingVerificationDoc.amount || monthlyFee,
         billingMonth: pendingVerificationDoc.billingMonth || currentMonthStr,
         transactionId: pendingVerificationDoc.transactionId,
       },
@@ -130,10 +139,10 @@ export async function getStudentFeeAccessStatus(userId: string): Promise<FeeAcce
     isTrialActive: false,
     trialHoursRemaining: 0,
     reason: "UNPAID_DUE",
-    message: `Please complete your monthly tuition fee (₹${unpaidFeeDoc?.amount || configuredFee}) for ${unpaidFeeDoc?.billingMonth || currentMonthStr} to unlock full access to study materials and live sessions.`,
+    message: `Please complete your monthly tuition fee (₹${unpaidFeeDoc?.amount || monthlyFee}) for ${unpaidFeeDoc?.billingMonth || currentMonthStr} to unlock full access to study materials and live sessions.`,
     unpaidFee: {
       _id: unpaidFeeDoc?._id ? unpaidFeeDoc._id.toString() : "unpaid-due",
-      amount: unpaidFeeDoc?.amount || configuredFee,
+      amount: unpaidFeeDoc?.amount || monthlyFee,
       billingMonth: unpaidFeeDoc?.billingMonth || currentMonthStr,
       dueDate: unpaidFeeDoc?.dueDate ? new Date(unpaidFeeDoc.dueDate).toISOString() : undefined,
       status: unpaidFeeDoc?.status || "PENDING",
