@@ -7,7 +7,7 @@ import Notification from "@/models/Notification";
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(req);
     if (!session || (session.role !== "TEACHER" && session.role !== "ADMIN")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }

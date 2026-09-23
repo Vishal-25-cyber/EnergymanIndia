@@ -32,6 +32,7 @@ import {
 import { Modal } from "@/components/ui/modal";
 import { getSubjectsForClassAndBoard, CLASS_LIST } from "@/lib/curriculum";
 import { useFastFetch, invalidateCache } from "@/lib/api-cache";
+import { DocumentViewer, openDocumentInNewTab, downloadDocumentFile } from "@/components/common/DocumentViewer";
 
 export default function TeacherAssignmentsPage() {
   // Category Tab: "ASSIGNMENT" | "TEST" | "HOMEWORK"
@@ -47,60 +48,7 @@ export default function TeacherAssignmentsPage() {
 
   // Safe Document Opener: prevents Chrome about:blank issues on data: URLs
   const openDocumentSafely = (fileUrl: string, fileName?: string) => {
-    if (!fileUrl) return;
-
-    if (fileUrl.startsWith("data:")) {
-      try {
-        const arr = fileUrl.split(",");
-        const mimeMatch = arr[0].match(/:(.*?);/);
-        const mime = mimeMatch ? mimeMatch[1] : "application/octet-stream";
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-          u8arr[n] = bstr.charCodeAt(n);
-        }
-        const blob = new Blob([u8arr], { type: mime });
-        const blobUrl = URL.createObjectURL(blob);
-
-        const newWin = window.open("", "_blank");
-        if (newWin) {
-          if (mime.startsWith("image/")) {
-            newWin.document.write(`
-              <!DOCTYPE html>
-              <html>
-                <head>
-                  <title>${fileName || "Student Submission Preview"}</title>
-                  <style>
-                    body { margin: 0; background: #0b1329; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; font-family: system-ui, -apple-system, sans-serif; }
-                    .wrapper { max-width: 95vw; max-height: 95vh; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-                    img { max-width: 92vw; max-height: 85vh; object-fit: contain; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border: 1px solid #1e293b; background: #000; }
-                    .meta { color: #94a3b8; font-size: 13px; font-weight: 600; }
-                  </style>
-                </head>
-                <body>
-                  <div class="wrapper">
-                    <div class="meta">${fileName || "Student Submitted Answer Sheet"}</div>
-                    <img src="${blobUrl}" alt="Submitted Work" />
-                  </div>
-                </body>
-              </html>
-            `);
-            newWin.document.close();
-          } else {
-            newWin.location.href = blobUrl;
-          }
-        } else {
-          window.open(blobUrl, "_blank");
-        }
-        return;
-      } catch (e) {
-        console.warn("Blob conversion error:", e);
-      }
-    }
-
-    // Normal URL
-    window.open(fileUrl, "_blank");
+    openDocumentInNewTab(fileUrl, fileName);
   };
 
   const [formData, setFormData] = useState({
@@ -766,6 +714,58 @@ export default function TeacherAssignmentsPage() {
                       {asg.title || "Assessment Title"}
                     </p>
 
+                    {/* Student Submitted Document / Solution Sheet */}
+                    {sub.fileUrl && (
+                      <div className="p-2.5 rounded-xl bg-blue-50/80 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-900/60 flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase text-white shrink-0 ${
+                            sub.fileUrl.startsWith("data:application/pdf") || sub.fileUrl.toLowerCase().includes(".pdf")
+                              ? "bg-rose-500"
+                              : sub.fileUrl.startsWith("data:image/") || /\.(png|jpe?g|webp|gif)$/i.test(sub.fileUrl)
+                              ? "bg-emerald-600"
+                              : "bg-blue-600"
+                          }`}>
+                            {sub.fileUrl.startsWith("data:application/pdf") || sub.fileUrl.toLowerCase().includes(".pdf")
+                              ? "PDF Solution"
+                              : sub.fileUrl.startsWith("data:image/") || /\.(png|jpe?g|webp|gif)$/i.test(sub.fileUrl)
+                              ? "Photo Sheet"
+                              : "Document"}
+                          </span>
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                            {sub.fileName || `${student.name || "Student"} — Answer Sheet`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => openDocumentInNewTab(sub.fileUrl, `${student.name || "Student"}_Answer_Sheet`)}
+                            className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>View Sheet</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => downloadDocumentFile(sub.fileUrl, `${student.name || "Student"}_Answer_Sheet`)}
+                            className="p-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                            title="Download Submitted Answer Sheet"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Student Typed Solution Notes */}
+                    {sub.submissionText && (
+                      <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs">
+                        <span className="font-bold text-slate-700 dark:text-slate-300 block mb-0.5">Typed Answer / Notes:</span>
+                        <p className="text-slate-600 dark:text-slate-400 font-mono text-[11px] whitespace-pre-wrap line-clamp-3">
+                          {sub.submissionText}
+                        </p>
+                      </div>
+                    )}
+
                     {sub.retestReason && (
                       <div className="p-2 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-xs">
                         <span className="font-bold text-amber-800 dark:text-amber-300">Student Explanation: </span>
@@ -781,6 +781,27 @@ export default function TeacherAssignmentsPage() {
                       }`}>
                         <span className="font-bold">Faculty Decision Note: </span>
                         <span>"{sub.retestDecisionNote}"</span>
+                      </div>
+                    )}
+
+                    {/* Proctoring Webcam Snapshot Thumbnail */}
+                    {isTest && sub.proctoringSnapshotUrl && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <span className="text-[11px] font-semibold text-slate-500">Proctoring Capture:</span>
+                        <img
+                          src={sub.proctoringSnapshotUrl}
+                          alt="Proctoring Snapshot"
+                          className="w-12 h-9 object-cover rounded-md border border-slate-300 dark:border-slate-700 cursor-pointer hover:scale-105 transition-transform"
+                          onClick={() => openDocumentInNewTab(sub.proctoringSnapshotUrl, `${student.name}_Proctoring_Capture`)}
+                          title="Click to view webcam capture full size"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => openDocumentInNewTab(sub.proctoringSnapshotUrl, `${student.name}_Proctoring_Capture`)}
+                          className="text-[11px] font-bold text-[#004b79] dark:text-[#dfb74a] hover:underline cursor-pointer"
+                        >
+                          View Camera Photo
+                        </button>
                       </div>
                     )}
 
@@ -808,97 +829,81 @@ export default function TeacherAssignmentsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
-                    {(sub.isDisqualified || sub.status === "DISQUALIFIED" || sub.retestRequested || sub.retestStatus === "REJECTED" || ((sub.violationCount || 0) >= 3 && !sub.retestPermitted)) ? (
-                      <div className="flex items-center gap-2">
-                        {sub.retestPermitted ? (
-                          <span className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            Retest Granted
-                          </span>
-                        ) : sub.retestRequested ? (
-                          <div className="flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => openRetestDecisionModal(sub, "APPROVE")}
-                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all shadow-2xs flex items-center gap-1.5"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>Approve Retest</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => openRetestDecisionModal(sub, "REJECT")}
-                              className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-all cursor-pointer flex items-center gap-1"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                              <span>Decline with Reason</span>
-                            </button>
-                          </div>
-                        ) : sub.retestStatus === "REJECTED" ? (
-                          <div className="flex items-center gap-1.5">
-                            <span className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
-                              Declined
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => openRetestDecisionModal(sub, "APPROVE")}
-                              className="px-2.5 py-1 rounded-xl text-xs font-semibold text-emerald-700 hover:bg-emerald-50 border border-emerald-200 transition-all cursor-pointer"
-                            >
-                              Allow Retest
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => openRetestDecisionModal(sub, "APPROVE")}
-                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all shadow-2xs flex items-center gap-1.5"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Grant Retest Permission</span>
-                          </button>
-                        )}
-                      </div>
-                    ) : isTest && !isEvaluated ? (
-                      <div className="flex items-center gap-2">
-                        {sub.retestPermitted ? (
-                          <span className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            Retest Permitted
-                          </span>
-                        ) : (
-                          <button
-                            type="button"
-                            disabled={grantingRetestId === sub._id}
-                            onClick={() => handleGrantRetest(sub._id)}
-                            title="Allow candidate to re-enter and retake test"
-                            className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-emerald-600 bg-slate-50 dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-800 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
-                          >
-                            <RefreshCw className="w-3 h-3 text-emerald-600" />
-                            <span>Allow Retest</span>
-                          </button>
-                        )}
-                      </div>
-                    ) : isEvaluated ? (
-                      <div className="text-right">
-                        <span className="text-xs font-black text-emerald-600">
-                          {sub.marksObtained} / {asg.maxMarks || 20} Marks
-                        </span>
-                        <p className="text-[10px] text-slate-400">Graded</p>
-                      </div>
-                    ) : (
+                  <div className="flex items-center gap-2.5 shrink-0 flex-wrap sm:flex-nowrap">
+                    {/* View Answer & Grade / Review Button */}
+                    {!isEvaluated ? (
                       <button
                         type="button"
                         onClick={() => {
                           setSelectedSub(sub);
-                          setMarks(sub.marksObtained || Math.round((asg.maxMarks || 20) * 0.85));
-                          setFeedback(sub.feedback || "Good accuracy and clear step-by-step working.");
+                          setMarks(sub.marksObtained !== undefined ? sub.marksObtained : Math.round((asg.maxMarks || 20) * 0.85));
+                          setFeedback(sub.feedback || "Good step-by-step accuracy.");
                         }}
-                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white cursor-pointer transition-all shadow-2xs"
+                        className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs"
                       >
-                        Evaluate &amp; Grade
+                        <Eye className="w-3.5 h-3.5" />
+                        <span>View Answer &amp; Grade</span>
                       </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <div className="text-right">
+                          <span className="text-xs font-black text-emerald-600 block">
+                            {sub.marksObtained} / {asg.maxMarks || 20} Marks
+                          </span>
+                          <p className="text-[10px] text-slate-400">Graded</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedSub(sub);
+                            setMarks(sub.marksObtained);
+                            setFeedback(sub.feedback || "");
+                          }}
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center gap-1.5 transition-all cursor-pointer"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Review</span>
+                        </button>
+                      </div>
                     )}
+
+                    {/* Retest Actions */}
+                    {sub.retestRequested ? (
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => openRetestDecisionModal(sub, "APPROVE")}
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all shadow-2xs flex items-center gap-1"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Approve Retest</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openRetestDecisionModal(sub, "REJECT")}
+                          className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                          <span>Decline</span>
+                        </button>
+                      </div>
+                    ) : sub.retestPermitted ? (
+                      <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                        <span>Retest Granted</span>
+                      </span>
+                    ) : isTest ? (
+                      <button
+                        type="button"
+                        disabled={grantingRetestId === sub._id}
+                        onClick={() => handleGrantRetest(sub._id)}
+                        title="Allow candidate to re-enter and retake test"
+                        className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-emerald-600 bg-slate-50 dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-800 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        <RefreshCw className="w-3 h-3 text-emerald-600" />
+                        <span>Allow Retest</span>
+                      </button>
+                    ) : null}
                   </div>
                 </div>
               );
@@ -1281,54 +1286,51 @@ export default function TeacherAssignmentsPage() {
               {/* Webcam Proctoring Snapshot - ONLY FOR PROCTORED TESTS */}
               {((selectedSub.type || selectedSub.assignmentId?.type) === "TEST") && selectedSub.proctoringSnapshotUrl && (
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <span className="text-[11px] font-bold text-slate-500 block mb-1">Webcam Proctoring Snapshot:</span>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-bold text-slate-500">Webcam Proctoring Snapshot:</span>
+                    <button
+                      type="button"
+                      onClick={() => openDocumentInNewTab(selectedSub.proctoringSnapshotUrl, `${selectedSub.studentId?.name || "Student"}_Proctoring_Capture`)}
+                      className="text-[11px] font-bold text-[#004b79] dark:text-[#dfb74a] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>View Full Resolution</span>
+                    </button>
+                  </div>
                   <img
                     src={selectedSub.proctoringSnapshotUrl}
                     alt="Proctoring Snapshot"
-                    className="w-36 h-28 object-cover rounded-lg border border-slate-300 dark:border-slate-700"
+                    className="w-48 h-36 object-cover rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm cursor-zoom-in hover:scale-102 transition-transform"
+                    onClick={() => openDocumentInNewTab(selectedSub.proctoringSnapshotUrl, `${selectedSub.studentId?.name || "Student"}_Proctoring_Capture`)}
+                    title="Click to view webcam snapshot full size"
                   />
                 </div>
               )}
               {selectedSub.submissionText && (
-                <div className="pt-1">
-                  <span className="text-[11px] font-bold text-slate-500">Student Notes:</span>
-                  <p className="text-slate-700 dark:text-slate-300 font-normal">{selectedSub.submissionText}</p>
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <span className="text-[11px] font-bold text-slate-500 block mb-1">Student Notes / Typed Answers:</span>
+                  <div className="p-3 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                    <p className="text-slate-800 dark:text-slate-200 font-mono text-xs whitespace-pre-wrap leading-relaxed">
+                      {selectedSub.submissionText}
+                    </p>
+                  </div>
                 </div>
               )}
               {selectedSub.fileUrl && (
                 <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
-                      <Paperclip className="w-3.5 h-3.5" />
-                      <span>Submitted Solution Sheet / Document:</span>
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => openDocumentSafely(selectedSub.fileUrl, `${selectedSub.studentId?.name || "Student"}_Answer_Sheet`)}
-                      className="inline-flex items-center gap-1 text-xs font-bold text-[#004b79] dark:text-[#dfb74a] hover:underline cursor-pointer"
-                    >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Open Full Size</span>
-                    </button>
-                  </div>
+                  <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                    <Paperclip className="w-3.5 h-3.5" />
+                    <span>Submitted Solution Sheet / Answer Document:</span>
+                  </span>
 
-                  {/* Instant In-Modal Document / Photo Preview Box */}
-                  <div className="rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-950/90 flex items-center justify-center min-h-[140px] max-h-[260px] p-1">
-                    {selectedSub.fileUrl.startsWith("data:application/pdf") || selectedSub.fileUrl.toLowerCase().includes(".pdf") ? (
-                      <iframe
-                        src={`${selectedSub.fileUrl}#toolbar=0`}
-                        title="Submitted PDF Answer Sheet"
-                        className="w-full h-[250px] bg-white rounded-lg border-0"
-                      />
-                    ) : (
-                      <img
-                        src={selectedSub.fileUrl}
-                        alt="Submitted Answer Sheet"
-                        className="max-h-[250px] w-auto max-w-full object-contain rounded-lg cursor-zoom-in hover:opacity-95 transition-all"
-                        onClick={() => openDocumentSafely(selectedSub.fileUrl, `${selectedSub.studentId?.name || "Student"}_Answer_Sheet`)}
-                      />
-                    )}
-                  </div>
+                  <DocumentViewer
+                    url={selectedSub.fileUrl}
+                    fileName={`${selectedSub.studentId?.name || "Student"}_Answer_Sheet`}
+                    title={`${selectedSub.studentId?.name || "Student"} — Answer Document`}
+                    minHeight="340px"
+                    className="w-full"
+                    showToolbar={true}
+                  />
                 </div>
               )}
             </div>
@@ -1361,20 +1363,34 @@ export default function TeacherAssignmentsPage() {
               />
             </div>
 
-            <div className="flex gap-2 pt-2">
+            <div className="flex items-center gap-2 pt-2 flex-wrap">
               <button
                 type="button"
                 onClick={() => setSelectedSub(null)}
-                className="px-4 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600"
+                className="px-4 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
+              {((selectedSub.type || selectedSub.assignmentId?.type) === "TEST") && !selectedSub.retestPermitted && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleGrantRetest(selectedSub._id);
+                    setSelectedSub(null);
+                  }}
+                  className="px-3.5 py-2 text-xs font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>Grant Retest</span>
+                </button>
+              )}
               <button
                 type="submit"
                 disabled={isGrading}
-                className="flex-1 py-2 text-xs font-bold rounded-xl bg-[#004b79] text-white hover:bg-[#003b60] disabled:opacity-60"
+                className="flex-1 py-2 text-xs font-bold rounded-xl bg-[#004b79] text-white hover:bg-[#003b60] disabled:opacity-60 flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
               >
-                {isGrading ? "Saving..." : "Submit Grade & Feedback"}
+                <Check className="w-3.5 h-3.5" />
+                <span>{isGrading ? "Saving Grade…" : "Finalize & Save Grade"}</span>
               </button>
             </div>
           </form>

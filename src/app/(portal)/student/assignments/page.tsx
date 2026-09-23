@@ -43,6 +43,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useFastFetch, invalidateCache } from "@/lib/api-cache";
 import { detectFacesInVideo } from "@/lib/face-detector";
+import { DocumentViewer, openDocumentInNewTab, downloadDocumentFile } from "@/components/common/DocumentViewer";
 
 const ATTENDED_TESTS_KEY = "acuity_attended_tests";
 function getStoredAttendedTests(): Set<string> {
@@ -165,60 +166,7 @@ export default function StudentAssignmentsPage() {
 
   // Safe Document Opener: prevents Chrome about:blank issues on data: URLs
   const openDocumentSafely = (fileUrl: string, fileName?: string) => {
-    if (!fileUrl) return;
-
-    if (fileUrl.startsWith("data:")) {
-      try {
-        const arr = fileUrl.split(",");
-        const mimeMatch = arr[0].match(/:(.*?);/);
-        const mime = mimeMatch ? mimeMatch[1] : "application/octet-stream";
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-          u8arr[n] = bstr.charCodeAt(n);
-        }
-        const blob = new Blob([u8arr], { type: mime });
-        const blobUrl = URL.createObjectURL(blob);
-
-        const newWin = window.open("", "_blank");
-        if (newWin) {
-          if (mime.startsWith("image/")) {
-            newWin.document.write(`
-              <!DOCTYPE html>
-              <html>
-                <head>
-                  <title>${fileName || "Document Preview"}</title>
-                  <style>
-                    body { margin: 0; background: #0b1329; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; font-family: system-ui, -apple-system, sans-serif; }
-                    .wrapper { max-width: 95vw; max-height: 95vh; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-                    img { max-width: 92vw; max-height: 85vh; object-fit: contain; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); border: 1px solid #1e293b; background: #000; }
-                    .meta { color: #94a3b8; font-size: 13px; font-weight: 600; }
-                  </style>
-                </head>
-                <body>
-                  <div class="wrapper">
-                    <div class="meta">${fileName || "Question Paper / Document"}</div>
-                    <img src="${blobUrl}" alt="Document" />
-                  </div>
-                </body>
-              </html>
-            `);
-            newWin.document.close();
-          } else {
-            newWin.location.href = blobUrl;
-          }
-        } else {
-          window.open(blobUrl, "_blank");
-        }
-        return;
-      } catch (e) {
-        console.warn("Blob conversion error:", e);
-      }
-    }
-
-    // Normal URL
-    window.open(fileUrl, "_blank");
+    openDocumentInNewTab(fileUrl, fileName);
   };
 
   // ── SOUND ALARM SYNTHESIZER (WEB AUDIO API) ──
@@ -1703,7 +1651,7 @@ export default function StudentAssignmentsPage() {
           ) : (
             /* DURING TEST VIEW: PDF VIEWER (LEFT) + CAMERA PROCTORING (RIGHT) */
             <div className="flex-1 p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-hidden">
-              {/* LEFT PANE: QUESTION PAPER / PDF VIEWER - light theme */}
+              {/* LEFT PANE: QUESTION PAPER / UNIVERSAL DOCUMENT VIEWER - light theme */}
               <div className={`${
                 splitViewMode === "SUBMIT_FULL"
                   ? "hidden"
@@ -1711,50 +1659,15 @@ export default function StudentAssignmentsPage() {
                   ? "lg:col-span-12"
                   : "lg:col-span-7"
               } h-full flex flex-col rounded-2xl bg-white border border-gray-200 overflow-hidden shadow-lg`}>
-                {/* PDF Viewer Header */}
-                <div className="px-3 py-2.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between gap-2 shrink-0">
-                  <div className="flex items-center gap-2 truncate">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-rose-500 text-white shrink-0">PDF</span>
-                    <span className="text-xs font-semibold text-gray-700 truncate">
-                      {activeProctoredTest.attachmentName || `${activeProctoredTest.title} — Question Paper`}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <button type="button" onClick={() => setPdfZoom((prev) => Math.max(50, prev - 15))} title="Zoom Out"
-                      className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 cursor-pointer transition-colors">
-                      <ZoomOut className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="text-[11px] font-mono text-gray-500 w-10 text-center font-bold">{pdfZoom}%</span>
-                    <button type="button" onClick={() => setPdfZoom((prev) => Math.min(200, prev + 15))} title="Zoom In"
-                      className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 cursor-pointer transition-colors">
-                      <ZoomIn className="w-3.5 h-3.5" />
-                    </button>
-                    <button type="button" onClick={() => setPdfZoom(100)} title="Reset"
-                      className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 cursor-pointer transition-colors">
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-                {/* PDF Frame */}
-                <div className="flex-1 overflow-hidden relative flex flex-col bg-gray-100">
-                  {activeProctoredTest.attachmentUrl ? (
-                    <div className="w-full h-full overflow-auto flex items-start justify-center p-2">
-                      <iframe
-                        src={`${activeProctoredTest.attachmentUrl}#toolbar=0&navpanes=0`}
-                        title="Question Paper PDF"
-                        className="w-full h-full rounded-xl bg-white border-0 shadow-md"
-                        style={{ transform: pdfZoom !== 100 ? `scale(${pdfZoom / 100})` : undefined, transformOrigin: "top center" }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="p-6 overflow-y-auto space-y-4 text-xs font-mono leading-relaxed text-gray-700">
-                      <div className="p-4 rounded-xl bg-white border border-gray-200 shadow-sm">
-                        <h4 className="font-bold text-sm text-[#004b79] mb-2">Instructions &amp; Questions:</h4>
-                        <p className="whitespace-pre-wrap">{activeProctoredTest.description || "Answer all questions clearly on your blank paper. Show complete working steps."}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <DocumentViewer
+                  url={activeProctoredTest.attachmentUrl}
+                  fileName={activeProctoredTest.attachmentName || `${activeProctoredTest.title} — Question Paper`}
+                  title={`${activeProctoredTest.title} — Question Paper`}
+                  description={activeProctoredTest.description || "Answer all questions clearly on your blank paper. Show complete working steps."}
+                  className="w-full h-full flex-1 border-0 rounded-none shadow-none"
+                  minHeight="100%"
+                  showToolbar={true}
+                />
               </div>
 
               {/* RIGHT PANE: CAMERA PROCTORING - light theme */}
@@ -1916,14 +1829,24 @@ export default function StudentAssignmentsPage() {
                       </span>
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => openDocumentSafely(selectedTask.attachmentUrl, selectedTask.attachmentName || "Question_Paper")}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-[#004b79] dark:text-[#dfb74a] hover:underline shrink-0 cursor-pointer"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Open Questions</span>
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => openDocumentInNewTab(selectedTask.attachmentUrl, selectedTask.attachmentName || "Question_Paper")}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-[#004b79] dark:text-[#dfb74a] hover:underline cursor-pointer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open Questions</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => downloadDocumentFile(selectedTask.attachmentUrl, selectedTask.attachmentName || "Question_Paper")}
+                      className="p-1 rounded-md hover:bg-blue-100 dark:hover:bg-blue-900 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                      title="Download Questions"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
