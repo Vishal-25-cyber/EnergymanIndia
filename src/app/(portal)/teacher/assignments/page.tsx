@@ -205,6 +205,92 @@ export default function TeacherAssignmentsPage() {
 
   const [grantingRetestId, setGrantingRetestId] = useState<string | null>(null);
 
+  const pendingRetestRequests = allSubmissions.filter(
+    (s: any) => (s.retestRequested || s.retestStatus === "REQUESTED") && !s.retestPermitted
+  );
+
+  const [retestDecisionModal, setRetestDecisionModal] = useState<{
+    isOpen: boolean;
+    submission: any;
+    action: "APPROVE" | "REJECT";
+    reason: string;
+    isSubmitting: boolean;
+    error: string;
+  }>({
+    isOpen: false,
+    submission: null,
+    action: "APPROVE",
+    reason: "",
+    isSubmitting: false,
+    error: "",
+  });
+
+  const openRetestDecisionModal = (sub: any, action: "APPROVE" | "REJECT") => {
+    setRetestDecisionModal({
+      isOpen: true,
+      submission: sub,
+      action,
+      reason:
+        action === "APPROVE"
+          ? "Retest approved: Technical exception granted. Please ensure a stable internet connection and remain facing the camera throughout the test."
+          : "",
+      isSubmitting: false,
+      error: "",
+    });
+  };
+
+  const handleConfirmRetestDecision = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!retestDecisionModal.submission) return;
+    if (retestDecisionModal.action === "REJECT" && !retestDecisionModal.reason.trim()) {
+      setRetestDecisionModal((prev) => ({
+        ...prev,
+        error: "Please enter a specific reason for declining the retest request so the student knows why.",
+      }));
+      return;
+    }
+
+    setRetestDecisionModal((prev) => ({ ...prev, isSubmitting: true, error: "" }));
+    try {
+      const res = await fetch("/api/teacher/assignments/grant-retest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          submissionId: retestDecisionModal.submission._id,
+          action: retestDecisionModal.action,
+          note: retestDecisionModal.reason.trim(),
+        }),
+      });
+      const resData = await res.json();
+      if (res.ok) {
+        setRetestDecisionModal({
+          isOpen: false,
+          submission: null,
+          action: "APPROVE",
+          reason: "",
+          isSubmitting: false,
+          error: "",
+        });
+        invalidateCache("/api/teacher/assignments");
+        invalidateCache("/api/student/assignments");
+        refetch();
+        alert(resData.message || (retestDecisionModal.action === "APPROVE" ? "Retest granted! Student has been notified." : "Retest declined."));
+      } else {
+        setRetestDecisionModal((prev) => ({
+          ...prev,
+          error: resData.error || "Failed to process decision.",
+          isSubmitting: false,
+        }));
+      }
+    } catch (err: any) {
+      setRetestDecisionModal((prev) => ({
+        ...prev,
+        error: err.message || "Network error.",
+        isSubmitting: false,
+      }));
+    }
+  };
+
   const handleGrantRetest = async (submissionId: string, action: "APPROVE" | "REJECT" = "APPROVE", note?: string) => {
     setGrantingRetestId(submissionId);
     try {
@@ -216,6 +302,7 @@ export default function TeacherAssignmentsPage() {
       const resData = await res.json();
       if (res.ok) {
         invalidateCache("/api/teacher/assignments");
+        invalidateCache("/api/student/assignments");
         refetch();
         alert(resData.message || (action === "APPROVE" ? "Retest permission granted! Student has been notified." : "Retest request declined."));
       } else {
@@ -427,6 +514,91 @@ export default function TeacherAssignmentsPage() {
         </div>
       </div>
 
+      {/* ── HIGH PRIORITY RETEST REQUESTS BANNER (Visible across all tabs) ── */}
+      {pendingRetestRequests.length > 0 && (
+        <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-700/80 shadow-sm space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <span className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-400 flex items-center justify-center font-bold shrink-0">
+                <AlertTriangle className="w-5 h-5 text-amber-600 animate-pulse" />
+              </span>
+              <div>
+                <h3 className="text-sm font-black text-amber-950 dark:text-amber-200 flex items-center gap-2">
+                  <span>Student Retest Requests Awaiting Review</span>
+                  <span className="px-2 py-0.5 rounded-full text-xs font-black bg-amber-200 dark:bg-amber-800 text-amber-900 dark:text-amber-100">
+                    {pendingRetestRequests.length} Pending
+                  </span>
+                </h3>
+                <p className="text-xs text-amber-800/90 dark:text-amber-300/90">
+                  Review student explanations and accept or reject with a reason to update their test access.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            {pendingRetestRequests.map((req: any) => {
+              const studentName = req.studentId?.name || "Student";
+              const testTitle = req.assignmentId?.title || req.type || "Proctored Test";
+              const studentClass = req.assignmentId?.classLevel || "Class 10";
+              const subject = req.assignmentId?.subject || "Subject";
+              const reasonText = req.retestReason || "Student requested a retest.";
+
+              return (
+                <div
+                  key={req._id}
+                  className="p-3.5 rounded-xl bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 shadow-xs flex flex-col justify-between gap-3"
+                >
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100">
+                          {studentName}
+                        </span>
+                        <span className="text-[10px] font-semibold text-slate-500">
+                          ({studentClass} • {subject})
+                        </span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 dark:bg-amber-950 text-amber-800 dark:text-amber-300">
+                        Retest Requested
+                      </span>
+                    </div>
+
+                    <p className="text-xs font-semibold text-[#004b79] dark:text-[#dfb74a] truncate">
+                      {testTitle}
+                    </p>
+
+                    <div className="p-2.5 rounded-lg bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/70 dark:border-amber-900/50 text-xs">
+                      <span className="font-bold text-amber-900 dark:text-amber-200">Student Explanation: </span>
+                      <span className="text-amber-950 dark:text-amber-100 italic">"{reasonText}"</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => openRetestDecisionModal(req, "APPROVE")}
+                      className="flex-1 py-1.5 px-3 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 cursor-pointer transition-all shadow-xs"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      <span>Approve Retest</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openRetestDecisionModal(req, "REJECT")}
+                      className="flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800 flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                      <span>Decline with Reason</span>
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ── 2. CATEGORY SWITCHER (ASSIGNMENTS vs TIMED TESTS vs HOMEWORK) ── */}
       <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800">
         <button
@@ -457,6 +629,11 @@ export default function TeacherAssignmentsPage() {
           <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-mono">
             {allAssignments.filter((a: any) => a.type === "TEST").length}
           </span>
+          {pendingRetestRequests.length > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-black bg-amber-400 text-slate-900 animate-pulse">
+              {pendingRetestRequests.length} Retest Req
+            </span>
+          )}
         </button>
 
         <button
@@ -596,6 +773,17 @@ export default function TeacherAssignmentsPage() {
                       </div>
                     )}
 
+                    {sub.retestDecisionNote && (
+                      <div className={`p-2 rounded-xl border text-xs ${
+                        sub.retestPermitted
+                          ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200/80 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200"
+                          : "bg-rose-50/80 dark:bg-rose-950/40 border-rose-200/80 dark:border-rose-800/60 text-rose-900 dark:text-rose-200"
+                      }`}>
+                        <span className="font-bold">Faculty Decision Note: </span>
+                        <span>"{sub.retestDecisionNote}"</span>
+                      </div>
+                    )}
+
                     <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap">
                       <span className="font-semibold text-[#004b79] dark:text-[#dfb74a]">
                         {asg.subject || "Mathematics"}
@@ -632,26 +820,19 @@ export default function TeacherAssignmentsPage() {
                           <div className="flex items-center gap-1.5">
                             <button
                               type="button"
-                              disabled={grantingRetestId === sub._id}
-                              onClick={() => handleGrantRetest(sub._id, "APPROVE")}
-                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all shadow-2xs flex items-center gap-1.5 disabled:opacity-60"
+                              onClick={() => openRetestDecisionModal(sub, "APPROVE")}
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all shadow-2xs flex items-center gap-1.5"
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
-                              <span>{grantingRetestId === sub._id ? "Approving..." : "Approve Retest"}</span>
+                              <span>Approve Retest</span>
                             </button>
                             <button
                               type="button"
-                              disabled={grantingRetestId === sub._id}
-                              onClick={() => {
-                                const note = window.prompt("Reason for declining retest request (optional):", "Retest request cannot be accommodated.");
-                                if (note !== null) {
-                                  handleGrantRetest(sub._id, "REJECT", note);
-                                }
-                              }}
+                              onClick={() => openRetestDecisionModal(sub, "REJECT")}
                               className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-all cursor-pointer flex items-center gap-1"
                             >
                               <X className="w-3.5 h-3.5" />
-                              <span>Decline</span>
+                              <span>Decline with Reason</span>
                             </button>
                           </div>
                         ) : sub.retestStatus === "REJECTED" ? (
@@ -661,8 +842,7 @@ export default function TeacherAssignmentsPage() {
                             </span>
                             <button
                               type="button"
-                              disabled={grantingRetestId === sub._id}
-                              onClick={() => handleGrantRetest(sub._id, "APPROVE")}
+                              onClick={() => openRetestDecisionModal(sub, "APPROVE")}
                               className="px-2.5 py-1 rounded-xl text-xs font-semibold text-emerald-700 hover:bg-emerald-50 border border-emerald-200 transition-all cursor-pointer"
                             >
                               Allow Retest
@@ -671,12 +851,11 @@ export default function TeacherAssignmentsPage() {
                         ) : (
                           <button
                             type="button"
-                            disabled={grantingRetestId === sub._id}
-                            onClick={() => handleGrantRetest(sub._id, "APPROVE")}
-                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all shadow-2xs flex items-center gap-1.5 disabled:opacity-60"
+                            onClick={() => openRetestDecisionModal(sub, "APPROVE")}
+                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all shadow-2xs flex items-center gap-1.5"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>{grantingRetestId === sub._id ? "Granting..." : "Grant Retest Permission"}</span>
+                            <span>Grant Retest Permission</span>
                           </button>
                         )}
                       </div>
@@ -1201,6 +1380,149 @@ export default function TeacherAssignmentsPage() {
           </form>
         </Modal>
       )}
+
+      {/* ── RETEST DECISION MODAL (Accept or Reject with Reason) ── */}
+      <Modal
+        isOpen={retestDecisionModal.isOpen}
+        onClose={() =>
+          !retestDecisionModal.isSubmitting &&
+          setRetestDecisionModal((prev) => ({ ...prev, isOpen: false, error: "" }))
+        }
+        title={
+          retestDecisionModal.action === "APPROVE"
+            ? "Approve Retest Request"
+            : "Decline Retest Request"
+        }
+        description={
+          retestDecisionModal.action === "APPROVE"
+            ? "Grant student permission to attempt a fresh proctored retest."
+            : "Decline student's retest request with an explanation."
+        }
+        maxWidth="lg"
+      >
+        <form onSubmit={handleConfirmRetestDecision} className="space-y-4">
+          {retestDecisionModal.error && (
+            <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-semibold text-rose-700 flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0 text-rose-600" />
+              <span>{retestDecisionModal.error}</span>
+            </div>
+          )}
+
+          {retestDecisionModal.submission && (
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-2">
+              <div className="flex items-center justify-between text-xs flex-wrap gap-1">
+                <span className="font-bold text-slate-900 dark:text-slate-100">
+                  Candidate: {retestDecisionModal.submission.studentId?.name || "Student"}
+                </span>
+                <span className="text-slate-500 font-medium">
+                  {retestDecisionModal.submission.assignmentId?.title || "Proctored Test"}
+                </span>
+              </div>
+              {retestDecisionModal.submission.retestReason && (
+                <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900 text-xs text-amber-900 dark:text-amber-200">
+                  <span className="font-bold">Student's Explanation: </span>
+                  <span className="italic">"{retestDecisionModal.submission.retestReason}"</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+              {retestDecisionModal.action === "APPROVE"
+                ? "Note / Instructions for Student (Optional):"
+                : "Reason for Declining (Required for Student): *"}
+            </label>
+
+            {/* Quick Chips */}
+            <div className="flex items-center gap-1.5 flex-wrap pb-1">
+              {(retestDecisionModal.action === "APPROVE"
+                ? [
+                    "Technical glitch confirmed. Retest granted.",
+                    "Please ensure stable internet & single face in camera.",
+                    "One-time exception granted.",
+                  ]
+                : [
+                    "Multiple proctoring violations recorded.",
+                    "Candidate face was absent from camera frame.",
+                    "Multiple persons detected in camera frame.",
+                    "Test deadline has already expired.",
+                    "Single test attempt policy.",
+                  ]
+              ).map((chip) => (
+                <button
+                  key={chip}
+                  type="button"
+                  onClick={() =>
+                    setRetestDecisionModal((prev) => ({
+                      ...prev,
+                      reason: chip,
+                      error: "",
+                    }))
+                  }
+                  className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 transition-all cursor-pointer"
+                >
+                  + {chip}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              rows={3}
+              value={retestDecisionModal.reason}
+              onChange={(e) =>
+                setRetestDecisionModal((prev) => ({
+                  ...prev,
+                  reason: e.target.value,
+                  error: "",
+                }))
+              }
+              placeholder={
+                retestDecisionModal.action === "APPROVE"
+                  ? "Optional note or instructions for the student before they retake the test..."
+                  : "Provide the reason why this retest is declined..."
+              }
+              className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-[#004b79]"
+            />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              disabled={retestDecisionModal.isSubmitting}
+              onClick={() =>
+                setRetestDecisionModal((prev) => ({ ...prev, isOpen: false, error: "" }))
+              }
+              className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={retestDecisionModal.isSubmitting}
+              className={`px-4 py-2 rounded-xl text-xs font-bold text-white cursor-pointer transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-60 ${
+                retestDecisionModal.action === "APPROVE"
+                  ? "bg-emerald-600 hover:bg-emerald-700"
+                  : "bg-rose-600 hover:bg-rose-700"
+              }`}
+            >
+              {retestDecisionModal.isSubmitting ? (
+                <span>Processing...</span>
+              ) : retestDecisionModal.action === "APPROVE" ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Confirm & Grant Retest</span>
+                </>
+              ) : (
+                <>
+                  <X className="w-3.5 h-3.5" />
+                  <span>Confirm & Decline Retest</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </main>
   );
 }

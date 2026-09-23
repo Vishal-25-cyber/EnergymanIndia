@@ -56,8 +56,8 @@ export async function POST(req: NextRequest) {
     );
 
     // Notify Teacher with student's explanation
+    const reasonExcerpt = cleanReason ? ` Reason: "${cleanReason.slice(0, 120)}"` : "";
     if (assignment.teacherId) {
-      const reasonExcerpt = cleanReason ? ` Reason: "${cleanReason.slice(0, 120)}"` : "";
       await Notification.create({
         userId: assignment.teacherId,
         title: "Retest Requested by Student",
@@ -65,6 +65,17 @@ export async function POST(req: NextRequest) {
         type: "TEST",
         linkUrl: "/teacher/assignments",
       });
+    } else {
+      const teachers = await User.find({ role: { $in: ["TEACHER", "ADMIN"] } }).limit(5);
+      for (const t of teachers) {
+        await Notification.create({
+          userId: t._id,
+          title: "Retest Requested by Student",
+          message: `${student?.name || "A student"} requested permission to retake proctored test "${assignment.title}".${reasonExcerpt}`,
+          type: "TEST",
+          linkUrl: "/teacher/assignments",
+        });
+      }
     }
 
     return NextResponse.json({

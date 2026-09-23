@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import connectToDatabase from "@/lib/db/mongoose";
 import { getSession } from "@/lib/auth/session";
 import Assignment from "@/models/Assignment";
@@ -12,7 +13,7 @@ export const revalidate = 0;
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(req);
     if (!session || (session.role !== "TEACHER" && session.role !== "ADMIN")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -36,8 +37,13 @@ export async function GET(req: NextRequest) {
         ? teacherProfile.classesTaught
         : [];
 
+      const teacherObjId = mongoose.Types.ObjectId.isValid(session.userId)
+        ? new mongoose.Types.ObjectId(session.userId)
+        : session.userId;
+
       const orConditions: any[] = [
         { teacherId: session.userId },
+        { teacherId: teacherObjId },
         { teacherId: { $exists: false } },
         { teacherId: null },
       ];
@@ -69,7 +75,13 @@ export async function GET(req: NextRequest) {
       .sort({ createdAt: -1 });
 
     const assignmentIds = assignments.map((a) => a._id);
-    const submissions = await AssignmentSubmission.find({ assignmentId: { $in: assignmentIds } })
+    const submissions = await AssignmentSubmission.find({
+      $or: [
+        { assignmentId: { $in: assignmentIds } },
+        { retestRequested: true },
+        { retestStatus: "REQUESTED" },
+      ],
+    })
       .populate("studentId", "name email avatarUrl")
       .populate("assignmentId")
       .sort({ createdAt: -1 });
