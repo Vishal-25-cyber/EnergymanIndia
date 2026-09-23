@@ -123,30 +123,10 @@ export default function StudentDashboardPage() {
 
       {/* ── 1. HEADER & IDENTITY (CARDLESS MASTHEAD) ── */}
       <div className="pb-6 border-b border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#b89047]/10 text-[#8f6d2b] dark:text-[#dfb74a] border border-[#b89047]/20">
-              <GraduationCap className="w-3.5 h-3.5 shrink-0" />
-              <span>Academic Year 2026–27</span>
-            </span>
-            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span>Active Student Portal</span>
-            </span>
-          </div>
-
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-              Welcome back, {safeName}
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 font-medium flex items-center gap-2 flex-wrap">
-              <span className="font-semibold text-slate-800 dark:text-slate-200">{classLevel}</span>
-              <span className="text-slate-300 dark:text-slate-600">•</span>
-              <span>{board.toLowerCase().includes("board") ? board : `${board} Board`}</span>
-              <span className="text-slate-300 dark:text-slate-600">•</span>
-              <span className="text-[#004b79] dark:text-[#dfb74a] font-mono font-semibold">{batchName}</span>
-            </p>
-          </div>
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+            Welcome back, {safeName}
+          </h1>
         </div>
 
         {/* Date & Countdown */}

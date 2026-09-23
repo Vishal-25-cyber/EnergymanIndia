@@ -6,7 +6,7 @@ export type AttendanceStatus = "PRESENT" | "LATE" | "PARTIAL" | "ABSENT";
 
 export type PaymentStatus = "PAID" | "PENDING" | "PENDING_VERIFICATION" | "OVERDUE" | "FAILED";
 
-export type SubmissionStatus = "PENDING" | "SUBMITTED" | "EVALUATED" | "OVERDUE";
+export type SubmissionStatus = "PENDING" | "SUBMITTED" | "EVALUATED" | "OVERDUE" | "DISQUALIFIED";
 
 export type RiskLevel = "LOW" | "MEDIUM" | "HIGH";
 
@@ -250,6 +250,12 @@ export interface IAssignmentSubmission {
   feedback?: string;
   isDisqualified?: boolean;
   disqualifiedReason?: string;
+  retestRequested?: boolean;
+  retestRequestedAt?: Date;
+  retestReason?: string;
+  retestStatus?: "NONE" | "REQUESTED" | "APPROVED" | "REJECTED";
+  retestDecisionNote?: string;
+  retestRejectedAt?: Date;
   retestPermitted?: boolean;
   retestGrantedBy?: string | IUser;
   retestGrantedAt?: Date;

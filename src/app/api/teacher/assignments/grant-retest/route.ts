@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized. Teacher role required." }, { status: 401 });
     }
 
-    const { submissionId, assignmentId, studentId } = await req.json();
+    const { submissionId, assignmentId, studentId, action = "APPROVE", note = "" } = await req.json();
 
     if (!submissionId && (!assignmentId || !studentId)) {
       return NextResponse.json(
@@ -34,8 +34,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Submission record not found." }, { status: 404 });
     }
 
-    // Grant retest permission and reset violation counters
+    const asgTitle = (submission.assignmentId as any)?.title || "Proctored Test";
+
+    if (action === "REJECT") {
+      submission.retestPermitted = false;
+      submission.retestRequested = false;
+      submission.retestStatus = "REJECTED";
+      submission.retestDecisionNote = note || "Retest request declined by faculty.";
+      submission.retestRejectedAt = new Date();
+      await submission.save();
+
+      // Notify Student
+      await Notification.create({
+        userId: submission.studentId,
+        title: "Retest Request Declined",
+        message: `Your retest request for "${asgTitle}" was declined by faculty.${note ? ` Note: ${note}` : ""}`,
+        type: "TEST",
+        linkUrl: "/student/assignments",
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: `Retest request for ${asgTitle} was declined. Student has been notified.`,
+        submission: {
+          _id: submission._id.toString(),
+          retestPermitted: false,
+          retestStatus: "REJECTED",
+          status: submission.status,
+        },
+      });
+    }
+
+    // Default: APPROVE
     submission.retestPermitted = true;
+    submission.retestRequested = false;
+    submission.retestStatus = "APPROVED";
     submission.retestGrantedBy = session.userId as any;
     submission.retestGrantedAt = new Date();
     submission.violationCount = 0;
@@ -44,13 +77,11 @@ export async function POST(req: NextRequest) {
     submission.status = "PENDING";
     await submission.save();
 
-    const asgTitle = (submission.assignmentId as any)?.title || "Proctored Test";
-
     // Notify Student
     await Notification.create({
       userId: submission.studentId,
       title: "Retest Permission Granted",
-      message: `Your faculty has granted permission to retake "${asgTitle}". You can now start your retest.`,
+      message: `Your faculty has approved your retest request for "${asgTitle}". You can now start your retest.`,
       type: "TEST",
       linkUrl: "/student/assignments",
     });
@@ -61,6 +92,7 @@ export async function POST(req: NextRequest) {
       submission: {
         _id: submission._id.toString(),
         retestPermitted: true,
+        retestStatus: "APPROVED",
         isDisqualified: false,
         status: submission.status,
       },

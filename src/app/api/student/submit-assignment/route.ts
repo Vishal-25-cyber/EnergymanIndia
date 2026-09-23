@@ -64,6 +64,21 @@ export async function POST(req: NextRequest) {
 
     const taskType = type || assignment?.type || "ASSIGNMENT";
 
+    if (
+      taskType === "TEST" &&
+      existingSubmission &&
+      !existingSubmission.retestPermitted &&
+      (existingSubmission.status === "SUBMITTED" || existingSubmission.status === "EVALUATED" || existingSubmission.isDisqualified || (existingSubmission.status as string) === "DISQUALIFIED")
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "This proctored test has already been completed and locked. Resubmissions are not permitted without faculty approval.",
+        },
+        { status: 400 }
+      );
+    }
+
     // Fast atomic upsert
     const submission = await AssignmentSubmission.findOneAndUpdate(
       {
@@ -83,6 +98,9 @@ export async function POST(req: NextRequest) {
         timeTakenMinutes: Number(timeTakenMinutes) || undefined,
         submittedAt: new Date(),
         status: "SUBMITTED",
+        retestPermitted: false,
+        retestRequested: false,
+        isDisqualified: false,
       },
       { upsert: true, new: true, lean: true }
     );

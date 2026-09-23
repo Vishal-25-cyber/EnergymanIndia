@@ -27,6 +27,7 @@ import {
   X,
   Paperclip,
   AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { getSubjectsForClassAndBoard, CLASS_LIST } from "@/lib/curriculum";
@@ -204,26 +205,70 @@ export default function TeacherAssignmentsPage() {
 
   const [grantingRetestId, setGrantingRetestId] = useState<string | null>(null);
 
-  const handleGrantRetest = async (submissionId: string) => {
+  const handleGrantRetest = async (submissionId: string, action: "APPROVE" | "REJECT" = "APPROVE", note?: string) => {
     setGrantingRetestId(submissionId);
     try {
       const res = await fetch("/api/teacher/assignments/grant-retest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ submissionId }),
+        body: JSON.stringify({ submissionId, action, note }),
       });
       const resData = await res.json();
       if (res.ok) {
         invalidateCache("/api/teacher/assignments");
         refetch();
-        alert(resData.message || "Retest permission granted! Student has been notified.");
+        alert(resData.message || (action === "APPROVE" ? "Retest permission granted! Student has been notified." : "Retest request declined."));
       } else {
-        alert(resData.error || "Failed to grant retest permission.");
+        alert(resData.error || "Failed to process retest request.");
       }
     } catch (e: any) {
-      alert("Error granting retest: " + (e.message || "Network error"));
+      alert("Error processing retest: " + (e.message || "Network error"));
     } finally {
       setGrantingRetestId(null);
+    }
+  };
+
+  const getSystemDateAndDefaultTime = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+    const dateStr = `${year}-${month}-${day}`;
+    // Default to 10:10 PM or next 2 hours matching system clock
+    const nextHour = (now.getHours() + 2) % 24;
+    const timeStr = `${String(nextHour).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+    return { dateStr, timeStr };
+  };
+
+  const [syncingTaskId, setSyncingTaskId] = useState<string | null>(null);
+
+  const handleSyncTaskToSystemTime = async (taskId: string) => {
+    try {
+      setSyncingTaskId(taskId);
+      const now = new Date();
+      // Set due date to today at 10:10 PM (or 2 hours later if already past 10 PM)
+      const targetHour = now.getHours() >= 22 ? 23 : 22;
+      const targetMin = now.getHours() >= 22 ? 59 : 10;
+      const newDue = new Date(now.getFullYear(), now.getMonth(), now.getDate(), targetHour, targetMin, 0, 0);
+
+      const res = await fetch("/api/teacher/assignments", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assignmentId: taskId,
+          dueDate: newDue.toISOString(),
+          testDate: newDue.toISOString(),
+        }),
+      });
+      if (res.ok) {
+        invalidateCache("/api/teacher/assignments");
+        invalidateCache("/api/student/assignments");
+        refetch();
+      }
+    } catch (e) {
+      console.error("Sync to system time error:", e);
+    } finally {
+      setSyncingTaskId(null);
     }
   };
 
@@ -231,13 +276,13 @@ export default function TeacherAssignmentsPage() {
     if (!dStr) return "No deadline";
     const d = new Date(dStr);
     if (isNaN(d.getTime())) return "No deadline";
-    const datePart = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+    const datePart = d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
     const hours = d.getHours();
     const mins = d.getMinutes();
     if (hours === 0 && mins === 0) {
       return `Due: ${datePart}`;
     }
-    const timePart = d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
+    const timePart = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", hour12: true });
     return `Due: ${datePart} at ${timePart}`;
   };
 
@@ -253,8 +298,9 @@ export default function TeacherAssignmentsPage() {
       if (formData.dueDate) {
         const timePart = formData.dueTime ? formData.dueTime : "23:59";
         const [hours, minutes] = timePart.split(":");
-        const d = new Date(formData.dueDate);
-        d.setHours(Number(hours) || 23, Number(minutes) || 59, 0, 0);
+        const [y, m, dNum] = formData.dueDate.split("-").map(Number);
+        // Construct precisely in system local time to avoid UTC offset shifts
+        const d = new Date(y, m - 1, dNum, Number(hours) || 23, Number(minutes) || 59, 0, 0);
         fullDueIso = d.toISOString();
       }
 
@@ -352,6 +398,7 @@ export default function TeacherAssignmentsPage() {
         <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={() => {
+              const { dateStr, timeStr } = getSystemDateAndDefaultTime();
               setFormData({
                 type: activeCategory,
                 title: "",
@@ -361,8 +408,8 @@ export default function TeacherAssignmentsPage() {
                 batchId: batches[0]?._id || "",
                 durationMinutes: 45,
                 proctoringRequired: true,
-                dueDate: "",
-                dueTime: "21:00",
+                dueDate: dateStr,
+                dueTime: timeStr,
                 maxMarks: activeCategory === "TEST" ? 50 : 20,
                 attachmentUrl: "",
                 attachmentName: "",
@@ -524,11 +571,30 @@ export default function TeacherAssignmentsPage() {
                           Disqualified (3 Warnings)
                         </span>
                       )}
+                      {sub.retestRequested && !sub.retestPermitted && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 flex items-center gap-1 animate-pulse">
+                          <Clock className="w-3 h-3 text-amber-600" />
+                          Retest Requested by Student
+                        </span>
+                      )}
+                      {sub.retestStatus === "REJECTED" && (
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-900 flex items-center gap-1">
+                          <X className="w-3 h-3 text-rose-600" />
+                          Retest Declined
+                        </span>
+                      )}
                     </div>
 
                     <p className="text-xs font-medium text-slate-700 dark:text-slate-300 truncate">
                       {asg.title || "Assessment Title"}
                     </p>
+
+                    {sub.retestReason && (
+                      <div className="p-2 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-xs">
+                        <span className="font-bold text-amber-800 dark:text-amber-300">Student Explanation: </span>
+                        <span className="text-amber-900 dark:text-amber-100">{sub.retestReason}</span>
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-3 text-[11px] text-slate-400 flex-wrap">
                       <span className="font-semibold text-[#004b79] dark:text-[#dfb74a]">
@@ -536,7 +602,7 @@ export default function TeacherAssignmentsPage() {
                       </span>
                       <span>•</span>
                       <span>
-                        Submitted: {new Date(sub.submittedAt || sub.createdAt).toLocaleDateString("en-IN", {
+                        Submitted: {new Date(sub.submittedAt || sub.createdAt).toLocaleDateString(undefined, {
                           day: "numeric",
                           month: "short",
                           hour: "2-digit",
@@ -555,22 +621,82 @@ export default function TeacherAssignmentsPage() {
                   </div>
 
                   <div className="flex items-center gap-3 shrink-0">
-                    {sub.isDisqualified || sub.status === "DISQUALIFIED" || ((sub.violationCount || 0) >= 3 && !sub.retestPermitted) ? (
+                    {(sub.isDisqualified || sub.status === "DISQUALIFIED" || sub.retestRequested || sub.retestStatus === "REJECTED" || ((sub.violationCount || 0) >= 3 && !sub.retestPermitted)) ? (
                       <div className="flex items-center gap-2">
                         {sub.retestPermitted ? (
                           <span className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                             Retest Granted
                           </span>
+                        ) : sub.retestRequested ? (
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              disabled={grantingRetestId === sub._id}
+                              onClick={() => handleGrantRetest(sub._id, "APPROVE")}
+                              className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all shadow-2xs flex items-center gap-1.5 disabled:opacity-60"
+                            >
+                              <CheckCircle2 className="w-3.5 h-3.5" />
+                              <span>{grantingRetestId === sub._id ? "Approving..." : "Approve Retest"}</span>
+                            </button>
+                            <button
+                              type="button"
+                              disabled={grantingRetestId === sub._id}
+                              onClick={() => {
+                                const note = window.prompt("Reason for declining retest request (optional):", "Retest request cannot be accommodated.");
+                                if (note !== null) {
+                                  handleGrantRetest(sub._id, "REJECT", note);
+                                }
+                              }}
+                              className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 border border-rose-200 transition-all cursor-pointer flex items-center gap-1"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                              <span>Decline</span>
+                            </button>
+                          </div>
+                        ) : sub.retestStatus === "REJECTED" ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="px-2.5 py-1 rounded-xl text-xs font-semibold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900">
+                              Declined
+                            </span>
+                            <button
+                              type="button"
+                              disabled={grantingRetestId === sub._id}
+                              onClick={() => handleGrantRetest(sub._id, "APPROVE")}
+                              className="px-2.5 py-1 rounded-xl text-xs font-semibold text-emerald-700 hover:bg-emerald-50 border border-emerald-200 transition-all cursor-pointer"
+                            >
+                              Allow Retest
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={grantingRetestId === sub._id}
+                            onClick={() => handleGrantRetest(sub._id, "APPROVE")}
+                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all shadow-2xs flex items-center gap-1.5 disabled:opacity-60"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>{grantingRetestId === sub._id ? "Granting..." : "Grant Retest Permission"}</span>
+                          </button>
+                        )}
+                      </div>
+                    ) : isTest && !isEvaluated ? (
+                      <div className="flex items-center gap-2">
+                        {sub.retestPermitted ? (
+                          <span className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            Retest Permitted
+                          </span>
                         ) : (
                           <button
                             type="button"
                             disabled={grantingRetestId === sub._id}
                             onClick={() => handleGrantRetest(sub._id)}
-                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-all shadow-2xs flex items-center gap-1.5 disabled:opacity-60"
+                            title="Allow candidate to re-enter and retake test"
+                            className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-emerald-600 bg-slate-50 dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-800 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
                           >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>{grantingRetestId === sub._id ? "Granting..." : "Grant Retest Permission"}</span>
+                            <RefreshCw className="w-3 h-3 text-emerald-600" />
+                            <span>Allow Retest</span>
                           </button>
                         )}
                       </div>
@@ -648,9 +774,24 @@ export default function TeacherAssignmentsPage() {
               </div>
 
               {(task.dueDate || task.testDate) && (
-                <div className="pt-1 text-[11px] font-semibold text-slate-500 flex items-center gap-1.5">
-                  <Clock className="w-3 h-3 text-[#004b79] dark:text-[#dfb74a]" />
-                  <span>{formatDueDateTime(task.dueDate || task.testDate)}</span>
+                <div className="pt-2 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800/60">
+                  <div className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5">
+                    <Clock className="w-3 h-3 text-[#004b79] dark:text-[#dfb74a]" />
+                    <span>{formatDueDateTime(task.dueDate || task.testDate)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSyncTaskToSystemTime(task._id);
+                    }}
+                    disabled={syncingTaskId === task._id}
+                    title="Update schedule to match today's system timing"
+                    className="inline-flex items-center gap-1 text-[10px] font-bold text-[#004b79] dark:text-[#dfb74a] hover:underline cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-2.5 h-2.5 ${syncingTaskId === task._id ? "animate-spin" : ""}`} />
+                    <span>{syncingTaskId === task._id ? "Updating..." : "Match System Timing"}</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -779,6 +920,21 @@ export default function TeacherAssignmentsPage() {
                   </div>
                 </div>
 
+                <div className="flex items-center justify-between text-[11px] pt-1">
+                  <span className="text-amber-800/80 dark:text-amber-300/80 font-medium">Auto-align with your current system clock:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const { dateStr, timeStr } = getSystemDateAndDefaultTime();
+                      setFormData((prev) => ({ ...prev, dueDate: dateStr, dueTime: timeStr }));
+                    }}
+                    className="font-bold text-[#004b79] dark:text-[#dfb74a] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Clock className="w-3 h-3" />
+                    <span>Match System Time</span>
+                  </button>
+                </div>
+
                 <label className="flex items-center gap-2 text-xs font-semibold text-amber-950 dark:text-amber-200 cursor-pointer pt-0.5">
                   <input
                     type="checkbox"
@@ -790,27 +946,44 @@ export default function TeacherAssignmentsPage() {
                 </label>
               </div>
             ) : (
-              <div className="grid grid-cols-2 gap-2.5">
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Due Date *</label>
-                  <input
-                    type="date"
-                    required
-                    value={formData.dueDate}
-                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
-                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100"
-                  />
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Due Date *</label>
+                    <input
+                      type="date"
+                      required
+                      value={formData.dueDate}
+                      onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Due Time (Set Time) *</label>
+                    <input
+                      type="time"
+                      required
+                      value={formData.dueTime}
+                      onChange={(e) => setFormData({ ...formData, dueTime: e.target.value })}
+                      className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Due Time (Set Time) *</label>
-                  <input
-                    type="time"
-                    required
-                    value={formData.dueTime}
-                    onChange={(e) => setFormData({ ...formData, dueTime: e.target.value })}
-                    className="w-full px-3 py-1.5 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-mono"
-                  />
+                <div className="flex items-center justify-between text-[11px] pt-0.5">
+                  <span className="text-slate-500 font-medium">Auto-align with your current system clock:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const { dateStr, timeStr } = getSystemDateAndDefaultTime();
+                      setFormData((prev) => ({ ...prev, dueDate: dateStr, dueTime: timeStr }));
+                    }}
+                    className="font-bold text-[#004b79] dark:text-[#dfb74a] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    <Clock className="w-3 h-3" />
+                    <span>Match System Time</span>
+                  </button>
                 </div>
               </div>
             )}

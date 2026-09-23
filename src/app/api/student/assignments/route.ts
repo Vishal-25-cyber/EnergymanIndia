@@ -81,6 +81,11 @@ export async function GET(req: NextRequest) {
               isDisqualified: !!submission.isDisqualified,
               disqualifiedReason: submission.disqualifiedReason || "",
               retestPermitted: !!submission.retestPermitted,
+              retestRequested: !!submission.retestRequested,
+              retestRequestedAt: submission.retestRequestedAt,
+              retestReason: submission.retestReason || "",
+              retestStatus: submission.retestStatus || "NONE",
+              retestDecisionNote: submission.retestDecisionNote || "",
               violationCount: submission.violationCount || 0,
             }
           : null,

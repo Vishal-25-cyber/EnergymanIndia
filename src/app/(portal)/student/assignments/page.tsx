@@ -126,13 +126,13 @@ export default function StudentAssignmentsPage() {
     if (!dStr) return "No deadline";
     const d = new Date(dStr);
     if (isNaN(d.getTime())) return "No deadline";
-    const datePart = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+    const datePart = d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
     const hours = d.getHours();
     const mins = d.getMinutes();
     if (hours === 0 && mins === 0) {
       return `Due: ${datePart}`;
     }
-    const timePart = d.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit", hour12: true });
+    const timePart = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", hour12: true });
     return `Due: ${datePart} at ${timePart}`;
   };
 
@@ -236,14 +236,16 @@ export default function StudentAssignmentsPage() {
   // ── 3-WARNING PROCTORING AUTO-TERMINATION & AWAY STATE ──
   const [terminationModalOpen, setTerminationModalOpen] = useState(false);
   const [terminatedTestTitle, setTerminatedTestTitle] = useState("");
+  const [terminatedTestId, setTerminatedTestId] = useState("");
 
   const handleAutoTerminateTest = async (testToTerminate: any, snapshotUrl?: string) => {
     if (!testToTerminate) return;
     const testId = testToTerminate._id;
     const testTitle = testToTerminate.title || "Proctored Test";
 
-    handleCloseTestRoom();
+    await handleCloseTestRoom({ skipConfirm: true, skipConclude: true });
     setTerminatedTestTitle(testTitle);
+    setTerminatedTestId(testId);
     setTerminationModalOpen(true);
 
     try {
@@ -389,6 +391,81 @@ export default function StudentAssignmentsPage() {
     return null;
   };
 
+  const [requestedRetestIds, setRequestedRetestIds] = useState<Set<string>>(new Set());
+  const [retestRequestTask, setRetestRequestTask] = useState<any | null>(null);
+  const [retestCategory, setRetestCategory] = useState<string>("Technical / Browser Glitch");
+  const [retestExplanation, setRetestExplanation] = useState<string>("");
+  const [retestFormError, setRetestFormError] = useState<string>("");
+  const [isSubmittingRetest, setIsSubmittingRetest] = useState<boolean>(false);
+
+  const openRetestRequestModal = (task: any) => {
+    setRetestRequestTask(task);
+    setRetestCategory("Technical / Browser Glitch");
+    setRetestExplanation("");
+    setRetestFormError("");
+  };
+
+  const handleSubmitRetestRequest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!retestExplanation.trim()) {
+      setRetestFormError("Please provide an explanation of what happened during the test.");
+      return;
+    }
+    if (!retestRequestTask) return;
+
+    setIsSubmittingRetest(true);
+    setRetestFormError("");
+    try {
+      const combinedReason = `[${retestCategory}] ${retestExplanation.trim()}`;
+      const res = await fetch("/api/student/assignments/request-retest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assignmentId: retestRequestTask._id,
+          reason: combinedReason,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRequestedRetestIds((prev) => new Set(prev).add(retestRequestTask._id));
+        invalidateCache("/api/student/assignments");
+        refetch();
+        setRetestRequestTask(null);
+        setRetestExplanation("");
+      } else {
+        setRetestFormError(data.error || "Failed to submit retest request.");
+      }
+    } catch (err: any) {
+      setRetestFormError(err.message || "Network error submitting request.");
+    } finally {
+      setIsSubmittingRetest(false);
+    }
+  };
+
+  const handleExitAndConcludeTest = async (testToConclude: any) => {
+    if (!testToConclude) return;
+    const testId = testToConclude._id;
+    try {
+      await fetch("/api/student/submit-assignment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          assignmentId: testId,
+          type: "TEST",
+          submissionText: "Test concluded by student upon exiting exam room.",
+          fileUrl: selectedFile?.url || "",
+          proctoringSnapshotUrl: capturedProctoringSnapshot || "",
+          violationCount: warningCount,
+          timeTakenMinutes: Math.round(((testToConclude.durationMinutes || 45) * 60 - timeLeftSeconds) / 60) || 1,
+        }),
+      });
+      invalidateCache("/api/student/assignments");
+      refetch();
+    } catch (e) {
+      console.error("Auto conclude on exit error:", e);
+    }
+  };
+
   // Launch Proctored Test Room
   const handleStartTest = async (test: any) => {
     if (test.dueDate && new Date() > new Date(test.dueDate)) {
@@ -396,9 +473,15 @@ export default function StudentAssignmentsPage() {
       return;
     }
 
-    if (test.submission?.isDisqualified && !test.submission?.retestPermitted) {
-      alert("Test Locked: You reached 3 proctoring violations on this test. Teacher permission is required to retake.");
-      return;
+    if (test.submission && !test.submission.retestPermitted) {
+      if (test.submission.isDisqualified) {
+        alert("Test Locked: You reached 3 proctoring violations on this test. Teacher permission is required to retake.");
+        return;
+      }
+      if (test.submission.status === "SUBMITTED" || test.submission.status === "EVALUATED") {
+        alert("Test Completed: You have already completed and submitted this proctored test. It cannot be reopened without faculty permission.");
+        return;
+      }
     }
 
     setActiveProctoredTest(test);
@@ -429,7 +512,35 @@ export default function StudentAssignmentsPage() {
   };
 
   // Close Proctored Test Room
-  const handleCloseTestRoom = () => {
+  const handleCloseTestRoom = async (
+    options?: boolean | React.MouseEvent | { skipConfirm?: boolean; skipConclude?: boolean }
+  ) => {
+    let skipConfirm = false;
+    let skipConclude = false;
+
+    if (typeof options === "boolean") {
+      skipConfirm = options;
+    } else if (options && typeof options === "object" && !("nativeEvent" in options)) {
+      skipConfirm = !!options.skipConfirm;
+      skipConclude = !!options.skipConclude;
+    }
+
+    const currentTest = activeProctoredTest;
+    const isAlreadySubmitted =
+      currentTest?.submission &&
+      !currentTest.submission.retestPermitted &&
+      (currentTest.submission.status === "SUBMITTED" ||
+        currentTest.submission.status === "EVALUATED" ||
+        currentTest.submission.status === "DISQUALIFIED" ||
+        !!currentTest.submission.isDisqualified);
+
+    if (currentTest && !isAlreadySubmitted && !skipConfirm) {
+      const confirmExit = window.confirm(
+        "Are you sure you want to exit? Exiting will finish and mark this test as completed. You will not be able to re-enter without faculty permission."
+      );
+      if (!confirmExit) return;
+    }
+
     stopCamera();
     setActiveProctoredTest(null);
     setIsTestLocked(false);
@@ -439,6 +550,10 @@ export default function StudentAssignmentsPage() {
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
       setIsExamFullscreen(false);
+    }
+
+    if (currentTest && !isAlreadySubmitted && !skipConclude) {
+      await handleExitAndConcludeTest(currentTest);
     }
   };
 
@@ -489,6 +604,59 @@ export default function StudentAssignmentsPage() {
       window.removeEventListener("focus", handleFocus);
     };
   }, [activeProctoredTest, isTestLocked]);
+
+  // Auto-conclude and warn if candidate leaves page / closes window during proctored test
+  useEffect(() => {
+    if (!activeProctoredTest) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      const isAlreadySubmitted =
+        activeProctoredTest?.submission &&
+        !activeProctoredTest.submission.retestPermitted &&
+        (activeProctoredTest.submission.status === "SUBMITTED" ||
+          activeProctoredTest.submission.status === "EVALUATED" ||
+          activeProctoredTest.submission.status === "DISQUALIFIED" ||
+          !!activeProctoredTest.submission.isDisqualified);
+
+      if (!isAlreadySubmitted) {
+        e.preventDefault();
+        e.returnValue = "Leaving this page will finish and conclude your test. Are you sure you want to leave?";
+        return e.returnValue;
+      }
+    };
+
+    const handlePageHide = () => {
+      const isAlreadySubmitted =
+        activeProctoredTest?.submission &&
+        !activeProctoredTest.submission.retestPermitted &&
+        (activeProctoredTest.submission.status === "SUBMITTED" ||
+          activeProctoredTest.submission.status === "EVALUATED" ||
+          activeProctoredTest.submission.status === "DISQUALIFIED" ||
+          !!activeProctoredTest.submission.isDisqualified);
+
+      if (!isAlreadySubmitted && activeProctoredTest?._id) {
+        const payload = JSON.stringify({
+          assignmentId: activeProctoredTest._id,
+          type: "TEST",
+          submissionText: "Test auto-concluded upon student leaving the exam window/tab.",
+          violationCount: warningCount,
+          timeTakenMinutes: Math.round(((activeProctoredTest.durationMinutes || 45) * 60 - timeLeftSeconds) / 60) || 1,
+        });
+        if (navigator.sendBeacon) {
+          const blob = new Blob([payload], { type: "application/json" });
+          navigator.sendBeacon("/api/student/submit-assignment", blob);
+        }
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("pagehide", handlePageHide);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("pagehide", handlePageHide);
+    };
+  }, [activeProctoredTest, warningCount, timeLeftSeconds]);
 
   // Away ticker: if candidate is away (tab hidden, window blurred, or face absent) for 5 seconds -> 1 warning
   useEffect(() => {
@@ -831,8 +999,8 @@ export default function StudentAssignmentsPage() {
               const isSubmitted = sub && !isEvaluated && !isDisqualified;
               const isTest = task.type === "TEST";
               const isPastDeadline = task.dueDate ? new Date() > new Date(task.dueDate) : false;
-              // Allow student to resubmit/retake any assignment, test, or homework before deadline as long as it is not graded yet and not locked by disqualification
-              const canResubmit = isSubmitted && !isEvaluated && !isPastDeadline && !isDisqualified;
+              // Proctored tests CANNOT be resubmitted once finished. Regular assignments can be resubmitted before deadline.
+              const canResubmit = !isTest && isSubmitted && !isEvaluated && !isPastDeadline && !isDisqualified;
 
               return (
                 <div
@@ -891,7 +1059,9 @@ export default function StudentAssignmentsPage() {
                           Score: {sub.marksObtained} / {task.maxMarks}
                         </span>
                       ) : isSubmitted ? (
-                        <span className="text-blue-600 font-bold">Submitted</span>
+                        <span className={isTest ? "text-emerald-600 font-bold" : "text-blue-600 font-bold"}>
+                          {isTest ? "Completed" : "Submitted"}
+                        </span>
                       ) : (
                         <span className="text-amber-600 font-bold">Pending</span>
                       )}
@@ -927,7 +1097,7 @@ export default function StudentAssignmentsPage() {
                                 <span>Test Disqualified (3 Warnings)</span>
                               </div>
                               <p className="text-[11px] text-rose-600 dark:text-rose-400/90 leading-tight">
-                                Closed due to 3 proctoring violations. You cannot retest unless your teacher grants permission.
+                                Closed due to 3 proctoring violations. You cannot retest unless faculty grants permission.
                               </p>
                             </div>
                             <button
@@ -936,8 +1106,54 @@ export default function StudentAssignmentsPage() {
                               className="w-full py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-2 cursor-not-allowed opacity-80"
                             >
                               <Lock className="w-3.5 h-3.5" />
-                              <span>Retest Locked (Teacher Permission Required)</span>
+                              <span>Retest Locked (Faculty Approval Required)</span>
                             </button>
+
+                            {sub?.retestStatus === "REJECTED" ? (
+                              <>
+                                <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-800 dark:text-rose-300 space-y-1">
+                                  <div className="font-bold flex items-center gap-1.5 text-rose-700 dark:text-rose-400">
+                                    <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                                    <span>Retest Request Declined</span>
+                                  </div>
+                                  <p className="text-[11px] text-rose-600 dark:text-rose-400/90 leading-tight">
+                                    {sub?.retestDecisionNote || "Faculty reviewed and declined your retest request."}
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => openRetestRequestModal(task)}
+                                  className="w-full py-2 rounded-xl text-xs font-semibold text-rose-700 dark:text-rose-300 hover:text-rose-800 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100/70 border border-rose-200 dark:border-rose-800 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                                >
+                                  <Send className="w-3 h-3" />
+                                  <span>Submit New Explanation</span>
+                                </button>
+                              </>
+                            ) : sub?.retestRequested || requestedRetestIds.has(task._id) || sub?.retestStatus === "REQUESTED" ? (
+                              <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-[11px] font-semibold text-amber-800 dark:text-amber-300 space-y-1">
+                                <div className="flex items-center gap-1.5 font-bold">
+                                  <Clock className="w-3.5 h-3.5 text-amber-600 animate-spin" />
+                                  <span>Retest Requested (Waiting for Staff Approval)</span>
+                                </div>
+                                <p className="text-[10px] text-amber-700/90 dark:text-amber-300/90 font-normal">
+                                  Your explanation was sent to faculty. If approved, you can retake the test.
+                                </p>
+                                {sub?.retestReason && (
+                                  <p className="text-[10px] text-amber-800/80 dark:text-amber-300/80 italic border-t border-amber-200/50 pt-1 line-clamp-2">
+                                    "{sub.retestReason}"
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => openRetestRequestModal(task)}
+                                className="w-full py-2 rounded-xl text-xs font-semibold text-rose-700 dark:text-rose-300 hover:text-rose-800 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100/70 border border-rose-200 dark:border-rose-800 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                              >
+                                <Send className="w-3 h-3" />
+                                <span>Request Staff for Retest Permission</span>
+                              </button>
+                            )}
                           </>
                         )}
                       </div>
@@ -948,6 +1164,83 @@ export default function StudentAssignmentsPage() {
                           <span>Graded by Faculty</span>
                         </div>
                         {sub.feedback && <p className="text-[11px] opacity-90">{sub.feedback}</p>}
+                      </div>
+                    ) : isTest && isSubmitted ? (
+                      <div className="space-y-2">
+                        <div className="p-2.5 rounded-xl bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 font-semibold">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                            <span>Test Finished &amp; Submitted</span>
+                          </div>
+                          <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-full">
+                            Completed
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          disabled
+                          className="w-full py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-2 cursor-not-allowed opacity-90 shadow-none"
+                        >
+                          <Lock className="w-3.5 h-3.5 text-slate-400" />
+                          <span>Test Completed (Locked)</span>
+                        </button>
+
+                        {/* Retest status & request button */}
+                        {isRetestPermitted ? (
+                          <button
+                            type="button"
+                            onClick={() => handleStartTest(task)}
+                            className="w-full py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 cursor-pointer transition-all shadow-xs"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            <span>Start Retest Now →</span>
+                          </button>
+                        ) : sub?.retestStatus === "REJECTED" ? (
+                          <>
+                            <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-xs text-rose-800 dark:text-rose-300 space-y-1">
+                              <div className="font-bold flex items-center gap-1.5 text-rose-700 dark:text-rose-400">
+                                <AlertCircle className="w-3.5 h-3.5 text-rose-600" />
+                                <span>Retest Request Declined</span>
+                              </div>
+                              <p className="text-[11px] text-rose-600 dark:text-rose-400/90 leading-tight">
+                                {sub?.retestDecisionNote || "Faculty reviewed and declined your retest request."}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => openRetestRequestModal(task)}
+                              className="w-full py-2 rounded-xl text-xs font-semibold text-rose-700 dark:text-rose-300 hover:text-rose-800 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100/70 border border-rose-200 dark:border-rose-800 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                            >
+                              <Send className="w-3 h-3" />
+                              <span>Submit New Explanation</span>
+                            </button>
+                          </>
+                        ) : sub?.retestRequested || requestedRetestIds.has(task._id) || sub?.retestStatus === "REQUESTED" ? (
+                          <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-[11px] font-semibold text-amber-800 dark:text-amber-300 space-y-1">
+                            <div className="flex items-center gap-1.5 font-bold">
+                              <Clock className="w-3.5 h-3.5 text-amber-600 animate-spin" />
+                              <span>Retest Requested (Waiting for Staff Approval)</span>
+                            </div>
+                            <p className="text-[10px] text-amber-700/90 dark:text-amber-300/90 font-normal">
+                              Your explanation was sent to faculty. If approved, you can retake the test.
+                            </p>
+                            {sub?.retestReason && (
+                              <p className="text-[10px] text-amber-800/80 dark:text-amber-300/80 italic border-t border-amber-200/50 pt-1 line-clamp-2">
+                                "{sub.retestReason}"
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openRetestRequestModal(task)}
+                            className="w-full py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-[#004b79] dark:hover:text-[#dfb74a] bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800/80 border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                          >
+                            <Send className="w-3 h-3" />
+                            <span>Request Staff for Retest</span>
+                          </button>
+                        )}
                       </div>
                     ) : canResubmit ? (
                       <div className="space-y-2">
@@ -961,39 +1254,28 @@ export default function StudentAssignmentsPage() {
                           </span>
                         </div>
 
-                        {isTest ? (
-                          <button
-                            type="button"
-                            onClick={() => handleStartTest(task)}
-                            className="w-full py-2.5 rounded-xl text-xs font-bold border border-amber-300 dark:border-amber-700 bg-amber-50/50 dark:bg-amber-950/30 hover:bg-amber-100/60 dark:hover:bg-amber-900/40 text-amber-900 dark:text-amber-200 flex items-center justify-center gap-2 cursor-pointer transition-all shadow-2xs"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            <span>Retake / Resubmit Test</span>
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedTask(task);
-                              setSelectedFile(
-                                sub.fileUrl
-                                  ? {
-                                      url: sub.fileUrl,
-                                      name: sub.fileName || (sub.fileUrl.split("/").pop() || "Submitted Attachment"),
-                                      isImage: /\.(png|jpe?g|webp|gif)$/i.test(sub.fileUrl),
-                                    }
-                                  : null
-                              );
-                              setSubmissionText(sub.submissionText || "");
-                              setErrorMessage("");
-                              setSuccessMessage("");
-                            }}
-                            className="w-full py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#004b79] dark:text-[#dfb74a] flex items-center justify-center gap-2 cursor-pointer transition-all shadow-2xs"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5" />
-                            <span>Resubmit / Update Work</span>
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedTask(task);
+                            setSelectedFile(
+                              sub.fileUrl
+                                ? {
+                                    url: sub.fileUrl,
+                                    name: sub.fileName || (sub.fileUrl.split("/").pop() || "Submitted Attachment"),
+                                    isImage: /\.(png|jpe?g|webp|gif)$/i.test(sub.fileUrl),
+                                  }
+                                : null
+                            );
+                            setSubmissionText(sub.submissionText || "");
+                            setErrorMessage("");
+                            setSuccessMessage("");
+                          }}
+                          className="w-full py-2.5 rounded-xl text-xs font-bold border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-[#004b79] dark:text-[#dfb74a] flex items-center justify-center gap-2 cursor-pointer transition-all shadow-2xs"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" />
+                          <span>Resubmit / Update Work</span>
+                        </button>
                       </div>
                     ) : isSubmitted ? (
                       <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-xs text-slate-500 flex items-center justify-between">
@@ -1195,15 +1477,26 @@ export default function StudentAssignmentsPage() {
               </button>
 
               {!isTestLocked ? (
-                <button type="button" onClick={handleFinishTest}
-                  className="px-3.5 py-1.5 rounded-xl bg-[#004b79] hover:bg-[#003b60] text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs">
-                  <Check className="w-3.5 h-3.5" />
-                  <span>Finish Test</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={handleFinishTest}
+                    className="px-3.5 py-1.5 rounded-xl bg-[#004b79] hover:bg-[#003b60] text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs">
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Finish Test</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCloseTestRoom()}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-600 hover:text-rose-600 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs group"
+                    title="Exit Test (Concludes & Locks Test)"
+                  >
+                    <X className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform duration-200" />
+                    <span className="hidden sm:inline">Exit</span>
+                  </button>
+                </div>
               ) : (
                 <button
                   type="button"
-                  onClick={handleCloseTestRoom}
+                  onClick={() => handleCloseTestRoom()}
                   className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 border border-slate-200/90 hover:border-rose-200 text-slate-700 hover:text-rose-600 text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-2xs hover:shadow-xs group"
                   title="Close & Exit Test Room"
                 >
@@ -1270,11 +1563,12 @@ export default function StudentAssignmentsPage() {
                     )}
                     <button
                       type="button"
-                      onClick={handleCloseTestRoom}
-                      className="w-9 h-9 rounded-xl bg-white hover:bg-rose-50 border border-gray-200 hover:border-rose-200 text-gray-400 hover:text-rose-600 flex items-center justify-center transition-all duration-200 cursor-pointer shadow-2xs hover:shadow-xs group"
-                      title="Exit and Close Room"
+                      onClick={() => handleCloseTestRoom()}
+                      className="w-10 h-10 rounded-2xl bg-white hover:bg-rose-50 border border-blue-200 hover:border-rose-300 text-slate-400 hover:text-rose-600 flex items-center justify-center transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md hover:scale-105 active:scale-95 group shrink-0 ring-1 ring-slate-900/5"
+                      title="Exit & Close Room"
+                      aria-label="Exit and Close Room"
                     >
-                      <X className="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" />
+                      <X className="w-4.5 h-4.5 stroke-[2.25] text-slate-400 group-hover:text-rose-600 group-hover:rotate-90 transition-transform duration-200" />
                     </button>
                   </div>
                 </div>
@@ -1303,10 +1597,11 @@ export default function StudentAssignmentsPage() {
                         <button
                           type="button"
                           onClick={() => setSelectedFile(null)}
-                          className="p-2 rounded-xl text-gray-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer shrink-0"
+                          className="w-8 h-8 rounded-xl bg-white/90 hover:bg-rose-50 border border-blue-200/80 hover:border-rose-300 text-slate-400 hover:text-rose-600 flex items-center justify-center transition-all duration-200 cursor-pointer shrink-0 shadow-2xs hover:shadow-xs group active:scale-95"
                           title="Remove file"
+                          aria-label="Remove attached file"
                         >
-                          <X className="w-5 h-5" />
+                          <X className="w-4 h-4 stroke-[2.25] group-hover:rotate-90 transition-transform duration-200" />
                         </button>
                       </div>
                     ) : (
@@ -1356,24 +1651,13 @@ export default function StudentAssignmentsPage() {
                       )}
                       <span>{isSubmitting ? "Submitting Answer Sheet…" : "Submit Answer Sheet"}</span>
                     </button>
-
-                    <div className="flex items-center justify-center pt-0.5">
-                      <button
-                        type="button"
-                        onClick={handleCloseTestRoom}
-                        className="text-xs font-semibold text-gray-400 hover:text-rose-600 transition-colors flex items-center gap-1.5 cursor-pointer py-1.5 px-3 rounded-xl hover:bg-rose-50 border border-transparent hover:border-rose-200 group"
-                      >
-                        <X className="w-3.5 h-3.5 text-gray-400 group-hover:text-rose-500 group-hover:rotate-90 transition-transform duration-200" />
-                        <span>Cancel &amp; Close Room</span>
-                      </button>
-                    </div>
                   </>
                 ) : (
                   <div className="text-center py-6 space-y-4">
                     <p className="text-xs text-gray-500">The upload window has expired. Please contact your instructor for assistance.</p>
                     <button
                       type="button"
-                      onClick={handleCloseTestRoom}
+                      onClick={() => handleCloseTestRoom()}
                       className="px-6 py-3 rounded-2xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 text-sm font-bold transition-all cursor-pointer flex items-center justify-center gap-2 mx-auto shadow-2xs hover:shadow-xs group"
                     >
                       <X className="w-4 h-4 group-hover:rotate-90 transition-transform duration-200" />
@@ -1703,14 +1987,147 @@ export default function StudentAssignmentsPage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => setTerminationModalOpen(false)}
-            className="w-full py-2.5 px-4 rounded-xl bg-[#002137] hover:bg-[#003659] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
-          >
-            <span>Understood &amp; Return to Dashboard</span>
-          </button>
+          <div className="flex flex-col sm:flex-row gap-2 pt-1">
+            {terminatedTestId && !requestedRetestIds.has(terminatedTestId) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTerminationModalOpen(false);
+                  openRetestRequestModal({ _id: terminatedTestId, title: terminatedTestTitle });
+                }}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>Request Staff for Retest</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setTerminationModalOpen(false)}
+              className="flex-1 py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <span>Return to Dashboard</span>
+            </button>
+          </div>
         </div>
+      </Modal>
+
+      {/* ── RETEST REQUEST EXPLANATION FORM MODAL ── */}
+      <Modal
+        isOpen={!!retestRequestTask}
+        onClose={() => {
+          if (!isSubmittingRetest) {
+            setRetestRequestTask(null);
+            setRetestFormError("");
+          }
+        }}
+        maxWidth="md"
+        title="Request Retest Permission"
+        description="Explain what happened during the proctored test so faculty can review your request."
+      >
+        <form onSubmit={handleSubmitRetestRequest} className="space-y-4 pt-1">
+          <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#004b79]/10 text-[#004b79] dark:text-[#dfb74a] flex items-center justify-center shrink-0 mt-0.5">
+              <Camera className="w-4.5 h-4.5" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-[#004b79] dark:text-[#dfb74a]">
+                {retestRequestTask?.title || "Proctored Test"}
+              </p>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                {retestRequestTask?.subject || "Subject"} • Class {retestRequestTask?.classLevel || "10"}
+              </p>
+            </div>
+          </div>
+
+          {/* Reason Category Quick Select */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              Primary Reason / What happened?
+            </label>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+              {[
+                "Technical / Browser Glitch",
+                "Internet / WiFi Disconnected",
+                "Accidental Exit / Tab Closed",
+                "Webcam / Camera Issue",
+                "Power / System Interruption",
+                "Other Issue",
+              ].map((category) => (
+                <button
+                  type="button"
+                  key={category}
+                  onClick={() => setRetestCategory(category)}
+                  className={`px-3 py-2 rounded-xl text-xs font-semibold text-left transition-all border cursor-pointer ${
+                    retestCategory === category
+                      ? "bg-[#004b79] text-white border-[#004b79] shadow-xs"
+                      : "bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Explanation Textarea */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">
+              Detailed Explanation for Faculty <span className="text-rose-500">*</span>
+            </label>
+            <textarea
+              value={retestExplanation}
+              onChange={(e) => {
+                setRetestExplanation(e.target.value);
+                if (retestFormError) setRetestFormError("");
+              }}
+              rows={4}
+              placeholder="Explain clearly what happened (e.g. My laptop browser crashed unexpectedly, or my camera disconnected while writing my answers...)"
+              className="w-full p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 text-xs focus:ring-2 focus:ring-[#004b79] outline-none transition-all resize-none"
+            />
+            <p className="text-[10px] text-slate-400">
+              Your instructor will read this explanation before deciding to approve or decline your request.
+            </p>
+          </div>
+
+          {retestFormError && (
+            <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+              <span>{retestFormError}</span>
+            </div>
+          )}
+
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+            <button
+              type="button"
+              disabled={isSubmittingRetest}
+              onClick={() => {
+                setRetestRequestTask(null);
+                setRetestFormError("");
+              }}
+              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={isSubmittingRetest}
+              className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#004b79] hover:bg-[#003b60] disabled:bg-slate-300 text-white flex items-center gap-2 shadow-xs cursor-pointer transition-all disabled:cursor-not-allowed"
+            >
+              {isSubmittingRetest ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <span>Submitting to Faculty...</span>
+                </>
+              ) : (
+                <>
+                  <Send className="w-3.5 h-3.5" />
+                  <span>Send Request to Faculty</span>
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </Modal>
     </main>
   );

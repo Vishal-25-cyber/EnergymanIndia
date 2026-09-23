@@ -192,3 +192,49 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const session = await getSession(req);
+    if (!session || (session.role !== "TEACHER" && session.role !== "ADMIN")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { assignmentId, dueDate, testDate } = await req.json();
+    if (!assignmentId) {
+      return NextResponse.json({ error: "Assignment ID is required" }, { status: 400 });
+    }
+
+    await connectToDatabase();
+    const updateFields: any = {};
+    if (dueDate) updateFields.dueDate = new Date(dueDate);
+    if (testDate || dueDate) updateFields.testDate = new Date(testDate || dueDate);
+
+    const updated = await Assignment.findByIdAndUpdate(assignmentId, updateFields, { new: true });
+    return NextResponse.json({ success: true, assignment: updated });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await getSession(req);
+    if (!session || (session.role !== "TEACHER" && session.role !== "ADMIN")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const assignmentId = searchParams.get("id");
+    if (!assignmentId) {
+      return NextResponse.json({ error: "Assignment ID is required" }, { status: 400 });
+    }
+
+    await connectToDatabase();
+    await Assignment.findByIdAndDelete(assignmentId);
+    await AssignmentSubmission.deleteMany({ assignmentId });
+    return NextResponse.json({ success: true, message: "Assignment deleted successfully" });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
