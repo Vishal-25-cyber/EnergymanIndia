@@ -45,6 +45,8 @@ export default function TeacherAssignmentsPage() {
   const [marks, setMarks] = useState<number | string>(18);
   const [feedback, setFeedback] = useState("");
   const [isGrading, setIsGrading] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  const [publishError, setPublishError] = useState("");
 
   // Safe Document Opener: prevents Chrome about:blank issues on data: URLs
   const openDocumentSafely = (fileUrl: string, fileName?: string) => {
@@ -323,27 +325,62 @@ export default function TeacherAssignmentsPage() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title.trim() || !formData.batchId) {
-      alert("Please fill in the title and select target batch.");
+    setPublishError("");
+
+    const targetBatchId = formData.batchId || batches[0]?._id;
+    if (!formData.title.trim()) {
+      setPublishError("Please enter a title or chapter topic.");
       return;
     }
+    if (!targetBatchId && batches.length > 0) {
+      setPublishError("Please select a target batch.");
+      return;
+    }
+
+    setIsPublishing(true);
 
     try {
       let fullDueIso: string | undefined = undefined;
       if (formData.dueDate) {
-        const timePart = formData.dueTime ? formData.dueTime : "23:59";
-        const [hours, minutes] = timePart.split(":");
-        const [y, m, dNum] = formData.dueDate.split("-").map(Number);
-        // Construct precisely in system local time to avoid UTC offset shifts
-        const d = new Date(y, m - 1, dNum, Number(hours) || 23, Number(minutes) || 59, 0, 0);
-        fullDueIso = d.toISOString();
+        try {
+          const timePart = formData.dueTime || "23:59";
+          const [hours = "23", minutes = "59"] = timePart.split(":");
+          let d: Date;
+          if (formData.dueDate.includes("-")) {
+            const parts = formData.dueDate.split("-").map(Number);
+            if (parts[0] > 1000) {
+              // YYYY-MM-DD
+              d = new Date(parts[0], parts[1] - 1, parts[2], Number(hours) || 23, Number(minutes) || 59, 0);
+            } else {
+              // DD-MM-YYYY
+              d = new Date(parts[2], parts[1] - 1, parts[0], Number(hours) || 23, Number(minutes) || 59, 0);
+            }
+          } else {
+            d = new Date(formData.dueDate);
+          }
+          if (!isNaN(d.getTime())) {
+            fullDueIso = d.toISOString();
+          }
+        } catch (dateErr) {
+          console.warn("Date parse error:", dateErr);
+          fullDueIso = new Date(Date.now() + 86400000 * 3).toISOString();
+        }
       }
+
+      const token = typeof window !== "undefined"
+        ? localStorage.getItem("acuity_auth_token") || sessionStorage.getItem("acuity_auth_token") || ""
+        : "";
 
       const res = await fetch("/api/teacher/assignments", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}`, "x-auth-token": token } : {}),
+        },
         body: JSON.stringify({
           ...formData,
+          batchId: targetBatchId || "",
           title: formData.title.trim(),
           description: formData.description.trim() || `${formData.classLevel} ${formData.subject} — ${formData.title.trim()}`,
           type: activeCategory,
@@ -357,8 +394,12 @@ export default function TeacherAssignmentsPage() {
           attachmentSize: formData.attachmentSize || "",
         }),
       });
+
+      const resJson = await res.json().catch(() => ({}));
+
       if (res.ok) {
         setIsCreateModal(false);
+        setPublishError("");
         setFormData({
           type: activeCategory,
           title: "",
@@ -379,11 +420,13 @@ export default function TeacherAssignmentsPage() {
         invalidateCache("/api/student/assignments");
         refetch();
       } else {
-        const d = await res.json();
-        alert(d.error || "Failed to create task");
+        setPublishError(resJson.error || "Failed to create task. Please check the details.");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
+      setPublishError(err.message || "Network error. Please try again.");
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -434,11 +477,13 @@ export default function TeacherAssignmentsPage() {
           <button
             onClick={() => {
               const { dateStr, timeStr } = getSystemDateAndDefaultTime();
+              setPublishError("");
+              setIsPublishing(false);
               setFormData({
                 type: activeCategory,
                 title: "",
                 description: "",
-                subject: "Mathematics",
+                subject: availableSubjects[0] || "Mathematics",
                 classLevel: "Class 10",
                 batchId: batches[0]?._id || "",
                 durationMinutes: 45,
@@ -984,6 +1029,13 @@ export default function TeacherAssignmentsPage() {
           title={`Create ${activeCategory === "TEST" ? "Timed Proctored Test" : activeCategory === "HOMEWORK" ? "Daily Homework" : "Assignment"}`}
         >
           <form onSubmit={handleCreate} className="space-y-3 pt-1">
+            {publishError && (
+              <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
+                <span>{publishError}</span>
+              </div>
+            )}
+
             {/* Row 1: Title */}
             <div className="space-y-1">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -1030,7 +1082,7 @@ export default function TeacherAssignmentsPage() {
               <div className="space-y-1">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Target Batch *</label>
                 <select
-                  value={formData.batchId}
+                  value={formData.batchId || (batches[0]?._id ?? "")}
                   onChange={(e) => setFormData({ ...formData, batchId: e.target.value })}
                   className="w-full px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 truncate"
                 >
@@ -1242,15 +1294,22 @@ export default function TeacherAssignmentsPage() {
               <button
                 type="button"
                 onClick={() => setIsCreateModal(false)}
-                className="px-4 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                disabled={isPublishing}
+                className="px-4 py-2 text-xs font-bold rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="flex-1 py-2 text-xs font-bold rounded-xl bg-[#004b79] text-white hover:bg-[#003b60] transition-colors cursor-pointer shadow-sm"
+                disabled={isPublishing}
+                className="flex-1 py-2 text-xs font-bold rounded-xl bg-[#004b79] text-white hover:bg-[#003b60] transition-colors cursor-pointer shadow-sm disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                Publish {activeCategory === "TEST" ? "Proctored Test" : activeCategory === "HOMEWORK" ? "Homework" : "Assignment"}
+                {isPublishing && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                <span>
+                  {isPublishing
+                    ? "Publishing..."
+                    : `Publish ${activeCategory === "TEST" ? "Proctored Test" : activeCategory === "HOMEWORK" ? "Homework" : "Assignment"}`}
+                </span>
               </button>
             </div>
           </form>

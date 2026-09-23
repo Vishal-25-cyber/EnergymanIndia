@@ -143,27 +143,50 @@ export async function POST(req: NextRequest) {
       testDate,
     } = await req.json();
 
-    if (!title || !subject || !classLevel || !batchId) {
-      return NextResponse.json({ error: "Please fill all required fields." }, { status: 400 });
+    await connectToDatabase();
+
+    let targetBatchId = batchId;
+    if (!targetBatchId) {
+      const Batch = (await import("@/models/Batch")).default;
+      const firstBatch = await Batch.findOne().lean();
+      targetBatchId = firstBatch?._id;
+    }
+
+    if (!title || !subject || !classLevel) {
+      return NextResponse.json({ error: "Please fill all required fields (title, subject, class level)." }, { status: 400 });
     }
 
     const taskType = type || "ASSIGNMENT";
-    const finalDueDate = dueDate ? new Date(dueDate) : new Date(Date.now() + 86400000 * 3);
+    let finalDueDate = new Date(Date.now() + 86400000 * 3);
+    if (dueDate) {
+      const parsed = new Date(dueDate);
+      if (!isNaN(parsed.getTime())) {
+        finalDueDate = parsed;
+      }
+    }
+
+    let finalTestDate: Date | undefined = undefined;
+    if (testDate) {
+      const parsed = new Date(testDate);
+      if (!isNaN(parsed.getTime())) {
+        finalTestDate = parsed;
+      }
+    }
+
     const resolvedDescription = (description || "").trim() || `${classLevel} ${subject} — ${title.trim()}`;
     const teacherUserId = session.userId || "staff";
 
-    await connectToDatabase();
     const newAssignment = await Assignment.create({
       title: title.trim(),
       description: resolvedDescription,
       subject,
       classLevel,
-      batchId,
+      batchId: targetBatchId,
       teacherId: teacherUserId,
       type: taskType,
       durationMinutes: taskType === "TEST" ? Number(durationMinutes) || 45 : undefined,
       proctoringRequired: taskType === "TEST" ? (proctoringRequired ?? true) : false,
-      testDate: testDate ? new Date(testDate) : undefined,
+      testDate: finalTestDate,
       dueDate: finalDueDate,
       maxMarks: Number(maxMarks) || (taskType === "TEST" ? 50 : 20),
       attachmentUrl: attachmentUrl || "",
@@ -172,10 +195,11 @@ export async function POST(req: NextRequest) {
     });
 
     // Notify students
-    const eligibleStudents = await StudentProfile.find({
-      currentClass: classLevel,
-      batchId,
-    });
+    const studentQuery: any = { currentClass: classLevel };
+    if (targetBatchId) {
+      studentQuery.batchId = targetBatchId;
+    }
+    const eligibleStudents = await StudentProfile.find(studentQuery);
 
     if (eligibleStudents.length > 0) {
       try {

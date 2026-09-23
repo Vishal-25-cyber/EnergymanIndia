@@ -109,7 +109,24 @@ function TeacherScheduleClassRow({
       <div className="flex items-center gap-2 shrink-0 flex-wrap">
         {!isCancelled && !isDraft && (
           !isCompleted ? (
-            <Link href={`/classroom/${targetRoomId}`}>
+            <Link
+              href={`/classroom/${targetRoomId}`}
+              onClick={() => {
+                if (cls._id) {
+                  const token = typeof window !== "undefined"
+                    ? localStorage.getItem("acuity_auth_token") || sessionStorage.getItem("acuity_auth_token") || ""
+                    : "";
+                  fetch(`/api/classes/${cls._id}/start`, {
+                    method: "PUT",
+                    credentials: "include",
+                    headers: {
+                      "Content-Type": "application/json",
+                      ...(token ? { Authorization: `Bearer ${token}`, "x-auth-token": token } : {}),
+                    },
+                  }).catch(() => {});
+                }
+              }}
+            >
               <button
                 className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition-all cursor-pointer shadow-md shadow-emerald-500/25 animate-pulse"
               >
