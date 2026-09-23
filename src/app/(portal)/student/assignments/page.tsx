@@ -42,10 +42,32 @@ import {
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useFastFetch, invalidateCache } from "@/lib/api-cache";
+import { detectFacesInVideo } from "@/lib/face-detector";
+
+const ATTENDED_TESTS_KEY = "acuity_attended_tests";
+function getStoredAttendedTests(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(ATTENDED_TESTS_KEY);
+    if (raw) return new Set(JSON.parse(raw));
+  } catch {}
+  return new Set();
+}
+
+function saveAttendedTestId(id: string) {
+  if (typeof window === "undefined" || !id) return;
+  try {
+    const current = getStoredAttendedTests();
+    current.add(id);
+    localStorage.setItem(ATTENDED_TESTS_KEY, JSON.stringify(Array.from(current)));
+  } catch {}
+}
 
 export default function StudentAssignmentsPage() {
   // Category Tab: "ASSIGNMENT" | "TEST" | "HOMEWORK"
   const [activeCategory, setActiveCategory] = useState<"ASSIGNMENT" | "TEST" | "HOMEWORK">("ASSIGNMENT");
+
+  const [attendedTestIds, setAttendedTestIds] = useState<Set<string>>(() => getStoredAttendedTests());
 
   const { data, refetch, isLoading } = useFastFetch("/api/student/assignments");
 
@@ -90,18 +112,23 @@ export default function StudentAssignmentsPage() {
   const [pdfZoom, setPdfZoom] = useState<number>(100);
   const [warningCount, setWarningCount] = useState<number>(0);
   const [activeWarning, setActiveWarning] = useState<{
-    type: "TAB_SWITCH" | "LOOK_AWAY" | "CAMERA_LOST";
+    type: "TAB_SWITCH" | "NO_FACE" | "MULTIPLE_FACES" | "LOOK_AWAY" | "CAMERA_LOST";
     message: string;
     timestamp: number;
   } | null>(null);
   const [awaySeconds, setAwaySeconds] = useState<number>(0);
   const [isFaceDetected, setIsFaceDetected] = useState<boolean>(true);
+  const [faceStatus, setFaceStatus] = useState<"OK" | "NO_FACE" | "MULTIPLE_FACES">("OK");
+  const [detectedFaceCount, setDetectedFaceCount] = useState<number>(1);
   const [isSoundMuted, setIsSoundMuted] = useState<boolean>(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const lastSoundRef = useRef<number>(0);
+  const hasSubmittedCurrentTestRef = useRef<boolean>(false);
+  const faceViolationStreakRef = useRef<number>(0);
+  const awayStreakRef = useRef<number>(0);
 
   // File Upload State
   const [selectedFile, setSelectedFile] = useState<{
@@ -267,13 +294,13 @@ export default function StudentAssignmentsPage() {
 
   // ── PROCTORING VIOLATION TRIGGER ──
   const triggerProctoringViolation = (
-    type: "TAB_SWITCH" | "LOOK_AWAY" | "CAMERA_LOST",
+    type: "TAB_SWITCH" | "NO_FACE" | "MULTIPLE_FACES" | "LOOK_AWAY" | "CAMERA_LOST",
     message: string
   ) => {
     setWarningCount((prev) => {
       const nextCount = prev + 1;
       const now = Date.now();
-      if (now - lastSoundRef.current > 2000) {
+      if (now - lastSoundRef.current > 1500) {
         lastSoundRef.current = now;
         playWarningSound("ALARM");
       }
@@ -281,7 +308,7 @@ export default function StudentAssignmentsPage() {
       if (nextCount >= 3) {
         setActiveWarning({
           type,
-          message: "3rd Warning Reached: Test Terminated due to Proctoring Violations!",
+          message: "Warning 3 of 3: Test Terminated due to Proctoring Violations!",
           timestamp: Date.now(),
         });
         setTimeout(() => {
@@ -473,16 +500,21 @@ export default function StudentAssignmentsPage() {
       return;
     }
 
-    if (test.submission && !test.submission.retestPermitted) {
-      if (test.submission.isDisqualified) {
+    const isAlreadyAttended = attendedTestIds.has(test._id);
+    if ((test.submission || isAlreadyAttended) && !test.submission?.retestPermitted) {
+      if (test.submission?.isDisqualified) {
         alert("Test Locked: You reached 3 proctoring violations on this test. Teacher permission is required to retake.");
         return;
       }
-      if (test.submission.status === "SUBMITTED" || test.submission.status === "EVALUATED") {
-        alert("Test Completed: You have already completed and submitted this proctored test. It cannot be reopened without faculty permission.");
-        return;
-      }
+      alert("Test Completed: You have already attended this test. A test can only be attempted once unless faculty approves a retest.");
+      return;
     }
+
+    saveAttendedTestId(test._id);
+    setAttendedTestIds((prev) => new Set(prev).add(test._id));
+    hasSubmittedCurrentTestRef.current = false;
+    faceViolationStreakRef.current = 0;
+    awayStreakRef.current = 0;
 
     setActiveProctoredTest(test);
     setIsTestLocked(false);
@@ -527,14 +559,15 @@ export default function StudentAssignmentsPage() {
 
     const currentTest = activeProctoredTest;
     const isAlreadySubmitted =
-      currentTest?.submission &&
-      !currentTest.submission.retestPermitted &&
-      (currentTest.submission.status === "SUBMITTED" ||
-        currentTest.submission.status === "EVALUATED" ||
-        currentTest.submission.status === "DISQUALIFIED" ||
-        !!currentTest.submission.isDisqualified);
+      hasSubmittedCurrentTestRef.current ||
+      (currentTest?.submission &&
+        !currentTest.submission.retestPermitted &&
+        (currentTest.submission.status === "SUBMITTED" ||
+          currentTest.submission.status === "EVALUATED" ||
+          currentTest.submission.status === "DISQUALIFIED" ||
+          !!currentTest.submission.isDisqualified));
 
-    if (currentTest && !isAlreadySubmitted && !skipConfirm) {
+    if (currentTest && !isAlreadySubmitted && !skipConfirm && !hasSubmittedCurrentTestRef.current) {
       const confirmExit = window.confirm(
         "Are you sure you want to exit? Exiting will finish and mark this test as completed. You will not be able to re-enter without faculty permission."
       );
@@ -552,7 +585,10 @@ export default function StudentAssignmentsPage() {
       setIsExamFullscreen(false);
     }
 
-    if (currentTest && !isAlreadySubmitted && !skipConclude) {
+    if (currentTest && !isAlreadySubmitted && !skipConclude && !hasSubmittedCurrentTestRef.current) {
+      hasSubmittedCurrentTestRef.current = true;
+      saveAttendedTestId(currentTest._id);
+      setAttendedTestIds((prev) => new Set(prev).add(currentTest._id));
       await handleExitAndConcludeTest(currentTest);
     }
   };
@@ -658,88 +694,83 @@ export default function StudentAssignmentsPage() {
     };
   }, [activeProctoredTest, warningCount, timeLeftSeconds]);
 
-  // Away ticker: if candidate is away (tab hidden, window blurred, or face absent) for 5 seconds -> 1 warning
+  // ── WEBCAM REAL-TIME FACE & MULTI-PERSON DETECTION ──
+  useEffect(() => {
+    if (!activeProctoredTest || isTestLocked || !isCameraStarted) return;
+
+    let isCancelled = false;
+
+    const interval = setInterval(async () => {
+      if (!videoRef.current || videoRef.current.readyState < 2) return;
+
+      try {
+        const result = await detectFacesInVideo(videoRef.current);
+        if (isCancelled) return;
+
+        setDetectedFaceCount(result.faceCount);
+
+        if (result.status === "SINGLE_FACE") {
+          // Exactly 1 face: Candidate verified in frame
+          setFaceStatus("OK");
+          setIsFaceDetected(true);
+          faceViolationStreakRef.current = 0;
+        } else if (result.status === "NO_FACE") {
+          // 0 faces: Absent or covered camera
+          setFaceStatus("NO_FACE");
+          setIsFaceDetected(false);
+          faceViolationStreakRef.current++;
+
+          // Continuous violation check (2 consecutive samples ~1.6s)
+          if (faceViolationStreakRef.current >= 2) {
+            triggerProctoringViolation("NO_FACE", "Face not detected in camera frame!");
+            faceViolationStreakRef.current = 0;
+          }
+        } else if (result.status === "MULTIPLE_FACES") {
+          // 2 or more faces: Multiple people in camera frame
+          setFaceStatus("MULTIPLE_FACES");
+          setIsFaceDetected(false);
+          faceViolationStreakRef.current++;
+
+          if (faceViolationStreakRef.current >= 2) {
+            triggerProctoringViolation(
+              "MULTIPLE_FACES",
+              `Multiple faces detected (${result.faceCount})! Only a single candidate is permitted in the exam frame.`
+            );
+            faceViolationStreakRef.current = 0;
+          }
+        }
+      } catch (e) {
+        console.warn("Proctoring face detection error:", e);
+      }
+    }, 700);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
+  }, [activeProctoredTest, isTestLocked, isCameraStarted]);
+
+  // Tab switch / window minimization violation monitor
   useEffect(() => {
     if (!activeProctoredTest || isTestLocked) {
-      setAwaySeconds(0);
+      awayStreakRef.current = 0;
       return;
     }
 
     const interval = setInterval(() => {
-      const isCandidateAway = isWindowAway || (isCameraStarted && !isFaceDetected);
-      if (isCandidateAway) {
-        setAwaySeconds((prev) => {
-          const next = prev + 1;
-          if (next >= 5) {
-            triggerProctoringViolation(
-              isWindowAway ? "TAB_SWITCH" : "LOOK_AWAY",
-              isWindowAway
-                ? "Navigated away from test screen / switched tabs for 5+ seconds!"
-                : "Candidate absent or looking away from camera frame for 5+ seconds!"
-            );
-            return 0; // reset counter for next 5-second block
-          }
-          return next;
-        });
-      } else {
-        setAwaySeconds(0);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [activeProctoredTest, isTestLocked, isWindowAway, isCameraStarted, isFaceDetected]);
-
-  // ── WEBCAM FACE DETECTION ANALYSIS ──
-  useEffect(() => {
-    if (!activeProctoredTest || isTestLocked || !isCameraStarted) return;
-
-    const interval = setInterval(() => {
-      if (videoRef.current && videoRef.current.readyState >= 2) {
-        try {
-          const canvas = canvasRef.current || document.createElement("canvas");
-          canvas.width = 64;
-          canvas.height = 48;
-          const ctx = canvas.getContext("2d", { willReadFrequently: true });
-          if (ctx) {
-            ctx.drawImage(videoRef.current, 0, 0, 64, 48);
-            const imgData = ctx.getImageData(0, 0, 64, 48);
-            const data = imgData.data;
-
-            let totalLuma = 0;
-            let centerVariance = 0;
-            let sampledPixels = 0;
-
-            for (let y = 12; y < 36; y++) {
-              for (let x = 16; x < 48; x++) {
-                const i = (y * 64 + x) * 4;
-                const luma = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-                totalLuma += luma;
-                sampledPixels++;
-              }
-            }
-            const avgLuma = totalLuma / (sampledPixels || 1);
-
-            for (let y = 12; y < 36; y++) {
-              for (let x = 16; x < 48; x++) {
-                const i = (y * 64 + x) * 4;
-                const luma = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-                centerVariance += Math.abs(luma - avgLuma);
-              }
-            }
-            const avgVariance = centerVariance / (sampledPixels || 1);
-
-            // If camera covered or face absent
-            const facePresent = avgLuma > 15 && avgLuma < 245 && avgVariance > 10;
-            setIsFaceDetected(facePresent);
-          }
-        } catch (e) {
-          console.warn("Proctoring frame analysis warning:", e);
+      if (isWindowAway) {
+        awayStreakRef.current++;
+        if (awayStreakRef.current >= 2) {
+          triggerProctoringViolation("TAB_SWITCH", "Exam window minimized or tab switched!");
+          awayStreakRef.current = 0;
         }
+      } else {
+        awayStreakRef.current = 0;
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [activeProctoredTest, isCameraStarted]);
+  }, [activeProctoredTest, isTestLocked, isWindowAway]);
 
   // Live Countdown Timer for Proctored Test
   useEffect(() => {
@@ -853,6 +884,11 @@ export default function StudentAssignmentsPage() {
 
       const result = await res.json();
       if (res.ok) {
+        hasSubmittedCurrentTestRef.current = true;
+        if (currentTask?._id) {
+          saveAttendedTestId(currentTask._id);
+          setAttendedTestIds((prev) => new Set(prev).add(currentTask._id));
+        }
         setSuccessMessage(
           isProctoredTest
             ? "Proctored test answers & webcam snapshot submitted successfully!"
@@ -865,12 +901,12 @@ export default function StudentAssignmentsPage() {
 
         setTimeout(() => {
           if (isProctoredTest) {
-            handleCloseTestRoom();
+            handleCloseTestRoom({ skipConfirm: true, skipConclude: true });
           } else {
             setSelectedTask(null);
           }
           setSuccessMessage("");
-        }, 1500);
+        }, 1200);
       } else {
         setErrorMessage(result.error || "Failed to submit work.");
       }
@@ -996,7 +1032,8 @@ export default function StudentAssignmentsPage() {
               const isEvaluated = sub?.status === "EVALUATED";
               const isDisqualified = !!sub?.isDisqualified || sub?.status === "DISQUALIFIED" || ((sub?.violationCount || 0) >= 3 && !sub?.retestPermitted);
               const isRetestPermitted = !!sub?.retestPermitted;
-              const isSubmitted = sub && !isEvaluated && !isDisqualified;
+              const isAttended = attendedTestIds.has(task._id);
+              const isSubmitted = (!!sub || isAttended) && !isEvaluated && !isDisqualified;
               const isTest = task.type === "TEST";
               const isPastDeadline = task.dueDate ? new Date() > new Date(task.dueDate) : false;
               // Proctored tests CANNOT be resubmitted once finished. Regular assignments can be resubmitted before deadline.
@@ -1303,7 +1340,7 @@ export default function StudentAssignmentsPage() {
                           <span>{isTest ? "Test Closed (Deadline Expired)" : "Submissions Closed"}</span>
                         </button>
                       </div>
-                    ) : isTest ? (
+                    ) : isTest && !isSubmitted && !isEvaluated && !isDisqualified ? (
                       <button
                         type="button"
                         onClick={() => handleStartTest(task)}
@@ -1311,6 +1348,15 @@ export default function StudentAssignmentsPage() {
                       >
                         <Play className="w-3.5 h-3.5 text-emerald-300 fill-emerald-300" />
                         <span>Start Proctored Test</span>
+                      </button>
+                    ) : isTest ? (
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-900 text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 flex items-center justify-center gap-2 cursor-not-allowed opacity-90 shadow-none"
+                      >
+                        <Lock className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Test Completed (Locked)</span>
                       </button>
                     ) : (
                       <button
@@ -1368,13 +1414,17 @@ export default function StudentAssignmentsPage() {
                   {!isTestLocked && (
                     <>
                       <span>•</span>
-                      {isFaceDetected ? (
+                      {faceStatus === "OK" ? (
                         <span className="text-emerald-600 font-bold flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> In Frame
                         </span>
+                      ) : faceStatus === "MULTIPLE_FACES" ? (
+                        <span className="text-rose-500 font-bold flex items-center gap-1 animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" /> Multiple Faces ({detectedFaceCount})
+                        </span>
                       ) : (
                         <span className="text-rose-500 font-bold flex items-center gap-1 animate-pulse">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" /> Away ({awaySeconds}s)
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" /> No Face Detected
                         </span>
                       )}
                     </>
@@ -1383,7 +1433,7 @@ export default function StudentAssignmentsPage() {
               </div>
             </div>
 
-            {/* Center: Timer + Warnings + View switcher */}
+            {/* Center: Timer + View switcher */}
             <div className="flex items-center gap-2">
               {!isTestLocked ? (
                 <>
@@ -1396,15 +1446,6 @@ export default function StudentAssignmentsPage() {
                     <Clock className="w-3.5 h-3.5" />
                     {formatTime(timeLeftSeconds)}
                   </div>
-
-                  {/* Warnings pill - ONLY show if warningCount > 0 during active test */}
-                  {warningCount > 0 && (
-                    <div className="px-2.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1 bg-rose-50 border-rose-300 text-rose-600 animate-pulse">
-                      <ShieldAlert className="w-3.5 h-3.5" />
-                      <span className="hidden sm:inline">Warnings:</span>
-                      <span>{warningCount}</span>
-                    </div>
-                  )}
 
                   {/* Split View toggle - only during active test */}
                   <div className="hidden md:flex items-center p-1 rounded-xl bg-gray-100 border border-gray-200 text-xs font-bold">
@@ -1439,7 +1480,7 @@ export default function StudentAssignmentsPage() {
             <div className="flex items-center gap-1.5 shrink-0">
               {!isTestLocked && (
                 <>
-                  {/* Proctoring Warnings Badge */}
+                  {/* Single Clean Proctoring Warnings Badge */}
                   <div className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-bold font-mono ${
                     warningCount === 0
                       ? "bg-slate-100 border-slate-200 text-slate-700"
@@ -1450,14 +1491,6 @@ export default function StudentAssignmentsPage() {
                     <ShieldAlert className="w-3.5 h-3.5" />
                     <span>Warnings: {warningCount}/3</span>
                   </div>
-
-                  {/* 5-Second Away Live Countdown Indicator */}
-                  {awaySeconds > 0 && (
-                    <div className="px-2.5 py-1.5 rounded-xl bg-rose-600 text-white font-bold text-xs flex items-center gap-1.5 animate-pulse shadow-sm">
-                      <AlertTriangle className="w-3.5 h-3.5 text-amber-300" />
-                      <span>Away: Warning in {5 - awaySeconds}s!</span>
-                    </div>
-                  )}
 
                   <button type="button" onClick={() => setIsSoundMuted(!isSoundMuted)}
                     title={isSoundMuted ? "Unmute" : "Mute"}
@@ -1741,9 +1774,19 @@ export default function StudentAssignmentsPage() {
                       <span className="text-[11px] font-bold text-gray-700">Live Proctoring</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      {/* In Frame / Away status */}
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${ isFaceDetected ? "text-emerald-700 bg-emerald-100" : "text-rose-600 bg-rose-100 animate-pulse" }`}>
-                        {isFaceDetected ? "● In Frame" : `Away ${awaySeconds}s`}
+                      {/* Face detection status badge */}
+                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        faceStatus === "OK"
+                          ? "text-emerald-700 bg-emerald-100"
+                          : faceStatus === "MULTIPLE_FACES"
+                          ? "text-rose-700 bg-rose-100 border border-rose-300 animate-pulse"
+                          : "text-rose-600 bg-rose-100 animate-pulse"
+                      }`}>
+                        {faceStatus === "OK"
+                          ? "● In Frame"
+                          : faceStatus === "MULTIPLE_FACES"
+                          ? `● Multiple Faces (${detectedFaceCount})`
+                          : "● No Face Detected"}
                       </span>
                       {warningCount > 0 && (
                         <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 border border-rose-200 text-rose-600 flex items-center gap-1">
@@ -1779,7 +1822,7 @@ export default function StudentAssignmentsPage() {
 
                     {/* Face guide frame */}
                     {isCameraStarted && (
-                      <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                      <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
                         <div className="w-44 h-56 sm:w-56 sm:h-72 relative transition-all duration-300">
                           {[
                             "top-0 left-0 border-t-2 border-l-2 rounded-tl-xl",
@@ -1787,9 +1830,28 @@ export default function StudentAssignmentsPage() {
                             "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-xl",
                             "bottom-0 right-0 border-b-2 border-r-2 rounded-br-xl",
                           ].map((cls, i) => (
-                            <div key={i} className={`absolute w-7 h-7 ${ isFaceDetected ? "border-emerald-400/80" : "border-rose-500 animate-pulse" } ${cls}`} />
+                            <div
+                              key={i}
+                              className={`absolute w-7 h-7 ${
+                                faceStatus === "OK"
+                                  ? "border-emerald-400/80"
+                                  : "border-rose-500 animate-pulse"
+                              } ${cls}`}
+                            />
                           ))}
                         </div>
+                        {faceStatus === "MULTIPLE_FACES" && (
+                          <div className="mt-3 px-3 py-1 rounded-full bg-rose-600/90 text-white text-[11px] font-bold shadow-lg animate-bounce flex items-center gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-300" />
+                            <span>Multiple Faces Detected ({detectedFaceCount})!</span>
+                          </div>
+                        )}
+                        {faceStatus === "NO_FACE" && (
+                          <div className="mt-3 px-3 py-1 rounded-full bg-rose-600/90 text-white text-[11px] font-bold shadow-lg animate-pulse flex items-center gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-300" />
+                            <span>No Face Detected in Frame!</span>
+                          </div>
+                        )}
                       </div>
                     )}
 

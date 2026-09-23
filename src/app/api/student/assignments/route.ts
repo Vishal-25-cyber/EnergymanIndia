@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import connectToDatabase from "@/lib/db/mongoose";
 import { getSession } from "@/lib/auth/session";
 import StudentProfile from "@/models/StudentProfile";
@@ -39,8 +40,15 @@ export async function GET(req: NextRequest) {
       .sort({ createdAt: -1 })
       .lean();
 
-    const submissions = await AssignmentSubmission.find({ studentId: session.userId }).lean();
-    const submissionMap = new Map(submissions.map((s: any) => [s.assignmentId.toString(), s]));
+    const studentObjId = mongoose.Types.ObjectId.isValid(session.userId)
+      ? new mongoose.Types.ObjectId(session.userId)
+      : session.userId;
+    const submissions = await AssignmentSubmission.find({
+      $or: [{ studentId: session.userId }, { studentId: studentObjId }],
+    }).lean();
+    const submissionMap = new Map(
+      submissions.map((s: any) => [s.assignmentId ? s.assignmentId.toString() : "", s])
+    );
 
     const result = assignments.map((assignment: any) => {
       const submission: any = submissionMap.get(assignment._id.toString());

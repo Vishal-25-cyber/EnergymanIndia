@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import connectToDatabase from "@/lib/db/mongoose";
 import { getSession } from "@/lib/auth/session";
 import Assignment from "@/models/Assignment";
@@ -8,7 +9,7 @@ import Notification from "@/models/Notification";
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getSession();
+    const session = await getSession(req);
     if (!session || session.role !== "STUDENT") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -30,16 +31,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Assignment/Test not found." }, { status: 404 });
     }
 
+    const targetAssignmentId = mongoose.Types.ObjectId.isValid(assignmentId)
+      ? new mongoose.Types.ObjectId(assignmentId)
+      : assignmentId;
+    const targetStudentId = mongoose.Types.ObjectId.isValid(session.userId)
+      ? new mongoose.Types.ObjectId(session.userId)
+      : session.userId;
+
     // Upsert the disqualified submission
     const submission = await AssignmentSubmission.findOneAndUpdate(
-      { assignmentId, studentId: session.userId },
+      { assignmentId: targetAssignmentId, studentId: targetStudentId },
       {
         $set: {
           type: "TEST",
           violationCount: Math.max(3, violationCount),
           isDisqualified: true,
-          disqualifiedReason: "Terminated: 3 Proctoring Violations (Away from exam screen / camera frame for 5+ seconds)",
+          disqualifiedReason: "Terminated: 3 Proctoring Violations reached.",
           retestPermitted: false,
+          retestRequested: false,
           status: "DISQUALIFIED",
           proctoringSnapshotUrl: proctoringSnapshotUrl || "",
           submittedAt: new Date(),
@@ -53,7 +62,7 @@ export async function POST(req: NextRequest) {
       await Notification.create({
         userId: assignment.teacherId,
         title: "Proctoring Violation: Test Terminated",
-        message: `${student?.name || "Student"} was automatically disqualified from "${assignment.title}" after 3 proctoring violations (away for 5+ seconds). Teacher permission is required to allow a retest.`,
+        message: `${student?.name || "Student"} was automatically disqualified from "${assignment.title}" after reaching 3 proctoring violations. Teacher permission is required to allow a retest.`,
         type: "TEST",
         linkUrl: "/teacher/assignments",
       });

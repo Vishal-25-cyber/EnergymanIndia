@@ -79,15 +79,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const targetAssignmentId = mongoose.Types.ObjectId.isValid(assignmentId)
+      ? new mongoose.Types.ObjectId(assignmentId)
+      : assignmentId;
+    const targetStudentId = mongoose.Types.ObjectId.isValid(session.userId)
+      ? new mongoose.Types.ObjectId(session.userId)
+      : session.userId;
+
     // Fast atomic upsert
     const submission = await AssignmentSubmission.findOneAndUpdate(
       {
-        assignmentId: mongoose.Types.ObjectId.isValid(assignmentId)
-          ? new mongoose.Types.ObjectId(assignmentId)
-          : new mongoose.Types.ObjectId("64b8a123456789abcdef0001"),
-        studentId: mongoose.Types.ObjectId.isValid(session.userId)
-          ? new mongoose.Types.ObjectId(session.userId)
-          : session.userId,
+        assignmentId: targetAssignmentId,
+        studentId: targetStudentId,
       },
       {
         type: taskType,
