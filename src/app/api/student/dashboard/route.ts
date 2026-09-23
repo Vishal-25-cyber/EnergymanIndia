@@ -286,27 +286,27 @@ export async function GET(req?: any) {
     // Dynamic subjects for current Class and Board from syllabus curriculum
     const subjects = getSubjectsForClassAndBoard(currentClass, board);
 
-    // Color palettes for subjects matching screenshot visual richness
+    // Color palettes for subjects matching logo color (navy #004b79 & gold #dfb74a)
     const subjectPalettes = [
       {
-        gradient: "from-blue-500 via-indigo-500 to-purple-600",
-        barColor: "bg-gradient-to-r from-indigo-500 to-purple-600",
+        gradient: "from-[#004b79] via-[#0066a4] to-[#002b48]",
+        barColor: "bg-gradient-to-r from-[#004b79] to-[#dfb74a]",
       },
       {
-        gradient: "from-emerald-400 via-teal-500 to-blue-500",
-        barColor: "bg-gradient-to-r from-emerald-500 to-teal-600",
+        gradient: "from-[#002b48] via-[#003d66] to-[#004b79]",
+        barColor: "bg-gradient-to-r from-[#003d66] to-[#dfb74a]",
       },
       {
-        gradient: "from-amber-500 via-orange-500 to-red-500",
-        barColor: "bg-gradient-to-r from-amber-500 to-orange-500",
+        gradient: "from-[#b89047] via-[#cfa34b] to-[#dfb74a]",
+        barColor: "bg-gradient-to-r from-[#b89047] to-[#dfb74a]",
       },
       {
-        gradient: "from-pink-500 via-rose-500 to-purple-600",
-        barColor: "bg-gradient-to-r from-rose-500 to-pink-500",
+        gradient: "from-[#003352] via-[#004b79] to-[#0066a4]",
+        barColor: "bg-gradient-to-r from-[#004b79] to-[#dfb74a]",
       },
       {
-        gradient: "from-violet-500 via-purple-500 to-fuchsia-500",
-        barColor: "bg-gradient-to-r from-purple-600 to-indigo-500",
+        gradient: "from-[#1e293b] via-[#002b48] to-[#004b79]",
+        barColor: "bg-gradient-to-r from-[#004b79] to-[#b89047]",
       },
     ];
 
@@ -318,7 +318,7 @@ export async function GET(req?: any) {
       const subAsgns = activeAssignments.filter((a: any) => isSubjectMatch(a.subject, subjName));
       const subTests = testTasks.filter((t: any) => isSubjectMatch(t.subject, subjName));
 
-      const subLessonsCount = Math.max(subMats.length + subSess.length, 1);
+      const subLessonsCount = subMats.length + subSess.length;
       const subAsgnsCount = subAsgns.length;
       const subTestsCount = subTests.length;
 

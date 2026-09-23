@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized access. Please login as a student." }, { status: 401 });
     }
 
-    const { assignmentId, submissionText, fileUrl, proctoringSnapshotUrl, violationCount, timeTakenMinutes, type } =
+    const { assignmentId, submissionText, fileUrl, proctoringSnapshotUrl, proctoringVideoUrl, violationCount, timeTakenMinutes, type } =
       await req.json();
 
     if (!assignmentId) {
@@ -97,6 +97,7 @@ export async function POST(req: NextRequest) {
         submissionText: submissionText || "",
         fileUrl: fileUrl || "",
         proctoringSnapshotUrl: proctoringSnapshotUrl || "",
+        proctoringVideoUrl: proctoringVideoUrl || "",
         violationCount: typeof violationCount === "number" ? violationCount : 0,
         timeTakenMinutes: Number(timeTakenMinutes) || undefined,
         submittedAt: new Date(),

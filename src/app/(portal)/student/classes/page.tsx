@@ -69,30 +69,44 @@ export default function StudentClassesPage() {
     return false;
   };
 
-  // Find real active live class or scheduled class actually created by the teacher
-  const liveClassDoc =
-    data?.classes?.filter((c: any) => c.status === "LIVE").sort((a: any, b: any) => {
-      const tA = a.actualStartTime ? new Date(a.actualStartTime).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
-      const tB = b.actualStartTime ? new Date(b.actualStartTime).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
-      return tB - tA;
-    })[0] || null;
+  const isDateToday = (d?: string) => {
+    if (!d) return true;
+    const localToday = new Date().toLocaleDateString("en-CA");
+    const isoToday = new Date().toISOString().split("T")[0];
+    return d === localToday || d === isoToday || new Date(d).toDateString() === new Date().toDateString();
+  };
 
-  const todayDbClass = data?.classes?.find(
-    (c: any) =>
-      c.status !== "CANCELLED" &&
-      c.status !== "COMPLETED" &&
-      c.status !== "LIVE" &&
-      (!c.date || c.date === todayDateStr)
+  // Today's created classes from API
+  const todayClassesList = Array.isArray(data?.todayClasses) && data.todayClasses.length > 0
+    ? data.todayClasses
+    : (data?.classes || []).filter((c: any) => c.status === "LIVE" || isDateToday(c.date));
+
+  // 1. Explicit LIVE session
+  const explicitLiveClass = (data?.classes || []).filter((c: any) => c.status === "LIVE").sort((a: any, b: any) => {
+    const tA = a.actualStartTime ? new Date(a.actualStartTime).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
+    const tB = b.actualStartTime ? new Date(b.actualStartTime).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
+    return tB - tA;
+  })[0] || null;
+
+  // 2. Class scheduled or published for today that is within its class window
+  const activeWindowTodayClass = todayClassesList.find(
+    (c: any) => c.status !== "CANCELLED" && c.status !== "COMPLETED" && isWithinClassWindow(c)
   ) || null;
 
-  const todayCompletedClass = data?.classes?.find(
-    (c: any) =>
-      c.status === "COMPLETED" &&
-      (!c.date || c.date === todayDateStr)
+  // Real active live class (either marked LIVE or within its active window)
+  const liveClassDoc = explicitLiveClass || activeWindowTodayClass;
+
+  // Any non-completed scheduled class created for today
+  const todayDbClass = todayClassesList.find(
+    (c: any) => c.status !== "CANCELLED" && c.status !== "COMPLETED" && (!liveClassDoc || c._id !== liveClassDoc._id)
+  ) || null;
+
+  const todayCompletedClass = todayClassesList.find(
+    (c: any) => c.status === "COMPLETED"
   ) || null;
 
   const hasTeacherCreatedClass = Boolean(liveClassDoc || todayDbClass || todayCompletedClass);
-  const isClassCurrentlyLive = Boolean(liveClassDoc && liveClassDoc.status === "LIVE");
+  const isClassCurrentlyLive = Boolean(liveClassDoc && (liveClassDoc.status === "LIVE" || isWithinClassWindow(liveClassDoc)));
   const liveOrTodayDbClass = liveClassDoc || todayDbClass;
   const activeDoc = liveClassDoc || todayDbClass || todayCompletedClass;
 

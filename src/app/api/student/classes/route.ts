@@ -59,6 +59,7 @@ export async function GET(req: NextRequest) {
     const dayFormatter = new Intl.DateTimeFormat("en-US", { weekday: "long", timeZone: "Asia/Kolkata" });
     const currentDayName = dayFormatter.format(now);
     const todayDateStr = now.toISOString().split("T")[0];
+    const kolkataDateStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(now);
 
     // Robust auto-cleanup: Stale sessions strictly from past calendar dates or running for >12 hours
     try {
@@ -85,6 +86,12 @@ export async function GET(req: NextRequest) {
     const batchEnd = (profile.batchId as any)?.endTime || "20:00";
     const batchId = (profile.batchId as any)?._id || profile.batchId;
 
+    const classVariants = [
+      profile.currentClass,
+      profile.currentClass?.replace(/Class\s*/i, "").trim(),
+      `Class ${profile.currentClass?.replace(/Class\s*/i, "").trim()}`,
+    ].filter(Boolean);
+
     // Query published/scheduled/live/completed classes for this student's grade/batch, or ANY class currently LIVE
     const sessionQuery: any = {
       $or: [
@@ -92,13 +99,15 @@ export async function GET(req: NextRequest) {
         {
           status: { $in: ["PUBLISHED", "SCHEDULED", "LIVE", "COMPLETED"] },
           $or: [
-            { classLevel: profile.currentClass },
+            { classLevel: { $in: classVariants } },
             { classLevel: null },
             { classLevel: { $exists: false } },
-            { batchId: batchId || null },
+            { classLevel: "" },
+            ...(batchId ? [{ batchId }] : []),
             { batchId: null },
             { batchId: { $exists: false } },
             { date: todayDateStr },
+            { date: kolkataDateStr },
           ],
         },
       ],
@@ -130,7 +139,8 @@ export async function GET(req: NextRequest) {
     const todayClasses = dbClasses.filter(
       (c: any) =>
         c.status === "LIVE" ||
-        (c.date === todayDateStr && (c.status === "SCHEDULED" || c.status === "PUBLISHED"))
+        ((c.date === todayDateStr || c.date === kolkataDateStr) &&
+          (c.status === "SCHEDULED" || c.status === "PUBLISHED" || c.status === "LIVE"))
     );
 
     const hasLiveClassNow = dbClasses.some((c: any) => c.status === "LIVE");

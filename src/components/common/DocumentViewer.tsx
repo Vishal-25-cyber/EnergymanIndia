@@ -61,39 +61,61 @@ function safeDataUrlToBlobUrl(dataUrl: string): { blobUrl: string; mimeType: str
 export function openDocumentInNewTab(url: string, fileName?: string) {
   if (!url) return;
 
+  const title = fileName || "Document Preview";
+
   if (url.startsWith("data:")) {
     const blobResult = safeDataUrlToBlobUrl(url);
-    if (blobResult) {
-      const { blobUrl, mimeType } = blobResult;
-      const title = fileName || "Document Preview";
-      const newWin = window.open("", "_blank");
-      if (newWin) {
-        if (mimeType.startsWith("image/")) {
-          newWin.document.write(`
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <title>${title}</title>
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <style>
-                  body { margin: 0; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; box-sizing: border-box; font-family: system-ui, sans-serif; }
-                  .header { color: #94a3b8; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
-                  img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid #334155; }
-                </style>
-              </head>
-              <body>
-                <div class="header">${title}</div>
-                <img src="${blobUrl}" alt="${title}" />
-              </body>
-            </html>
-          `);
-          newWin.document.close();
-        } else {
-          newWin.location.href = blobUrl;
-        }
+    const targetUrl = blobResult ? blobResult.blobUrl : url;
+    const isImage = (blobResult?.mimeType || "").startsWith("image/") || url.startsWith("data:image/");
+
+    const newWin = window.open("", "_blank");
+    if (newWin) {
+      if (isImage) {
+        newWin.document.write(`
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <title>${title}</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                body { margin: 0; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; box-sizing: border-box; font-family: system-ui, sans-serif; }
+                .header { color: #94a3b8; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+                img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid #334155; }
+              </style>
+            </head>
+            <body>
+              <div class="header">${title}</div>
+              <img src="${targetUrl}" alt="${title}" />
+            </body>
+          </html>
+        `);
       } else {
-        window.open(blobUrl, "_blank");
+        newWin.document.write(`
+          <!DOCTYPE html>
+          <html style="height:100%;margin:0;padding:0;">
+            <head>
+              <title>${title}</title>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <style>
+                html, body { height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; background: #334155; font-family: system-ui, sans-serif; }
+                .bar { height: 42px; background: #002137; color: #dfb74a; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 13px; font-weight: bold; }
+                .btn { background: #b89047; color: #002137; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; }
+                iframe { width: 100%; height: calc(100% - 42px); border: none; }
+              </style>
+            </head>
+            <body>
+              <div class="bar">
+                <span>${title}</span>
+                <a class="btn" href="${targetUrl}" download="${title}">Download File</a>
+              </div>
+              <iframe src="${targetUrl}#toolbar=1&navpanes=0" type="application/pdf">
+                <p style="color:white;padding:20px;">Your browser cannot display this document inline. <a href="${targetUrl}" download="${title}" style="color:#dfb74a;">Click here to download</a>.</p>
+              </iframe>
+            </body>
+          </html>
+        `);
       }
+      newWin.document.close();
       return;
     }
   }

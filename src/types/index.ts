@@ -244,6 +244,7 @@ export interface IAssignmentSubmission {
   submissionText?: string;
   fileUrl?: string;
   proctoringSnapshotUrl?: string;
+  proctoringVideoUrl?: string;
   violationCount?: number;
   timeTakenMinutes?: number;
   submittedAt: Date;

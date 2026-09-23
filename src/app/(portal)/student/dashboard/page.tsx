@@ -365,16 +365,16 @@ export default function StudentDashboardPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               
-              {/* Card 1: Lessons (Warm Cream / Peach) */}
-              <div className="bg-[#FFF8EE] dark:bg-[#20180e] border border-amber-200/60 dark:border-amber-900/40 rounded-3xl p-5 shadow-xs flex flex-col justify-between gap-5 transition-all hover:shadow-sm">
+              {/* Card 1: Lessons (Warm Gold / Bronze Accent) */}
+              <div className="bg-[#FFFBF2] dark:bg-[#1a150c] border border-amber-200/60 dark:border-amber-900/40 rounded-3xl p-5 shadow-xs flex flex-col justify-between gap-5 transition-all hover:shadow-sm">
                 <div className="flex items-center justify-between">
-                  <div className="w-11 h-11 rounded-2xl bg-[#FF7A59] text-white flex items-center justify-center shadow-xs">
+                  <div className="w-11 h-11 rounded-2xl bg-[#b89047] text-white flex items-center justify-center shadow-xs">
                     <BookOpen className="w-5 h-5" />
                   </div>
                   <CircularProgressRing
                     percentage={lessonsPercentage}
-                    strokeColor="#FF7A59"
-                    trackColor="rgba(255, 122, 89, 0.15)"
+                    strokeColor="#dfb74a"
+                    trackColor="rgba(223, 183, 74, 0.16)"
                   />
                 </div>
 
@@ -391,16 +391,16 @@ export default function StudentDashboardPage() {
                 </div>
               </div>
 
-              {/* Card 2: Assignments (Soft Pastel Pink / Rose) */}
-              <div className="bg-[#FFF0F4] dark:bg-[#240f17] border border-rose-200/60 dark:border-rose-900/40 rounded-3xl p-5 shadow-xs flex flex-col justify-between gap-5 transition-all hover:shadow-sm">
+              {/* Card 2: Assignments (Logo Brand Primary Navy Blue) */}
+              <div className="bg-[#F0F6FA] dark:bg-[#071926] border border-blue-200/60 dark:border-blue-900/40 rounded-3xl p-5 shadow-xs flex flex-col justify-between gap-5 transition-all hover:shadow-sm">
                 <div className="flex items-center justify-between">
-                  <div className="w-11 h-11 rounded-2xl bg-[#FF4F81] text-white flex items-center justify-center shadow-xs">
+                  <div className="w-11 h-11 rounded-2xl bg-[#004b79] text-white flex items-center justify-center shadow-xs">
                     <FileCheck className="w-5 h-5" />
                   </div>
                   <CircularProgressRing
                     percentage={assignmentsPercentage}
-                    strokeColor="#FF4F81"
-                    trackColor="rgba(255, 79, 129, 0.15)"
+                    strokeColor="#004b79"
+                    trackColor="rgba(0, 75, 121, 0.15)"
                   />
                 </div>
 
@@ -417,16 +417,16 @@ export default function StudentDashboardPage() {
                 </div>
               </div>
 
-              {/* Card 3: Tests (Mint / Soft Pastel Green) */}
-              <div className="bg-[#F0FAF4] dark:bg-[#0c1f15] border border-emerald-200/60 dark:border-emerald-900/40 rounded-3xl p-5 shadow-xs flex flex-col justify-between gap-5 transition-all hover:shadow-sm">
+              {/* Card 3: Tests (Deep Brand Royal Navy & Gold) */}
+              <div className="bg-[#F4F8FB] dark:bg-[#091a27] border border-blue-100 dark:border-blue-900/30 rounded-3xl p-5 shadow-xs flex flex-col justify-between gap-5 transition-all hover:shadow-sm">
                 <div className="flex items-center justify-between">
-                  <div className="w-11 h-11 rounded-2xl bg-[#2ECC71] text-white flex items-center justify-center shadow-xs">
+                  <div className="w-11 h-11 rounded-2xl bg-[#002b48] text-[#dfb74a] flex items-center justify-center shadow-xs">
                     <Award className="w-5 h-5" />
                   </div>
                   <CircularProgressRing
                     percentage={testsPercentage}
-                    strokeColor="#2ECC71"
-                    trackColor="rgba(46, 204, 113, 0.15)"
+                    strokeColor="#00385c"
+                    trackColor="rgba(0, 56, 92, 0.15)"
                   />
                 </div>
 
@@ -573,11 +573,11 @@ export default function StudentDashboardPage() {
                                 <span className="text-[11px]">{c.lessons}</span>
                               </span>
                               <span className="inline-flex items-center gap-1" title="Assignments">
-                                <span className="text-pink-500">📝</span>
+                                <span className="text-[#004b79] dark:text-[#dfb74a]">📝</span>
                                 <span className="text-[11px]">{c.assignments}</span>
                               </span>
                               <span className="inline-flex items-center gap-1" title="Tests">
-                                <span className="text-emerald-500">📋</span>
+                                <span className="text-[#b89047] dark:text-[#dfb74a]">📋</span>
                                 <span className="text-[11px]">{c.tests}</span>
                               </span>
                             </span>

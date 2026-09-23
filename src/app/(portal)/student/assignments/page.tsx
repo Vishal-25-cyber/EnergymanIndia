@@ -131,6 +131,11 @@ export default function StudentAssignmentsPage() {
   const faceViolationStreakRef = useRef<number>(0);
   const awayStreakRef = useRef<number>(0);
 
+  // Proctored Video Recording & Inline Question Preview
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordedChunksRef = useRef<Blob[]>([]);
+  const [previewQuestionDoc, setPreviewQuestionDoc] = useState<{ url: string; title: string } | null>(null);
+
   // File Upload State
   const [selectedFile, setSelectedFile] = useState<{
     url: string;
@@ -313,6 +318,36 @@ export default function StudentAssignmentsPage() {
           videoRef.current.play().catch(() => {});
         }
         setIsCameraStarted(true);
+
+        // Start Video Recording for Faculty Proctoring Review
+        try {
+          recordedChunksRef.current = [];
+          if (typeof MediaRecorder !== "undefined") {
+            const mimeTypes = ["video/webm;codecs=vp8", "video/webm", "video/mp4"];
+            let chosenMime = "";
+            for (const m of mimeTypes) {
+              if (MediaRecorder.isTypeSupported(m)) {
+                chosenMime = m;
+                break;
+              }
+            }
+            const options: MediaRecorderOptions = { videoBitsPerSecond: 250000 };
+            if (chosenMime) options.mimeType = chosenMime;
+            const recorder = new MediaRecorder(stream, options);
+            recorder.ondataavailable = (e) => {
+              if (e.data && e.data.size > 0) {
+                recordedChunksRef.current.push(e.data);
+                if (recordedChunksRef.current.length > 180) {
+                  recordedChunksRef.current.splice(0, recordedChunksRef.current.length - 180);
+                }
+              }
+            };
+            recorder.start(1000);
+            mediaRecorderRef.current = recorder;
+          }
+        } catch (recErr) {
+          console.warn("MediaRecorder start error:", recErr);
+        }
       } else {
         setCameraError("Webcam is not supported on this browser device.");
       }
@@ -333,6 +368,11 @@ export default function StudentAssignmentsPage() {
   }, [isCameraStarted, activeProctoredTest, splitViewMode]);
 
   const stopCamera = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (e) {}
+    }
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((t) => {
         try {
@@ -347,6 +387,33 @@ export default function StudentAssignmentsPage() {
       videoRef.current.srcObject = null;
     }
     setIsCameraStarted(false);
+  };
+
+  const getProctoringVideoPayload = async (): Promise<string> => {
+    return new Promise((resolve) => {
+      try {
+        if (!recordedChunksRef.current || recordedChunksRef.current.length === 0) {
+          resolve("");
+          return;
+        }
+        const blob = new Blob(recordedChunksRef.current, { type: "video/webm" });
+        if (blob.size < 6 * 1024 * 1024) {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve((reader.result as string) || "");
+          reader.onerror = () => resolve("");
+          reader.readAsDataURL(blob);
+        } else {
+          const slice = recordedChunksRef.current.slice(-15);
+          const smallerBlob = new Blob(slice, { type: "video/webm" });
+          const reader = new FileReader();
+          reader.onloadend = () => resolve((reader.result as string) || "");
+          reader.onerror = () => resolve("");
+          reader.readAsDataURL(smallerBlob);
+        }
+      } catch {
+        resolve("");
+      }
+    });
   };
 
   const captureSnapshot = (): string | null => {
@@ -657,33 +724,44 @@ export default function StudentAssignmentsPage() {
 
         setDetectedFaceCount(result.faceCount);
 
-        if (result.status === "SINGLE_FACE") {
-          // Exactly 1 face: Candidate verified in frame
+        // 1. Mobile Phone Detection in camera frame
+        if (result.isMobileDetected) {
+          faceViolationStreakRef.current = 0;
+          triggerProctoringViolation(
+            "MULTIPLE_FACES" as any,
+            "Mobile phone device detected in camera frame! Keep mobile phones away during the test."
+          );
+          return;
+        }
+
+        // 2. Candidate Presence & Writing Posture Check
+        // If candidate is in frame (sitting, looking at screen, or tilted down writing on paper), candidate is verified
+        if (result.isCandidateInFrame || result.isWritingPosture || result.status === "SINGLE_FACE") {
           setFaceStatus("OK");
           setIsFaceDetected(true);
           faceViolationStreakRef.current = 0;
-        } else if (result.status === "NO_FACE") {
-          // 0 faces: Absent or covered camera
-          setFaceStatus("NO_FACE");
-          setIsFaceDetected(false);
-          faceViolationStreakRef.current++;
-
-          // Continuous violation check (2 consecutive samples ~1.6s)
-          if (faceViolationStreakRef.current >= 2) {
-            triggerProctoringViolation("NO_FACE", "Face not detected in camera frame!");
-            faceViolationStreakRef.current = 0;
-          }
         } else if (result.status === "MULTIPLE_FACES") {
-          // 2 or more faces: Multiple people in camera frame
+          // Strictly 2 or more distinct heads separated horizontally
           setFaceStatus("MULTIPLE_FACES");
           setIsFaceDetected(false);
           faceViolationStreakRef.current++;
 
-          if (faceViolationStreakRef.current >= 2) {
+          if (faceViolationStreakRef.current >= 4) {
             triggerProctoringViolation(
               "MULTIPLE_FACES",
-              `Multiple faces detected (${result.faceCount})! Only a single candidate is permitted in the exam frame.`
+              `Multiple candidates detected in camera frame! Only a single candidate is permitted in the exam frame.`
             );
+            faceViolationStreakRef.current = 0;
+          }
+        } else {
+          // Candidate completely absent from frame (empty desk/walked away)
+          setFaceStatus("NO_FACE");
+          setIsFaceDetected(false);
+          faceViolationStreakRef.current++;
+
+          // Require 5 consecutive missing samples (~3.5-4s) before alarming
+          if (faceViolationStreakRef.current >= 5) {
+            triggerProctoringViolation("NO_FACE", "Candidate not detected in camera frame!");
             faceViolationStreakRef.current = 0;
           }
         }
@@ -782,22 +860,79 @@ export default function StudentAssignmentsPage() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Standard File Select Handler
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // High-Speed Canvas Image Compressor: Downscales camera photos to max 1600px width/height and 0.82 JPEG quality
+  // Drops file sizes from 10MB+ down to ~250KB for instant submission without freezing or long waits
+  const compressImageFile = async (file: File): Promise<{ url: string; size: string }> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const maxDimension = 1600;
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", 0.82);
+          const approxKb = Math.round((compressedDataUrl.length * 3) / 4 / 1024);
+          resolve({
+            url: compressedDataUrl,
+            size: approxKb > 1024 ? `${(approxKb / 1024).toFixed(1)} MB` : `${approxKb} KB`,
+          });
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => resolve({ url: reader.result as string, size: `${(file.size / 1024).toFixed(1)} KB` });
+        reader.readAsDataURL(file);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        const reader = new FileReader();
+        reader.onload = () => resolve({ url: reader.result as string, size: `${(file.size / 1024).toFixed(1)} KB` });
+        reader.readAsDataURL(file);
+      };
+      img.src = objectUrl;
+    });
+  };
+
+  // Standard File Select Handler with automatic canvas compression
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const isImage = file.type.startsWith("image/");
-    const reader = new FileReader();
-    reader.onload = () => {
+    if (isImage) {
+      const compressed = await compressImageFile(file);
       setSelectedFile({
-        url: reader.result as string,
+        url: compressed.url,
         name: file.name,
-        size: (file.size / 1024).toFixed(1) + " KB",
-        isImage,
+        size: compressed.size,
+        isImage: true,
       });
-    };
-    reader.readAsDataURL(file);
+    } else {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setSelectedFile({
+          url: reader.result as string,
+          name: file.name,
+          size: (file.size / 1024).toFixed(1) + " KB",
+          isImage: false,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Submit Answer for Task or Test
@@ -816,6 +951,15 @@ export default function StudentAssignmentsPage() {
       snapshotUrl = captureSnapshot();
     }
 
+    let proctoringVideoUrl = "";
+    if (isProctoredTest) {
+      try {
+        proctoringVideoUrl = await getProctoringVideoPayload();
+      } catch (err) {
+        console.warn("Video payload error:", err);
+      }
+    }
+
     try {
       const res = await fetch("/api/student/submit-assignment", {
         method: "POST",
@@ -825,6 +969,7 @@ export default function StudentAssignmentsPage() {
           submissionText: submissionText.trim(),
           fileUrl: selectedFile?.url || "",
           proctoringSnapshotUrl: isProctoredTest ? (snapshotUrl || "") : "",
+          proctoringVideoUrl: isProctoredTest ? proctoringVideoUrl : "",
           violationCount: isProctoredTest ? warningCount : 0,
           type: currentTask.type || activeCategory,
         }),
@@ -1832,7 +1977,13 @@ export default function StudentAssignmentsPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
-                      onClick={() => openDocumentInNewTab(selectedTask.attachmentUrl, selectedTask.attachmentName || "Question_Paper")}
+                      onClick={() => {
+                        setPreviewQuestionDoc({
+                          url: selectedTask.attachmentUrl,
+                          title: selectedTask.attachmentName || selectedTask.title,
+                        });
+                        openDocumentInNewTab(selectedTask.attachmentUrl, selectedTask.attachmentName || "Question_Paper");
+                      }}
                       className="inline-flex items-center gap-1 text-xs font-bold text-[#004b79] dark:text-[#dfb74a] hover:underline cursor-pointer"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
@@ -2114,6 +2265,50 @@ export default function StudentAssignmentsPage() {
           </div>
         </form>
       </Modal>
+
+      {/* ── INLINE QUESTION PAPER INSTANT VIEWER MODAL ── */}
+      {previewQuestionDoc && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative w-full max-w-4xl h-[88vh] bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 shrink-0">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <FileText className="w-4 h-4 text-[#004b79] dark:text-[#dfb74a] shrink-0" />
+                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">
+                  {previewQuestionDoc.title}
+                </h3>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => downloadDocumentFile(previewQuestionDoc.url, previewQuestionDoc.title)}
+                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                  title="Download Question Paper"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewQuestionDoc(null)}
+                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
+                  title="Close Preview"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden p-2">
+              <DocumentViewer
+                url={previewQuestionDoc.url}
+                fileName={previewQuestionDoc.title}
+                title={previewQuestionDoc.title}
+                className="w-full h-full border-0 rounded-none shadow-none"
+                minHeight="100%"
+                showToolbar={true}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

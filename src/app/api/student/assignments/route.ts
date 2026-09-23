@@ -81,6 +81,7 @@ export async function GET(req: NextRequest) {
               submissionText: submission.submissionText,
               fileUrl: submission.fileUrl,
               proctoringSnapshotUrl: submission.proctoringSnapshotUrl,
+              proctoringVideoUrl: submission.proctoringVideoUrl,
               timeTakenMinutes: submission.timeTakenMinutes,
               submittedAt: submission.submittedAt,
               marksObtained: submission.marksObtained,

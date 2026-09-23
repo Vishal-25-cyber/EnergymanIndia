@@ -738,16 +738,8 @@ export default function TeacherAssignmentsPage() {
                         <div className="flex items-center gap-1.5 shrink-0">
                           <button
                             type="button"
-                            onClick={() => openDocumentInNewTab(sub.fileUrl, `${student.name || "Student"}_Answer_Sheet`)}
-                            className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white flex items-center gap-1 cursor-pointer transition-all shadow-2xs"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5" />
-                            <span>View Sheet</span>
-                          </button>
-                          <button
-                            type="button"
                             onClick={() => downloadDocumentFile(sub.fileUrl, `${student.name || "Student"}_Answer_Sheet`)}
-                            className="p-1 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
                             title="Download Submitted Answer Sheet"
                           >
                             <Download className="w-3.5 h-3.5" />
@@ -1283,27 +1275,48 @@ export default function TeacherAssignmentsPage() {
                   <span className="text-[#004b79] dark:text-[#dfb74a]">{selectedSub.assignmentId?.title}</span>
                 </div>
               </div>
-              {/* Webcam Proctoring Snapshot - ONLY FOR PROCTORED TESTS */}
-              {((selectedSub.type || selectedSub.assignmentId?.type) === "TEST") && selectedSub.proctoringSnapshotUrl && (
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-[11px] font-bold text-slate-500">Webcam Proctoring Snapshot:</span>
-                    <button
-                      type="button"
-                      onClick={() => openDocumentInNewTab(selectedSub.proctoringSnapshotUrl, `${selectedSub.studentId?.name || "Student"}_Proctoring_Capture`)}
-                      className="text-[11px] font-bold text-[#004b79] dark:text-[#dfb74a] hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      <span>View Full Resolution</span>
-                    </button>
+              {/* Webcam Proctoring Video & Snapshot - ONLY FOR PROCTORED TESTS */}
+              {((selectedSub.type || selectedSub.assignmentId?.type) === "TEST") && (selectedSub.proctoringVideoUrl || selectedSub.proctoringSnapshotUrl) && (
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                      <Video className="w-3.5 h-3.5 text-[#004b79] dark:text-[#dfb74a]" />
+                      <span>{selectedSub.proctoringVideoUrl ? "Proctoring Exam Video Recording:" : "Webcam Proctoring Snapshot:"}</span>
+                    </span>
+                    {selectedSub.proctoringVideoUrl ? (
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/50">
+                        Live Exam Recording
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => openDocumentInNewTab(selectedSub.proctoringSnapshotUrl, `${selectedSub.studentId?.name || "Student"}_Proctoring_Capture`)}
+                        className="text-[11px] font-bold text-[#004b79] dark:text-[#dfb74a] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>View Full Resolution</span>
+                      </button>
+                    )}
                   </div>
-                  <img
-                    src={selectedSub.proctoringSnapshotUrl}
-                    alt="Proctoring Snapshot"
-                    className="w-48 h-36 object-cover rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm cursor-zoom-in hover:scale-102 transition-transform"
-                    onClick={() => openDocumentInNewTab(selectedSub.proctoringSnapshotUrl, `${selectedSub.studentId?.name || "Student"}_Proctoring_Capture`)}
-                    title="Click to view webcam snapshot full size"
-                  />
+
+                  {selectedSub.proctoringVideoUrl ? (
+                    <div className="rounded-xl overflow-hidden border border-slate-300 dark:border-slate-700 bg-black shadow-xs">
+                      <video
+                        src={selectedSub.proctoringVideoUrl}
+                        controls
+                        playsInline
+                        className="w-full max-h-64 object-contain mx-auto"
+                      />
+                    </div>
+                  ) : (
+                    <img
+                      src={selectedSub.proctoringSnapshotUrl}
+                      alt="Proctoring Snapshot"
+                      className="w-48 h-36 object-cover rounded-xl border border-slate-300 dark:border-slate-700 shadow-sm cursor-zoom-in hover:scale-102 transition-transform"
+                      onClick={() => openDocumentInNewTab(selectedSub.proctoringSnapshotUrl, `${selectedSub.studentId?.name || "Student"}_Proctoring_Capture`)}
+                      title="Click to view webcam snapshot full size"
+                    />
+                  )}
                 </div>
               )}
               {selectedSub.submissionText && (
