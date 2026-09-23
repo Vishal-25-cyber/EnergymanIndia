@@ -93,6 +93,7 @@ export default function StudentDashboardPage() {
 
   // Calendar State
   const [currentMonthDate, setCurrentMonthDate] = useState(new Date());
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<number | null>(new Date().getDate());
 
   const authUser = authData?.user;
   const trial = authUser?.trial;
@@ -125,24 +126,24 @@ export default function StudentDashboardPage() {
 
   // Real Strictly Calculated Counts from Live DB
   const assessments = data?.assessmentSummary || {
-    total: 7,
-    submitted: 2,
-    pending: 5,
-    evaluated: 1,
-    averageScore: 85,
+    total: 0,
+    submitted: 0,
+    pending: 0,
+    evaluated: 0,
+    averageScore: 0,
   };
 
-  const totalLessons = data?.statusCounts?.totalLessons ?? (data?.materialsCount || 73);
-  const completedLessons = data?.statusCounts?.completedLessons ?? (data?.completedMaterialsCount || 42);
-  const lessonsPercentage = data?.statusCounts?.lessonsPercentage ?? (totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 58);
+  const totalLessons = data?.statusCounts?.totalLessons ?? (data?.materialsCount || 0);
+  const completedLessons = data?.statusCounts?.completedLessons ?? (data?.completedMaterialsCount || 0);
+  const lessonsPercentage = data?.statusCounts?.lessonsPercentage ?? (totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0);
 
-  const totalAssignments = data?.statusCounts?.totalAssignments ?? (assessments.total || 7);
-  const completedAssignments = data?.statusCounts?.completedAssignments ?? (assessments.submitted || 2);
-  const assignmentsPercentage = data?.statusCounts?.assignmentsPercentage ?? (totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 29);
+  const totalAssignments = data?.statusCounts?.totalAssignments ?? (assessments.total || 0);
+  const completedAssignments = data?.statusCounts?.completedAssignments ?? (assessments.submitted || 0);
+  const assignmentsPercentage = data?.statusCounts?.assignmentsPercentage ?? (totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0);
 
-  const totalTests = data?.statusCounts?.totalTests ?? (data?.totalTestsCount || 15);
-  const completedTests = data?.statusCounts?.completedTests ?? (data?.completedTestsCount || 3);
-  const testsPercentage = data?.statusCounts?.testsPercentage ?? (totalTests > 0 ? Math.round((completedTests / totalTests) * 100) : 20);
+  const totalTests = data?.statusCounts?.totalTests ?? (data?.totalTestsCount || 0);
+  const completedTests = data?.statusCounts?.completedTests ?? (data?.completedTestsCount || 0);
+  const testsPercentage = data?.statusCounts?.testsPercentage ?? (totalTests > 0 ? Math.round((completedTests / totalTests) * 100) : 0);
 
   // Dynamic Curriculum Subjects for this student
   const academicSubjects = useMemo(() => {
@@ -156,11 +157,10 @@ export default function StudentDashboardPage() {
     }
 
     const palettes = [
-      { gradient: "from-blue-500 via-indigo-500 to-purple-600", barColor: "bg-gradient-to-r from-indigo-500 to-purple-600" },
-      { gradient: "from-emerald-400 via-teal-500 to-blue-500", barColor: "bg-gradient-to-r from-emerald-500 to-teal-600" },
-      { gradient: "from-amber-500 via-orange-500 to-red-500", barColor: "bg-gradient-to-r from-amber-500 to-orange-500" },
-      { gradient: "from-pink-500 via-rose-500 to-purple-600", barColor: "bg-gradient-to-r from-rose-500 to-pink-500" },
-      { gradient: "from-violet-500 via-purple-500 to-fuchsia-500", barColor: "bg-gradient-to-r from-purple-600 to-indigo-500" },
+      { gradient: "from-[#002137] via-[#0b3354] to-[#b89047]", barColor: "bg-gradient-to-r from-[#002137] to-[#b89047]" },
+      { gradient: "from-emerald-500 via-teal-600 to-[#002137]", barColor: "bg-gradient-to-r from-emerald-500 to-teal-600" },
+      { gradient: "from-[#b89047] via-amber-600 to-[#002137]", barColor: "bg-gradient-to-r from-[#b89047] to-amber-600" },
+      { gradient: "from-slate-700 via-[#002137] to-[#b89047]", barColor: "bg-gradient-to-r from-[#002137] to-[#dfb74a]" },
     ];
 
     return academicSubjects.map((subj, idx) => {
@@ -170,35 +170,16 @@ export default function StudentDashboardPage() {
         name: `${subj} : ${classLevel} ${board} Syllabus`,
         tag: `${classLevel} • ${board}`,
         subject: subj,
-        progress: idx === 0 ? 75 : idx === 1 ? 50 : 35,
-        lessons: 15,
-        assignments: 6,
-        tests: 3,
+        progress: 0,
+        lessons: 0,
+        assignments: 0,
+        tests: 0,
         gradient: p.gradient,
         barColor: p.barColor,
         isCompleted: false,
       };
     });
   }, [data?.courses, academicSubjects, classLevel, board]);
-
-  // Active Course for Top Resume Banner
-  const activeCourse = useMemo(() => {
-    if (data?.activeCourse) {
-      return data.activeCourse;
-    }
-    const firstCourse = allCourses[0];
-    return {
-      title: firstCourse?.name || `${classLevel} Academic Curriculum`,
-      subject: firstCourse?.subject || "Mathematics",
-      tag: `${classLevel} • ${board}`,
-      progress: firstCourse?.progress || 60,
-      lessons: firstCourse?.lessons || 15,
-      assignments: firstCourse?.assignments || 6,
-      tests: firstCourse?.tests || 3,
-      actionText: "Resume",
-      actionLink: "/student/classes",
-    };
-  }, [data?.activeCourse, allCourses, classLevel, board]);
 
   const filteredCourses = useMemo(() => {
     return allCourses
@@ -212,54 +193,20 @@ export default function StudentDashboardPage() {
       );
   }, [allCourses, courseTab, searchQuery]);
 
-  // Real Live Upcoming Schedule
+  // Real Live Upcoming Schedule strictly from Database
   const upcomingItems = useMemo(() => {
-    if (Array.isArray(data?.upcomingSchedule) && data.upcomingSchedule.length > 0) {
-      return data.upcomingSchedule;
-    }
-    return [
-      {
-        id: "up-1",
-        day: "29",
-        month: "Sept",
-        title: `${academicSubjects[0] || "Mathematics"} : Practical theory`,
-        type: "Assignments",
-        dotColor: "bg-pink-500",
-        textColor: "text-pink-500 dark:text-pink-400",
-        link: "/student/assignments",
-      },
-      {
-        id: "up-2",
-        day: "29",
-        month: "Sept",
-        title: `${academicSubjects[1] || "Science"} : Practical theory 1`,
-        type: "Test",
-        dotColor: "bg-emerald-500",
-        textColor: "text-emerald-500 dark:text-emerald-400",
-        link: "/student/assignments",
-      },
-      {
-        id: "up-3",
-        day: "29",
-        month: "Sept",
-        title: `${academicSubjects[2] || "English"} : Practical theory 2`,
-        type: "Lessons",
-        dotColor: "bg-amber-500",
-        textColor: "text-amber-500 dark:text-amber-400",
-        link: "/student/materials",
-      },
-      {
-        id: "up-4",
-        day: "29",
-        month: "Sept",
-        title: `${academicSubjects[0] || "Mathematics"} : Practical theory 3`,
-        type: "Assignments",
-        dotColor: "bg-pink-500",
-        textColor: "text-pink-500 dark:text-pink-400",
-        link: "/student/assignments",
-      },
-    ];
-  }, [data?.upcomingSchedule, academicSubjects]);
+    return Array.isArray(data?.upcomingSchedule) ? data.upcomingSchedule : [];
+  }, [data?.upcomingSchedule]);
+
+  // Selected Date Events for Live Calendar Details
+  const selectedDateEvents = useMemo(() => {
+    if (!selectedCalendarDay) return [];
+    const yr = currentMonthDate.getFullYear();
+    const mo = String(currentMonthDate.getMonth() + 1).padStart(2, "0");
+    const dy = String(selectedCalendarDay).padStart(2, "0");
+    const dateKey = `${yr}-${mo}-${dy}`;
+    return data?.calendarEvents?.[dateKey] || [];
+  }, [selectedCalendarDay, currentMonthDate, data?.calendarEvents]);
 
   // Calendar Days calculation
   const calendarDays = useMemo(() => {
@@ -308,13 +255,13 @@ export default function StudentDashboardPage() {
 
         {/* Center Search Pill */}
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-purple-600 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-4 h-4 text-[#002137] dark:text-[#dfb74a] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search here..."
-            className="w-full pl-10 pr-4 py-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 shadow-2xs focus:outline-none focus:ring-2 focus:ring-purple-500/20 transition-all"
+            className="w-full pl-10 pr-4 py-2 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 placeholder-slate-400 shadow-2xs focus:outline-none focus:ring-2 focus:ring-[#002137]/20 focus:border-[#002137] dark:focus:border-[#dfb74a] transition-all"
           />
         </div>
 
@@ -323,7 +270,7 @@ export default function StudentDashboardPage() {
           {/* Messages */}
           <button
             type="button"
-            className="w-9 h-9 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-500 hover:text-purple-600 flex items-center justify-center shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+            className="w-9 h-9 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-500 hover:text-[#002137] dark:hover:text-[#dfb74a] flex items-center justify-center shadow-2xs hover:shadow-xs transition-all cursor-pointer"
             title="Messages"
           >
             <MessageSquare className="w-4 h-4" />
@@ -332,7 +279,7 @@ export default function StudentDashboardPage() {
           {/* Notifications with red dot */}
           <button
             type="button"
-            className="relative w-9 h-9 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-500 hover:text-purple-600 flex items-center justify-center shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+            className="relative w-9 h-9 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-500 hover:text-[#002137] dark:hover:text-[#dfb74a] flex items-center justify-center shadow-2xs hover:shadow-xs transition-all cursor-pointer"
             title="Notifications"
           >
             <Bell className="w-4 h-4" />
@@ -345,7 +292,7 @@ export default function StudentDashboardPage() {
             className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-xs cursor-pointer transition-all select-none"
             title="View Student Dossier"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 text-white font-black text-xs flex items-center justify-center shadow-xs">
+            <div className="w-8 h-8 rounded-full bg-[#002137] text-[#dfb74a] border border-[#b89047]/40 font-black text-xs flex items-center justify-center shadow-xs">
               {safeName.charAt(0).toUpperCase()}
             </div>
             <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate max-w-[120px]">
@@ -379,7 +326,7 @@ export default function StudentDashboardPage() {
               {classLevel} ({board}) • Batch {batchName} • Academic Year 2025–2026 Active
             </span>
           </div>
-          <Link href="/student/classes" className="font-bold text-purple-700 dark:text-purple-300 hover:underline flex items-center gap-1 shrink-0">
+          <Link href="/student/classes" className="font-bold text-[#002137] dark:text-[#dfb74a] hover:underline flex items-center gap-1 shrink-0">
             <span>Classroom</span> <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -393,7 +340,7 @@ export default function StudentDashboardPage() {
               <strong>Monthly Tuition Renewal:</strong> {remainingDays} day{remainingDays === 1 ? "" : "s"} remaining before month cycle ends.
             </span>
           </div>
-          <Link href="/student/fees" className="font-bold text-purple-700 hover:underline flex items-center gap-1">
+          <Link href="/student/fees" className="font-bold text-[#002137] dark:text-[#dfb74a] hover:underline flex items-center gap-1">
             <span>Renew</span> <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
@@ -405,61 +352,18 @@ export default function StudentDashboardPage() {
         {/* ════ LEFT MAIN SECTION (8 COLS) ════ */}
         <div className="lg:col-span-8 space-y-6">
           
-          {/* 1. TOP RESUME COURSE BANNER (EXACT AS SCREENSHOT) */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-100 dark:border-slate-800 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all">
-            <div className="flex items-center gap-3.5 min-w-0 flex-1">
-              {/* Vibrant Gradient Icon */}
-              <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-500 to-rose-400 flex items-center justify-center text-white shadow-sm shrink-0">
-                <BookOpen className="w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
-
-              {/* Title & Underline Progress */}
-              <div className="space-y-1.5 min-w-0 flex-1">
-                <h3 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 truncate" title={activeCourse.title}>
-                  {activeCourse.title}
-                </h3>
-                <div className="w-44 sm:w-56 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-purple-600 to-indigo-500 rounded-full transition-all duration-500"
-                    style={{ width: `${Math.max(8, Math.min(100, activeCourse.progress))}%` }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Stat Counters: 📄 lessons, 📝 assignments, 📋 tests */}
-            <div className="flex items-center gap-4 text-xs font-semibold text-slate-600 dark:text-slate-400 shrink-0">
-              <span className="flex items-center gap-1.5" title="Lessons">
-                <span className="text-amber-500">📄</span>
-                <span>{activeCourse.lessons}</span>
-              </span>
-              <span className="flex items-center gap-1.5" title="Assignments">
-                <span className="text-pink-500">📝</span>
-                <span>{activeCourse.assignments}</span>
-              </span>
-              <span className="flex items-center gap-1.5" title="Tests">
-                <span className="text-emerald-500">📋</span>
-                <span>{activeCourse.tests}</span>
-              </span>
-            </div>
-
-            {/* Resume Button */}
-            <Link
-              href={activeCourse.actionLink || "/student/classes"}
-              className="px-4 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:hover:bg-purple-900/60 dark:text-purple-300 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs shrink-0"
-            >
-              <Play className="w-3.5 h-3.5 fill-purple-700 dark:fill-purple-300" />
-              <span>{activeCourse.actionText || "Resume"}</span>
-            </Link>
-          </div>
-
-          {/* 2. "STATUS" THREE LARGE PASTEL STAT CARDS */}
+          {/* 1. "STATUS" FOUR LARGE PASTEL STAT CARDS */}
           <div className="space-y-3">
-            <h2 className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
-              Status
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                Academic Status
+              </h2>
+              <span className="text-xs font-semibold text-[#b89047] dark:text-[#dfb74a]">
+                Live Real-time Metrics
+              </span>
+            </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               
               {/* Card 1: Lessons (Warm Cream / Peach) */}
               <div className="bg-[#FFF8EE] dark:bg-[#20180e] border border-amber-200/60 dark:border-amber-900/40 rounded-3xl p-5 shadow-xs flex flex-col justify-between gap-5 transition-all hover:shadow-sm">
@@ -481,7 +385,7 @@ export default function StudentDashboardPage() {
                   <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">
                     Lessons
                   </p>
-                  <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-0.5">
+                  <p className="text-xs text-[#002137] dark:text-[#dfb74a] font-semibold mt-0.5">
                     of {totalLessons} completed
                   </p>
                 </div>
@@ -507,7 +411,7 @@ export default function StudentDashboardPage() {
                   <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">
                     Assignments
                   </p>
-                  <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-0.5">
+                  <p className="text-xs text-[#002137] dark:text-[#dfb74a] font-semibold mt-0.5">
                     of {totalAssignments} completed
                   </p>
                 </div>
@@ -533,9 +437,39 @@ export default function StudentDashboardPage() {
                   <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">
                     Tests
                   </p>
-                  <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-0.5">
+                  <p className="text-xs text-[#002137] dark:text-[#dfb74a] font-semibold mt-0.5">
                     of {totalTests} completed
                   </p>
+                </div>
+              </div>
+
+              {/* Card 4: Attendance (Mantif Logo Navy & Gold) */}
+              <div className="bg-[#f0f5fa] dark:bg-[#051827] border border-[#b89047]/30 dark:border-[#b89047]/20 rounded-3xl p-5 shadow-xs flex flex-col justify-between gap-5 transition-all hover:shadow-sm">
+                <div className="flex items-center justify-between">
+                  <div className="w-11 h-11 rounded-2xl bg-[#002137] text-[#dfb74a] flex items-center justify-center shadow-xs">
+                    <CheckCircle2 className="w-5 h-5 text-[#dfb74a]" />
+                  </div>
+                  <CircularProgressRing
+                    percentage={data?.student?.attendancePercentage ?? 100}
+                    strokeColor="#b89047"
+                    trackColor="rgba(184, 144, 71, 0.15)"
+                  />
+                </div>
+
+                <div>
+                  <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
+                    {data?.student?.attendancePercentage ?? 100}%
+                  </p>
+                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">
+                    Attendance
+                  </p>
+                  <Link
+                    href="/student/attendance"
+                    className="text-xs text-[#8f6d2b] dark:text-[#dfb74a] font-bold mt-0.5 hover:underline flex items-center gap-1"
+                  >
+                    <span>{data?.student?.totalAttended ?? 0} of {data?.student?.totalSessions ?? 0} attended</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
                 </div>
               </div>
 
@@ -556,7 +490,7 @@ export default function StudentDashboardPage() {
                   onClick={() => setCourseTab("ACTIVE")}
                   className={`px-3 py-1 rounded-xl transition-all cursor-pointer ${
                     courseTab === "ACTIVE"
-                      ? "bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 shadow-2xs font-bold"
+                      ? "bg-[#002137] text-[#dfb74a] shadow-xs font-bold border border-[#b89047]/30"
                       : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                   }`}
                 >
@@ -567,7 +501,7 @@ export default function StudentDashboardPage() {
                   onClick={() => setCourseTab("COMPLETED")}
                   className={`px-3 py-1 rounded-xl transition-all cursor-pointer ${
                     courseTab === "COMPLETED"
-                      ? "bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 shadow-2xs font-bold"
+                      ? "bg-[#002137] text-[#dfb74a] shadow-xs font-bold border border-[#b89047]/30"
                       : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                   }`}
                 >
@@ -612,7 +546,7 @@ export default function StudentDashboardPage() {
                           <td className="py-3.5 pr-4">
                             <Link
                               href={`/student/materials?subject=${encodeURIComponent(c.subject || "")}`}
-                              className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-purple-600 transition-colors truncate max-w-xs block cursor-pointer"
+                              className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-[#002137] dark:group-hover:text-[#dfb74a] transition-colors truncate max-w-xs block cursor-pointer"
                             >
                               {c.name}
                             </Link>
@@ -665,16 +599,21 @@ export default function StudentDashboardPage() {
           {/* 1. "STATUS" CALENDAR WIDGET */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-xs space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
-                Status
-              </h2>
+              <div className="space-y-0.5">
+                <h2 className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                  Status &amp; Schedule
+                </h2>
+                <p className="text-[11px] font-semibold text-[#8f6d2b] dark:text-[#dfb74a]">
+                  {new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(currentMonthDate)}
+                </p>
+              </div>
 
               {/* Month Navigation Arrows */}
-              <div className="flex items-center gap-1 text-purple-600">
+              <div className="flex items-center gap-1 text-[#002137] dark:text-[#dfb74a]">
                 <button
                   type="button"
                   onClick={handlePrevMonth}
-                  className="p-1 rounded-lg hover:bg-purple-50 text-purple-700 dark:text-purple-300 cursor-pointer transition-all"
+                  className="p-1 rounded-lg hover:bg-[#002137]/10 text-[#002137] dark:text-[#dfb74a] cursor-pointer transition-all"
                   title="Previous Month"
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -682,7 +621,7 @@ export default function StudentDashboardPage() {
                 <button
                   type="button"
                   onClick={handleNextMonth}
-                  className="p-1 rounded-lg hover:bg-purple-50 text-purple-700 dark:text-purple-300 cursor-pointer transition-all"
+                  className="p-1 rounded-lg hover:bg-[#002137]/10 text-[#002137] dark:text-[#dfb74a] cursor-pointer transition-all"
                   title="Next Month"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -710,92 +649,201 @@ export default function StudentDashboardPage() {
                     return <div key={`empty-${i}`} className="h-8" />;
                   }
 
+                  const yr = currentMonthDate.getFullYear();
+                  const mo = String(currentMonthDate.getMonth() + 1).padStart(2, "0");
+                  const dy = String(d).padStart(2, "0");
+                  const dateKey = `${yr}-${mo}-${dy}`;
+                  const dayEvents = (data?.calendarEvents as any)?.[dateKey] || [];
+
                   const isCurrentMonth =
                     currentMonthDate.getMonth() === new Date().getMonth() &&
                     currentMonthDate.getFullYear() === new Date().getFullYear();
-                  
                   const todayDay = new Date().getDate();
-                  const isRangeStart = isCurrentMonth && d === todayDay;
-                  const isInRange = isCurrentMonth && d >= todayDay + 1 && d <= todayDay + 3;
-                  const isRangeEnd = isCurrentMonth && d === todayDay + 4;
-                  const isHighlightDay = Array.isArray(data?.calendarHighlights) && data.calendarHighlights.includes(d);
+                  const isToday = isCurrentMonth && d === todayDay;
+                  const isSelected = selectedCalendarDay === d;
 
-                  if (isRangeStart || isRangeEnd) {
-                    return (
-                      <div key={d} className="flex items-center justify-center">
-                        <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-purple-600 text-white font-bold flex items-center justify-center shadow-xs">
-                          {d}
-                        </span>
-                      </div>
-                    );
-                  }
-
-                  if (isInRange) {
-                    return (
-                      <div key={d} className="flex items-center justify-center bg-purple-100/90 dark:bg-purple-950/70 text-purple-800 dark:text-purple-200 font-semibold h-7 sm:h-8">
-                        <span>{d}</span>
-                      </div>
-                    );
-                  }
-
-                  if (isHighlightDay) {
-                    return (
-                      <div key={d} className="flex items-center justify-center">
-                        <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-full border-2 border-purple-500/80 text-purple-700 dark:text-purple-300 font-bold flex items-center justify-center">
-                          {d}
-                        </span>
-                      </div>
-                    );
-                  }
+                  const hasPresent = dayEvents.some((e: any) => e.type === "ATTENDANCE" && (e.status === "PRESENT" || e.status === "LATE"));
+                  const hasAbsent = dayEvents.some((e: any) => e.type === "ATTENDANCE" && e.status === "ABSENT");
+                  const hasClass = dayEvents.some((e: any) => e.type === "CLASS");
+                  const hasTask = dayEvents.some((e: any) => e.type === "ASSIGNMENT" || e.type === "TEST");
 
                   return (
-                    <div key={d} className="flex items-center justify-center h-7 sm:h-8 text-slate-700 dark:text-slate-400 hover:text-purple-600">
-                      <span>{d}</span>
+                    <div key={d} className="flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCalendarDay(d)}
+                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex flex-col items-center justify-center relative mx-auto transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-[#002137] text-white font-bold ring-2 ring-[#b89047] shadow-xs"
+                            : isToday
+                            ? "border-2 border-[#002137] dark:border-[#dfb74a] font-bold text-slate-900 dark:text-white"
+                            : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-medium"
+                        }`}
+                        title={
+                          dayEvents.length > 0
+                            ? dayEvents.map((e: any) => `${e.title}${e.status ? ` (${e.status})` : ""}`).join(", ")
+                            : `Day ${d}`
+                        }
+                      >
+                        <span className="text-xs leading-none">{d}</span>
+                        {/* Live Status Indicator Dots */}
+                        {dayEvents.length > 0 && (
+                          <span className="flex items-center gap-0.5 absolute -bottom-1">
+                            {hasPresent && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                            {hasAbsent && <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />}
+                            {hasClass && <span className="w-1.5 h-1.5 rounded-full bg-[#002137] dark:bg-[#dfb74a]" />}
+                            {hasTask && <span className="w-1.5 h-1.5 rounded-full bg-[#b89047]" />}
+                          </span>
+                        )}
+                      </button>
                     </div>
                   );
                 })}
               </div>
             </div>
+
+            {/* Calendar Legend: Explains why dates are marked */}
+            <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800 flex-wrap gap-1.5">
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span>Present</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                <span>Absent</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-[#002137] dark:bg-[#dfb74a] shrink-0" />
+                <span>Class</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-[#b89047] shrink-0" />
+                <span>Task/Test</span>
+              </span>
+            </div>
+
+            {/* Selected Date Live Details Card: Shows why that date is marked */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 text-xs space-y-2">
+              <div className="flex items-center justify-between font-bold text-slate-900 dark:text-slate-100">
+                <div className="flex items-center gap-1.5">
+                  <CalendarIcon className="w-3.5 h-3.5 text-[#b89047]" />
+                  <span>
+                    {new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", weekday: "short" }).format(
+                      new Date(currentMonthDate.getFullYear(), currentMonthDate.getMonth(), selectedCalendarDay || 1)
+                    )}
+                  </span>
+                </div>
+                <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-[#b89047]/15 text-[#8f6d2b] dark:text-[#dfb74a] border border-[#b89047]/30">
+                  {selectedDateEvents.length} {selectedDateEvents.length === 1 ? "Activity" : "Activities"}
+                </span>
+              </div>
+              {selectedDateEvents.length === 0 ? (
+                <p className="text-[11px] text-slate-400">
+                  No attendance marked or classes scheduled on this date.
+                </p>
+              ) : (
+                <div className="space-y-1.5 pt-0.5">
+                  {selectedDateEvents.map((ev: any, idx: number) => (
+                    <div
+                      key={idx}
+                      className="flex items-start gap-2 p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-[11px]"
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full shrink-0 mt-1 ${
+                          ev.status === "PRESENT"
+                            ? "bg-emerald-500"
+                            : ev.status === "ABSENT"
+                            ? "bg-rose-500"
+                            : ev.type === "CLASS"
+                            ? "bg-[#002137] dark:bg-[#dfb74a]"
+                            : "bg-[#b89047]"
+                        }`}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                          {ev.title}
+                        </p>
+                        <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 flex-wrap">
+                          {ev.status && (
+                            <span
+                              className={`font-semibold ${
+                                ev.status === "PRESENT"
+                                  ? "text-emerald-600 dark:text-emerald-400"
+                                  : "text-rose-600 dark:text-rose-400"
+                              }`}
+                            >
+                              Attendance: {ev.status}
+                            </span>
+                          )}
+                          {ev.time && <span>Time: {ev.time}</span>}
+                          {ev.type && <span className="uppercase text-slate-400">• {ev.type}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
 
-          {/* 2. "UPCOMING" WIDGET (EXACT ITEMS FROM USER SCREENSHOT) */}
+          {/* 2. "UPCOMING" WIDGET (STRICTLY REAL LIVE ITEMS) */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 border border-slate-100 dark:border-slate-800 shadow-xs space-y-4">
-            <h2 className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
-              Upcoming
-            </h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-base sm:text-lg font-black text-slate-800 dark:text-slate-100 tracking-tight">
+                Upcoming
+              </h2>
+              {upcomingItems.length > 0 && (
+                <span className="text-[10px] font-bold text-[#b89047] uppercase tracking-wider">
+                  Live Schedule
+                </span>
+              )}
+            </div>
 
-            <div className="space-y-3">
-              {upcomingItems.map((item: any) => (
-                <Link
-                  key={item.id}
-                  href={item.link || "/student/classes"}
-                  className="flex items-center gap-3.5 p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
-                >
-                  {/* Date Box: 29 Sept */}
-                  <div className="w-12 h-12 rounded-2xl bg-[#f8f9fd] dark:bg-slate-800 border border-slate-100 dark:border-slate-700/60 flex flex-col items-center justify-center leading-none shrink-0 group-hover:border-purple-200 transition-colors">
-                    <span className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-200">
-                      {item.day}
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">
-                      {item.month}
-                    </span>
-                  </div>
-
-                  {/* Title & Type */}
-                  <div className="min-w-0 flex-1">
-                    <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-purple-600 transition-colors truncate">
-                      {item.title}
-                    </h4>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <span className={`w-1.5 h-1.5 rounded-full ${item.dotColor || "bg-purple-600"}`} />
-                      <span className={`text-[11px] font-semibold ${item.textColor || "text-purple-600"}`}>
-                        {item.type}
+            {upcomingItems.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 space-y-2">
+                <CalendarIcon className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-700" />
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  No upcoming activities
+                </p>
+                <p className="text-[11px] text-slate-400 max-w-[220px] mx-auto">
+                  New live classes, tests, and assignments will automatically appear here once scheduled by your teacher.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {upcomingItems.map((item: any) => (
+                  <Link
+                    key={item.id}
+                    href={item.link || "/student/classes"}
+                    className="flex items-center gap-3.5 p-2 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
+                  >
+                    {/* Date Box */}
+                    <div className="w-12 h-12 rounded-2xl bg-[#002137]/5 dark:bg-slate-800 border border-[#002137]/10 dark:border-slate-700/60 flex flex-col items-center justify-center leading-none shrink-0 group-hover:border-[#b89047]/50 transition-colors">
+                      <span className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-slate-200">
+                        {item.day}
+                      </span>
+                      <span className="text-[10px] font-bold text-[#b89047] uppercase mt-0.5">
+                        {item.month}
                       </span>
                     </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
+
+                    {/* Title & Type */}
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 group-hover:text-[#002137] dark:group-hover:text-[#dfb74a] transition-colors truncate">
+                        {item.title}
+                      </h4>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className={`w-1.5 h-1.5 rounded-full ${item.dotColor || "bg-[#002137]"}`} />
+                        <span className={`text-[11px] font-semibold ${item.textColor || "text-[#002137] dark:text-[#dfb74a]"}`}>
+                          {item.type}
+                        </span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
 
         </div>
@@ -824,7 +872,7 @@ export default function StudentDashboardPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
             <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-700/50">
               <span className="text-slate-400 font-medium">Student ID</span>
-              <div className="flex items-center gap-1.5 mt-1 font-bold font-mono text-purple-700 dark:text-purple-300">
+              <div className="flex items-center gap-1.5 mt-1 font-bold font-mono text-[#002137] dark:text-[#dfb74a]">
                 <span>{studentId}</span>
                 <button type="button" onClick={handleCopyId} className="cursor-pointer">
                   {copiedId ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5 text-slate-400" />}

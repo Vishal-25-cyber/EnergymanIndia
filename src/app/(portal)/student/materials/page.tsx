@@ -89,18 +89,18 @@ export default function StudentMaterialsPage() {
   const getSubjectBadge = (subject: string) => {
     switch (subject?.toLowerCase()) {
       case "mathematics":
-        return "text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/70 border-indigo-200 dark:border-indigo-800";
+        return "text-[#002137] dark:text-[#dfb74a] bg-[#002137]/5 dark:bg-[#002137]/40 border-[#b89047]/30";
       case "science":
       case "physics":
       case "chemistry":
       case "biology":
-        return "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/70 border-emerald-200 dark:border-emerald-800";
+        return "text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/70 border-emerald-200 dark:border-emerald-800";
       case "english":
-        return "text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/70 border-amber-200 dark:border-amber-800";
+        return "text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/70 border-amber-200 dark:border-amber-800";
       case "social science":
-        return "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/70 border-rose-200 dark:border-rose-800";
+        return "text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/70 border-rose-200 dark:border-rose-800";
       default:
-        return "text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/70 border-purple-200 dark:border-purple-800";
+        return "text-[#002137] dark:text-[#dfb74a] bg-[#002137]/5 dark:bg-[#002137]/40 border-[#b89047]/30";
     }
   };
 
@@ -110,9 +110,11 @@ export default function StudentMaterialsPage() {
       {/* ── 1. CLEAN HEADER (NO CARDS) ── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
         <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
-            Learning Hub & Study Materials
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+              Learning Hub &amp; Study Materials
+            </h1>
+          </div>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
             Official verified notes, formula handbooks, and model question papers for <span className="font-semibold text-slate-700 dark:text-slate-300">{studentClass} ({studentBoard})</span>.
           </p>
@@ -175,13 +177,13 @@ export default function StudentMaterialsPage() {
             {/* Call to Action Buttons */}
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link href="/student/fees" className="w-full sm:w-auto">
-                <Button className="w-full sm:w-auto px-6 py-2.5 text-xs font-bold bg-[#004b79] hover:bg-[#003b60] dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white rounded-xl shadow-xs transition-all cursor-pointer">
+                <Button className="w-full sm:w-auto px-6 py-2.5 text-xs font-bold bg-[#002137] hover:bg-[#003152] text-[#dfb74a] border border-[#b89047]/40 rounded-xl shadow-xs transition-all cursor-pointer">
                   {data.isUnderReview ? "View Payment Verification Status →" : `Pay Tuition Fee (₹${data.unpaidFee?.amount || 1999}) →`}
                 </Button>
               </Link>
               <Link href="/student/fees" className="w-full sm:w-auto">
                 <Button variant="outline" className="w-full sm:w-auto px-5 py-2.5 text-xs font-bold rounded-xl border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 cursor-pointer">
-                  View Fee Receipts & QR
+                  View Fee Receipts &amp; QR
                 </Button>
               </Link>
             </div>
@@ -193,13 +195,13 @@ export default function StudentMaterialsPage() {
           {/* ── 2. SEARCH & SUBJECT FILTERS (CARDLESS) ── */}
           <div className="space-y-3">
             <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <Search className="w-4 h-4 text-[#002137] dark:text-[#dfb74a] absolute left-3.5 top-3" />
               <input
                 type="text"
                 placeholder={`Search ${studentClass} materials by title, topic, or keywords...`}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-10 pr-4 text-xs sm:text-sm font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-10 pr-4 text-xs sm:text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[#002137] dark:focus:ring-[#dfb74a] focus:border-[#002137] dark:focus:border-[#dfb74a]"
               />
             </div>
 
@@ -214,7 +216,7 @@ export default function StudentMaterialsPage() {
                   onClick={() => setSelectedSubject(s)}
                   className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
                     selectedSubject === s
-                      ? "bg-indigo-600 text-white"
+                      ? "bg-[#002137] text-[#dfb74a] border border-[#b89047]/40 shadow-xs font-bold"
                       : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                   }`}
                 >
@@ -297,16 +299,16 @@ export default function StudentMaterialsPage() {
                       <div className="col-span-2 flex items-center justify-start md:justify-end gap-1.5">
                         <button
                           onClick={() => handleOpen(mat)}
-                          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-[#004b79] dark:hover:text-[#dfb74a] transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-[#002137] dark:hover:text-[#dfb74a] transition-colors cursor-pointer"
                           title="Open and read document in browser tab"
                         >
-                          <ExternalLink className="w-3.5 h-3.5 text-[#004b79] dark:text-[#dfb74a]" />
+                          <ExternalLink className="w-3.5 h-3.5 text-[#002137] dark:text-[#dfb74a]" />
                           <span>Open</span>
                         </button>
 
                         <button
                           onClick={() => setPreviewMaterial(mat)}
-                          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-[#004b79] dark:hover:text-[#dfb74a] transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-[#002137] dark:hover:text-[#dfb74a] transition-colors cursor-pointer"
                           title="Preview details"
                         >
                           <Eye className="w-3.5 h-3.5" />
@@ -319,7 +321,7 @@ export default function StudentMaterialsPage() {
                           className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
                             isDownloaded
                               ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                              : "bg-[#004b79] hover:bg-[#003b60] text-white"
+                              : "bg-[#002137] hover:bg-[#003152] text-[#dfb74a] border border-[#b89047]/30 shadow-xs"
                           }`}
                           title="Download document file"
                         >
@@ -385,15 +387,15 @@ export default function StudentMaterialsPage() {
                       {/* Syllabus Highlights */}
                       <div className="space-y-2 pt-1 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
                         <div className="flex items-start gap-2">
-                          <span className="text-indigo-600 dark:text-indigo-400 font-bold mt-0.5">•</span>
-                          <span><strong>Key Formulas:</strong> Standard equations & derivation rules.</span>
+                          <span className="text-[#b89047] dark:text-[#dfb74a] font-bold mt-0.5">•</span>
+                          <span><strong>Key Formulas:</strong> Standard equations &amp; derivation rules.</span>
                         </div>
                         <div className="flex items-start gap-2">
-                          <span className="text-indigo-600 dark:text-indigo-400 font-bold mt-0.5">•</span>
+                          <span className="text-[#b89047] dark:text-[#dfb74a] font-bold mt-0.5">•</span>
                           <span><strong>Solved Exemplars:</strong> Step-by-step scoring solutions.</span>
                         </div>
                         <div className="flex items-start gap-2">
-                          <span className="text-indigo-600 dark:text-indigo-400 font-bold mt-0.5">•</span>
+                          <span className="text-[#b89047] dark:text-[#dfb74a] font-bold mt-0.5">•</span>
                           <span><strong>Practice Checklist:</strong> Board question preparation.</span>
                         </div>
                       </div>
@@ -403,7 +405,7 @@ export default function StudentMaterialsPage() {
                     <div className="pt-3 flex flex-col sm:flex-row items-center gap-3">
                       <button
                         onClick={() => handleOpen(previewMaterial)}
-                        className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#004b79] hover:bg-[#003b60] text-white shadow-md shadow-[#004b79]/20 transition-all cursor-pointer"
+                        className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#002137] hover:bg-[#003152] text-[#dfb74a] border border-[#b89047]/40 shadow-sm shadow-[#002137]/20 transition-all cursor-pointer"
                         title="Open and view full document in new tab"
                       >
                         <ExternalLink className="w-4 h-4" />
@@ -438,7 +440,7 @@ export default function StudentMaterialsPage() {
                   </div>
 
                   {/* Right Column: Clean Spacious Dossier Panel (5 cols) */}
-                  <div className="md:col-span-5 p-4 rounded-xl bg-slate-50 dark:bg-slate-850/70 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between space-y-4 text-xs sm:text-sm">
+                  <div className="md:col-span-5 p-4 rounded-xl bg-slate-50 dark:bg-slate-850/70 border border-[#b89047]/20 flex flex-col justify-between space-y-4 text-xs sm:text-sm">
                     <div className="space-y-3">
                       <div className="space-y-1">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Faculty Specialist</span>

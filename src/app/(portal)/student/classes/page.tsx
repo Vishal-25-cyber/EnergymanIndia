@@ -69,31 +69,32 @@ export default function StudentClassesPage() {
     return false;
   };
 
-  // Find the latest active live class first, or scheduled class for today
+  // Find real active live class or scheduled class actually created by the teacher
   const liveClassDoc =
     data?.classes?.filter((c: any) => c.status === "LIVE").sort((a: any, b: any) => {
       const tA = a.actualStartTime ? new Date(a.actualStartTime).getTime() : (a.createdAt ? new Date(a.createdAt).getTime() : 0);
       const tB = b.actualStartTime ? new Date(b.actualStartTime).getTime() : (b.createdAt ? new Date(b.createdAt).getTime() : 0);
       return tB - tA;
-    })[0] ||
-    data?.classes?.find((c: any) => (!c.date || c.date === todayDateStr) && isWithinClassWindow(c));
+    })[0] || null;
 
   const todayDbClass = data?.classes?.find(
     (c: any) =>
       c.status !== "CANCELLED" &&
       c.status !== "COMPLETED" &&
+      c.status !== "LIVE" &&
       (!c.date || c.date === todayDateStr)
-  );
+  ) || null;
 
   const todayCompletedClass = data?.classes?.find(
     (c: any) =>
       c.status === "COMPLETED" &&
       (!c.date || c.date === todayDateStr)
-  );
+  ) || null;
 
-  const activeDoc = liveClassDoc || todayDbClass || todayCompletedClass;
+  const hasTeacherCreatedClass = Boolean(liveClassDoc || todayDbClass || todayCompletedClass);
   const isClassCurrentlyLive = Boolean(liveClassDoc && liveClassDoc.status === "LIVE");
   const liveOrTodayDbClass = liveClassDoc || todayDbClass;
+  const activeDoc = liveClassDoc || todayDbClass || todayCompletedClass;
 
   const DAY_ORDER: Record<string, number> = {
     monday: 1,
@@ -135,26 +136,16 @@ export default function StudentClassesPage() {
     } else if (itemDayOrder > todayOrder) {
       status = "SCHEDULED";
     } else {
-      // Today!
-      if (isClassCurrentlyLive || item.status === "LIVE") {
+      // Today: strictly reflect real teacher class state
+      if (isClassCurrentlyLive) {
         status = "LIVE";
         isLive = true;
-      } else if (todayCompletedClass || item.status === "COMPLETED") {
+      } else if (todayCompletedClass) {
         status = "COMPLETED";
+      } else if (todayDbClass) {
+        status = "SCHEDULED";
       } else {
-        const [sh = "0", sm = "0"] = startTime.split(":");
-        const [eh = "23", em = "59"] = endTime.split(":");
-        const startMin = parseInt(sh, 10) * 60 + parseInt(sm, 10);
-        const endMin = parseInt(eh, 10) * 60 + parseInt(em, 10);
-
-        if (currentMinutes > endMin) {
-          status = "COMPLETED";
-        } else if (currentMinutes >= startMin - 15 && currentMinutes <= endMin) {
-          status = "LIVE";
-          isLive = true;
-        } else {
-          status = "UPCOMING";
-        }
+        status = "NOT_CREATED";
       }
     }
 
@@ -345,8 +336,8 @@ export default function StudentClassesPage() {
                       CLASS IS LIVE NOW
                     </span>
                   ) : liveOrTodayDbClass ? (
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
-                      <Clock className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400">
+                      <Clock className="w-3.5 h-3.5 text-indigo-500" />
                       SCHEDULED FOR TODAY
                     </span>
                   ) : todayCompletedClass ? (
@@ -357,7 +348,7 @@ export default function StudentClassesPage() {
                   ) : (
                     <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-600 dark:text-amber-400">
                       <Clock className="w-3.5 h-3.5 text-amber-500" />
-                      TIMED ENTRY LOCK
+                      CLASS NOT CREATED YET
                     </span>
                   )}
 
@@ -365,18 +356,30 @@ export default function StudentClassesPage() {
                   <span className="text-xs font-mono font-medium text-slate-600 dark:text-slate-400">
                     {batchName}
                   </span>
-                  <span className="text-slate-300 dark:text-slate-700">•</span>
-                  <span className="text-xs font-mono text-slate-400">
-                    Room: {activeRoomId}
-                  </span>
+                  {isClassCurrentlyLive && (
+                    <>
+                      <span className="text-slate-300 dark:text-slate-700">•</span>
+                      <span className="text-xs font-mono text-slate-400">
+                        Room: {activeRoomId}
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                  {activeSubject}: {activeTopic}
+                  {hasTeacherCreatedClass
+                    ? `${activeSubject}: ${activeTopic}`
+                    : "Class is not created yet"}
                 </h2>
 
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                  Instructor: <span className="font-medium text-slate-800 dark:text-slate-200">{activeFaculty}</span> • Direct Interactive Live Classroom
+                  {hasTeacherCreatedClass ? (
+                    <>
+                      Instructor: <span className="font-medium text-slate-800 dark:text-slate-200">{activeFaculty}</span> • Direct Interactive Live Classroom
+                    </>
+                  ) : (
+                    "Your teacher has not created or launched a live class for this batch today. The join button will appear automatically as soon as your teacher launches the class."
+                  )}
                 </p>
               </div>
 
@@ -399,7 +402,7 @@ export default function StudentClassesPage() {
                       <span>Starts at {liveOrTodayDbClass.startTime}</span>
                     </div>
                     <p className="text-[11px] text-slate-400">
-                      Live session for {batchName}
+                      Live session scheduled for {batchName}
                     </p>
                   </div>
                 ) : todayCompletedClass ? (
@@ -414,12 +417,12 @@ export default function StudentClassesPage() {
                   </div>
                 ) : (
                   <div className="space-y-1 text-left lg:text-right">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-semibold">
-                      <Lock className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{timing.countdownText}</span>
+                    <div className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 text-xs font-semibold border border-amber-200/50">
+                      <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span>Class is not created yet</span>
                     </div>
                     <p className="text-[11px] text-slate-400">
-                      Opens automatically during {batchName}
+                      Batch slot: {batchName}
                     </p>
                   </div>
                 )}

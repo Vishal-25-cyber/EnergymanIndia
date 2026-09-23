@@ -235,17 +235,17 @@ export function PortalSidebar({ role }: SidebarProps) {
   const renderSidebarContent = (isMobile: boolean = false) => (
     <>
       {/* Sidebar Header */}
-      <div className="h-[64px] sm:h-[70px] lg:h-[72px] flex items-center justify-between px-5 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#00121e]/50 shrink-0">
-        <div className="flex items-center gap-3.5 min-w-0 select-none cursor-default">
+      <div className="h-[64px] sm:h-[70px] lg:h-[72px] flex items-center justify-between px-3.5 sm:px-4 border-b border-slate-200/80 dark:border-slate-800/80 bg-slate-50/50 dark:bg-[#00121e]/50 shrink-0">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 select-none cursor-default">
           <img
             src="/images/mantif_icon.png?v=3"
             alt="Mantif Logo"
             className="w-10 h-10 lg:w-11 lg:h-11 object-contain shrink-0"
           />
-          <div className="flex flex-col justify-center min-w-0">
+          <div className="flex flex-col justify-center shrink-0">
             <div className="flex items-center gap-1.5">
               <span
-                className="font-black text-[16px] lg:text-[18px] tracking-[0.14em] text-[#002137] dark:text-white leading-tight select-none truncate"
+                className="font-black text-[16px] lg:text-[17px] tracking-[0.12em] text-[#002137] dark:text-white leading-tight select-none whitespace-nowrap shrink-0"
                 style={{ fontFamily: "'Montserrat', 'Outfit', 'Inter', sans-serif" }}
               >
                 M<span className="text-[#b89047] dark:text-[#dfb74a]">Λ</span>NTIF
@@ -254,7 +254,7 @@ export function PortalSidebar({ role }: SidebarProps) {
                 {role}
               </span>
             </div>
-            <p className="text-[10px] font-bold text-[#b89047] dark:text-[#dfb74a] tracking-tight leading-none mt-0.5 truncate">
+            <p className="text-[10px] font-bold text-[#b89047] dark:text-[#dfb74a] tracking-tight leading-none mt-0.5 whitespace-nowrap">
               Human x AI
             </p>
           </div>
@@ -354,7 +354,7 @@ export function PortalSidebar({ role }: SidebarProps) {
   return (
     <>
       {/* ── DESKTOP SIDEBAR (Visible on lg screens and up) ── */}
-      <aside className="hidden lg:flex w-64 border-r border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#001726] flex-col h-screen sticky top-0 shrink-0 select-none z-30">
+      <aside className="hidden lg:flex w-[268px] border-r border-slate-200/90 dark:border-slate-800 bg-white dark:bg-[#001726] flex-col h-screen sticky top-0 shrink-0 select-none z-30">
         {renderSidebarContent(false)}
       </aside>
 

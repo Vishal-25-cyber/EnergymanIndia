@@ -159,7 +159,10 @@ export async function GET(req?: any) {
 
       Attendance.find({
         $or: [{ studentId: session.userId }, { studentId: studentObjId }],
-      }).lean(),
+      })
+        .populate("sessionId", "title subject topic date startTime endTime")
+        .sort({ date: -1, createdAt: -1 })
+        .lean(),
 
       Assignment.find(assignmentFilter)
         .populate("teacherId", "name email avatarUrl")
@@ -541,104 +544,81 @@ export async function GET(req?: any) {
     // Sort by chronological order
     upcomingSchedule.sort((a, b) => a.timestamp - b.timestamp);
 
-    // If fewer than 4 items, supplement with academic schedule items for student's subjects
-    if (upcomingSchedule.length < 4) {
-      const fallbackMilestones = [
-        {
-          id: "m-1",
-          subject: subjects[0] || "Mathematics",
-          topic: "Chapter Assessment & Problem Set",
-          type: "Test",
-          dotColor: "bg-emerald-500",
-          textColor: "text-emerald-500 dark:text-emerald-400",
-          link: "/student/assignments",
-          offsetDays: 1,
-        },
-        {
-          id: "m-2",
-          subject: subjects[1] || "Science",
-          topic: "Laboratory & Practical Worksheet",
-          type: "Assignments",
-          dotColor: "bg-pink-500",
-          textColor: "text-pink-500 dark:text-pink-400",
-          link: "/student/assignments",
-          offsetDays: 2,
-        },
-        {
-          id: "m-3",
-          subject: subjects[2] || "English",
-          topic: "Grammar & Reading Comprehension",
-          type: "Lessons",
-          dotColor: "bg-amber-500",
-          textColor: "text-amber-500 dark:text-amber-400",
-          link: "/student/materials",
-          offsetDays: 3,
-        },
-        {
-          id: "m-4",
-          subject: subjects[3] || "Social Science",
-          topic: "Revision Notes & Board Exemplars",
-          type: "Lessons",
-          dotColor: "bg-amber-500",
-          textColor: "text-amber-500 dark:text-amber-400",
-          link: "/student/materials",
-          offsetDays: 4,
-        },
-      ];
+    // ── CALENDAR EVENTS & REASONS (LIVE DATA ONLY) ──
+    // Key: YYYY-MM-DD -> Array of { type: string; title: string; status?: string; time?: string }
+    const calendarEventsMap: Record<string, Array<{ type: string; title: string; status?: string; time?: string }>> = {};
 
-      for (const m of fallbackMilestones) {
-        if (upcomingSchedule.length >= 4) break;
-        const targetDate = new Date(Date.now() + m.offsetDays * 24 * 60 * 60 * 1000);
-        const day = String(targetDate.getDate()).padStart(2, "0");
-        const month = new Intl.DateTimeFormat("en-US", { month: "short" }).format(targetDate).toUpperCase();
-        upcomingSchedule.push({
-          id: m.id,
-          day,
-          month,
-          title: `${m.subject} : ${m.topic}`,
-          type: m.type,
-          dotColor: m.dotColor,
-          textColor: m.textColor,
-          link: m.link,
-          timestamp: targetDate.getTime(),
+    const addCalendarEvent = (dateStr: string, event: { type: string; title: string; status?: string; time?: string }) => {
+      if (!dateStr) return;
+      const key = dateStr.slice(0, 10);
+      if (!calendarEventsMap[key]) {
+        calendarEventsMap[key] = [];
+      }
+      calendarEventsMap[key].push(event);
+    };
+
+    // 1. Attendance records marked by faculty
+    for (const att of attendanceRecords) {
+      const sess = typeof att.sessionId === "object" ? (att.sessionId as any) : null;
+      const dStr = (att as any).date || sess?.date || (att.createdAt ? new Date(att.createdAt).toISOString().split("T")[0] : null);
+      if (dStr) {
+        addCalendarEvent(dStr, {
+          type: "ATTENDANCE",
+          title: sess?.subject ? `${sess.subject} Class` : "Academic Session",
+          status: att.status || "PRESENT",
+          time: sess?.startTime ? `${sess.startTime} - ${sess.endTime}` : undefined,
         });
       }
     }
 
-    // ── CALENDAR HIGHLIGHTS ──
-    const currentMonthNum = now.getMonth();
-    const currentYearNum = now.getFullYear();
-    const activeCalendarDays = new Set<number>();
-    activeCalendarDays.add(now.getDate());
-
+    // 2. Real scheduled classes
     for (const cls of upcomingClasses) {
       if (cls.date) {
-        try {
-          const d = new Date(cls.date);
-          if (d.getMonth() === currentMonthNum && d.getFullYear() === currentYearNum) {
-            activeCalendarDays.add(d.getDate());
-          }
-        } catch {}
+        addCalendarEvent(cls.date, {
+          type: "CLASS",
+          title: `${cls.subject}: ${cls.topic || cls.title}`,
+          status: cls.status,
+          time: `${cls.startTime || ""} - ${cls.endTime || ""}`,
+        });
       }
     }
 
+    // 3. Real assignments & tests
     for (const asgn of allAssignments) {
-      const dRaw = asgn.dueDate || asgn.testDate;
-      if (dRaw) {
+      const targetDate = asgn.dueDate || asgn.testDate;
+      if (targetDate) {
         try {
-          const d = new Date(dRaw);
-          if (d.getMonth() === currentMonthNum && d.getFullYear() === currentYearNum) {
-            activeCalendarDays.add(d.getDate());
-          }
+          const dStr = new Date(targetDate).toISOString().split("T")[0];
+          addCalendarEvent(dStr, {
+            type: asgn.type === "TEST" ? "TEST" : "ASSIGNMENT",
+            title: `${asgn.subject}: ${asgn.title}`,
+          });
         } catch {}
       }
     }
 
-    // Include the consecutive active cluster around today to match screenshot styling
-    const todayNum = now.getDate();
-    for (let offset = 0; offset <= 4; offset++) {
-      activeCalendarDays.add(todayNum + offset);
-    }
+    // Daily Attendance Records formatted for Student Dashboard
+    const dailyAttendanceLogs = attendanceRecords.slice(0, 20).map((att: any) => {
+      const sess = typeof att.sessionId === "object" ? (att.sessionId as any) : null;
+      const dStr = att.date || sess?.date || (att.createdAt ? new Date(att.createdAt).toISOString().split("T")[0] : "");
+      return {
+        _id: att._id?.toString(),
+        date: dStr,
+        status: att.status || "PRESENT",
+        subject: sess?.subject || "Core Academics",
+        topic: sess?.topic || sess?.title || "Daily Lecture",
+        time: sess?.startTime ? `${sess.startTime} - ${sess.endTime}` : "Batch Slot",
+      };
+    });
+
+    const activeCalendarDays = Object.keys(calendarEventsMap)
+      .filter((dateStr) => {
+        const parts = dateStr.split("-");
+        const yr = parseInt(parts[0], 10);
+        const mo = parseInt(parts[1], 10) - 1;
+        return yr === now.getFullYear() && mo === now.getMonth();
+      })
+      .map((dateStr) => parseInt(dateStr.split("-")[2], 10));
 
     let assignedStudentId = profile?.studentId;
     if (!assignedStudentId) {
@@ -697,6 +677,13 @@ export async function GET(req?: any) {
         },
         upcomingSchedule: upcomingSchedule.slice(0, 6),
         calendarHighlights: Array.from(activeCalendarDays),
+        calendarEvents: calendarEventsMap,
+        dailyAttendance: dailyAttendanceLogs,
+        attendanceStats: {
+          totalSessions,
+          totalAttended,
+          attendancePercentage,
+        },
       },
       {
         headers: {

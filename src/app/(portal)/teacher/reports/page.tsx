@@ -367,7 +367,7 @@ export default function TeacherStudentReportsPage() {
 
                   <div className="space-y-1">
                     <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Top Performer</span>
-                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight leading-none truncate">
+                    <p className="text-lg sm:text-xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight leading-snug break-words">
                       {schoolReport.schoolMetrics?.topPerformer || schoolReport.schoolOverview?.topPerformer || "N/A"}
                     </p>
                     <p className="text-xs text-slate-400">highest score: {schoolReport.schoolMetrics?.highestScore ?? schoolReport.schoolOverview?.highestScore ?? 0}%</p>
