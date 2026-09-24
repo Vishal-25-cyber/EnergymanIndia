@@ -33,6 +33,7 @@ const AssignmentSubmissionSchema = new Schema<IAssignmentSubmissionDocument>(
       default: "SUBMITTED",
       index: true,
     },
+    isLate: { type: Boolean, default: false },
     isDisqualified: { type: Boolean, default: false },
     disqualifiedReason: { type: String, default: "" },
     retestRequested: { type: Boolean, default: false },

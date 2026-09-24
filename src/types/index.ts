@@ -249,6 +249,7 @@ export interface IAssignmentSubmission {
   timeTakenMinutes?: number;
   submittedAt: Date;
   status: SubmissionStatus;
+  isLate?: boolean;
   marksObtained?: number;
   feedback?: string;
   isDisqualified?: boolean;

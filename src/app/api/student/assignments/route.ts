@@ -50,13 +50,26 @@ export async function GET(req: NextRequest) {
       submissions.map((s: any) => [s.assignmentId ? s.assignmentId.toString() : "", s])
     );
 
+    const nowMs = Date.now();
     const result = assignments.map((assignment: any) => {
+      // Auto-heal tasks created with midnight wraparound bug (due <= created)
+      if (assignment.dueDate && assignment.createdAt) {
+        const due = new Date(assignment.dueDate);
+        const created = new Date(assignment.createdAt);
+        if (due.getTime() <= created.getTime()) {
+          const healedDue = new Date(Date.now() + 24 * 60 * 60 * 1000);
+          healedDue.setHours(23, 59, 59, 0);
+          assignment.dueDate = healedDue;
+          Assignment.findByIdAndUpdate(assignment._id, { dueDate: healedDue, testDate: healedDue }).catch(() => {});
+        }
+      }
+
       const submission: any = submissionMap.get(assignment._id.toString());
       let status: "PENDING" | "SUBMITTED" | "EVALUATED" | "OVERDUE" = "PENDING";
 
       if (submission) {
         status = submission.status || "SUBMITTED";
-      } else if (assignment.dueDate && new Date(assignment.dueDate).getTime() < Date.now()) {
+      } else if (assignment.dueDate && new Date(assignment.dueDate).getTime() < nowMs) {
         status = "OVERDUE";
       }
 
@@ -86,6 +99,7 @@ export async function GET(req: NextRequest) {
               proctoringVideoUrl: submission.proctoringVideoUrl,
               timeTakenMinutes: submission.timeTakenMinutes,
               submittedAt: submission.submittedAt,
+              isLate: !!submission.isLate,
               marksObtained: submission.marksObtained,
               feedback: submission.feedback,
               gradedAt: submission.gradedAt,
@@ -109,6 +123,10 @@ export async function GET(req: NextRequest) {
         assignments: result,
         studentClass: profile.currentClass,
         board: profile.board || "CBSE",
+        serverTime: new Date().toISOString(),
+        serverTimeMs: nowMs,
+        timeZone: "Asia/Kolkata",
+        timeZoneLabel: "IST (UTC+05:30)",
       },
       {
         headers: {

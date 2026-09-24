@@ -27,16 +27,8 @@ export async function POST(req: NextRequest) {
       assignment = await Assignment.findById(assignmentId).lean();
     }
 
-    // Server-side Deadline Enforcement: check if deadline has passed
-    if (assignment && assignment.dueDate) {
-      const d = new Date(assignment.dueDate);
-      if (Date.now() > d.getTime()) {
-        return NextResponse.json(
-          { error: `Submission closed: The deadline (${new Date(assignment.dueDate).toLocaleDateString()}) has passed.` },
-          { status: 400 }
-        );
-      }
-    }
+    const taskType = type || assignment?.type || "ASSIGNMENT";
+    const isPastDeadline = assignment?.dueDate ? Date.now() > new Date(assignment.dueDate).getTime() : false;
 
     // Server-side Evaluated / Graded Check: Cannot resubmit if evaluated
     const existingSubmission = await AssignmentSubmission.findOne({
@@ -61,8 +53,6 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-
-    const taskType = type || assignment?.type || "ASSIGNMENT";
 
     if (
       taskType === "TEST" &&
@@ -102,6 +92,7 @@ export async function POST(req: NextRequest) {
         timeTakenMinutes: Number(timeTakenMinutes) || undefined,
         submittedAt: new Date(),
         status: "SUBMITTED",
+        isLate: isPastDeadline,
         retestPermitted: false,
         retestRequested: false,
         isDisqualified: false,

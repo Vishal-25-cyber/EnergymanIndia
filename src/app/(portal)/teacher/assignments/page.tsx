@@ -33,6 +33,7 @@ import { Modal } from "@/components/ui/modal";
 import { getSubjectsForClassAndBoard, CLASS_LIST } from "@/lib/curriculum";
 import { useFastFetch, invalidateCache } from "@/lib/api-cache";
 import { DocumentViewer, openDocumentInNewTab, downloadDocumentFile } from "@/components/common/DocumentViewer";
+import { formatGlobalDueDateTime, formatGlobalDateTime, GLOBAL_TIMEZONE_LABEL } from "@/lib/global-time";
 
 export default function TeacherAssignmentsPage() {
   // Category Tab: "ASSIGNMENT" | "TEST" | "HOMEWORK"
@@ -319,28 +320,34 @@ export default function TeacherAssignmentsPage() {
     }
   };
 
-  const getSystemDateAndDefaultTime = () => {
+  const getSystemDateAndDefaultTime = (category?: string) => {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    const dateStr = `${year}-${month}-${day}`;
-    // Default to 10:10 PM or next 2 hours matching system clock
-    const nextHour = (now.getHours() + 2) % 24;
-    const timeStr = `${String(nextHour).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-    return { dateStr, timeStr };
+    // For HOMEWORK and ASSIGNMENT: default to tomorrow at 23:59 IST so students always have time
+    if (category === "HOMEWORK" || category === "ASSIGNMENT" || activeCategory === "HOMEWORK" || activeCategory === "ASSIGNMENT") {
+      const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const year = tomorrow.getFullYear();
+      const month = String(tomorrow.getMonth() + 1).padStart(2, "0");
+      const day = String(tomorrow.getDate()).padStart(2, "0");
+      return { dateStr: `${year}-${month}-${day}`, timeStr: "23:59" };
+    }
+    // For tests: target is 2 hours from now, safely handling date rollover across midnight
+    const target = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+    const year = target.getFullYear();
+    const month = String(target.getMonth() + 1).padStart(2, "0");
+    const day = String(target.getDate()).padStart(2, "0");
+    const timeStr = `${String(target.getHours()).padStart(2, "0")}:${String(target.getMinutes()).padStart(2, "0")}`;
+    return { dateStr: `${year}-${month}-${day}`, timeStr };
   };
 
   const [syncingTaskId, setSyncingTaskId] = useState<string | null>(null);
 
-  const handleSyncTaskToSystemTime = async (taskId: string) => {
+  const handleSyncTaskToSystemTime = async (taskId: string, extendHours: number = 24) => {
     try {
       setSyncingTaskId(taskId);
       const now = new Date();
-      // Set due date to today at 10:10 PM (or 2 hours later if already past 10 PM)
-      const targetHour = now.getHours() >= 22 ? 23 : 22;
-      const targetMin = now.getHours() >= 22 ? 59 : 10;
-      const newDue = new Date(now.getFullYear(), now.getMonth(), now.getDate(), targetHour, targetMin, 0, 0);
+      // Advance due date by 24h into the future at 23:59:59
+      const newDue = new Date(now.getTime() + extendHours * 60 * 60 * 1000);
+      newDue.setHours(23, 59, 59, 0);
 
       const res = await fetch("/api/teacher/assignments", {
         method: "PATCH",
@@ -364,17 +371,7 @@ export default function TeacherAssignmentsPage() {
   };
 
   const formatDueDateTime = (dStr: string | Date) => {
-    if (!dStr) return "No deadline";
-    const d = new Date(dStr);
-    if (isNaN(d.getTime())) return "No deadline";
-    const datePart = d.toLocaleDateString(undefined, { day: "numeric", month: "short" });
-    const hours = d.getHours();
-    const mins = d.getMinutes();
-    if (hours === 0 && mins === 0) {
-      return `Due: ${datePart}`;
-    }
-    const timePart = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit", hour12: true });
-    return `Due: ${datePart} at ${timePart}`;
+    return formatGlobalDueDateTime(dStr);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -418,6 +415,10 @@ export default function TeacherAssignmentsPage() {
             d = new Date(formData.dueDate);
           }
           if (!isNaN(d.getTime())) {
+            // Guard against accidental past due dates
+            if (d.getTime() <= Date.now()) {
+              d = new Date(d.getTime() + 24 * 60 * 60 * 1000);
+            }
             fullDueIso = d.toISOString();
           }
         } catch (dateErr) {
@@ -1063,14 +1064,14 @@ export default function TeacherAssignmentsPage() {
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleSyncTaskToSystemTime(task._id);
+                      handleSyncTaskToSystemTime(task._id, 24);
                     }}
                     disabled={syncingTaskId === task._id}
-                    title="Update schedule to match today's system timing"
+                    title="Extend deadline by 24 hours to keep submissions open"
                     className="inline-flex items-center gap-1 text-[10px] font-bold text-[#004b79] dark:text-[#dfb74a] hover:underline cursor-pointer disabled:opacity-50"
                   >
                     <RefreshCw className={`w-2.5 h-2.5 ${syncingTaskId === task._id ? "animate-spin" : ""}`} />
-                    <span>{syncingTaskId === task._id ? "Updating..." : "Match System Timing"}</span>
+                    <span>{syncingTaskId === task._id ? "Updating..." : "+24h Extend Deadline"}</span>
                   </button>
                 </div>
               )}

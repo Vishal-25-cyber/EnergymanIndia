@@ -110,8 +110,16 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    const nowMs = Date.now();
     return NextResponse.json(
-      { assignments: enrichedAssignments, submissions },
+      {
+        assignments: enrichedAssignments,
+        submissions,
+        serverTime: new Date().toISOString(),
+        serverTimeMs: nowMs,
+        timeZone: "Asia/Kolkata",
+        timeZoneLabel: "IST (UTC+05:30)",
+      },
       {
         headers: {
           "Cache-Control": "no-store, max-age=0, must-revalidate",
@@ -170,12 +178,24 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Safety guard against past dates caused by midnight wraparound
+    if (finalDueDate.getTime() <= Date.now()) {
+      finalDueDate = new Date(finalDueDate.getTime() + 24 * 60 * 60 * 1000);
+      if (finalDueDate.getTime() <= Date.now()) {
+        finalDueDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        finalDueDate.setHours(23, 59, 59, 0);
+      }
+    }
+
     let finalTestDate: Date | undefined = undefined;
     if (testDate) {
       const parsed = new Date(testDate);
       if (!isNaN(parsed.getTime())) {
         finalTestDate = parsed;
       }
+    }
+    if (finalTestDate && finalTestDate.getTime() <= Date.now()) {
+      finalTestDate = new Date(finalTestDate.getTime() + 24 * 60 * 60 * 1000);
     }
 
     const resolvedDescription = (description || "").trim() || `${classLevel} ${subject} — ${title.trim()}`;
