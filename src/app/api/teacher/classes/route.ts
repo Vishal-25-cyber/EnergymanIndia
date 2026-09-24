@@ -151,3 +151,77 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const session = await getSession(req).catch(() => null);
+    if (!session || (session.role !== "TEACHER" && session.role !== "ADMIN")) {
+      return NextResponse.json({ error: "Unauthorized. Staff only." }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    let id = searchParams.get("id") || searchParams.get("classId");
+    if (!id) {
+      const body = await req.json().catch(() => ({}));
+      id = body.id || body.classId;
+    }
+
+    if (id) {
+      try {
+        id = decodeURIComponent(id).trim();
+      } catch {}
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: "Class ID is required." }, { status: 400 });
+    }
+
+    await connectToDatabase();
+
+    let liveClass: any = null;
+    const mongoose = (await import("mongoose")).default;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      liveClass = await LiveSession.findById(id);
+    }
+    if (!liveClass) {
+      liveClass = await LiveSession.findOne({
+        $or: [{ meetingId: id }, { livekitRoomId: id }, { title: id }, { topic: id }],
+      });
+    }
+    if (!liveClass) {
+      const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const safeRegex = new RegExp(`^${escaped}$`, "i");
+      liveClass = await LiveSession.findOne({
+        $or: [{ meetingId: safeRegex }, { livekitRoomId: safeRegex }, { title: safeRegex }, { topic: safeRegex }],
+      });
+    }
+
+    if (!liveClass) {
+      return NextResponse.json({ error: "Class not found." }, { status: 404 });
+    }
+
+    const classIdToDelete = liveClass._id;
+    await LiveSession.findByIdAndDelete(classIdToDelete);
+
+    try {
+      const Attendance = (await import("@/models/Attendance")).default;
+      await Attendance.deleteMany({ sessionId: classIdToDelete });
+    } catch {}
+
+    await recordAuditLog({
+      actorId: session.userId || "staff",
+      action: "CLASS_DELETED",
+      entityType: "LIVE_SESSION",
+      entityId: classIdToDelete.toString(),
+      details: { title: liveClass.title, subject: liveClass.subject, topic: liveClass.topic },
+    });
+
+    const { invalidateClassesCache } = await import("@/app/api/classes/route");
+    invalidateClassesCache();
+
+    return NextResponse.json({ success: true, message: "Class deleted successfully." });
+  } catch (error: any) {
+    console.error("DELETE /api/teacher/classes error:", error);
+    return NextResponse.json({ error: error.message || "Failed to delete class." }, { status: 500 });
+  }
+}

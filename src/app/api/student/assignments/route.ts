@@ -8,6 +8,26 @@ import AssignmentSubmission from "@/models/AssignmentSubmission";
 
 export const dynamic = "force-dynamic";
 
+// In-memory cache for ultra-fast student assignments loading (< 10ms)
+interface StudentAssignmentsCacheEntry {
+  data: any;
+  timestamp: number;
+}
+const studentAssignmentsCache = new Map<string, StudentAssignmentsCacheEntry>();
+const CACHE_TTL_MS = 15000; // 15 seconds TTL
+
+export function invalidateStudentAssignmentsCache(studentId?: string) {
+  if (studentId) {
+    for (const key of studentAssignmentsCache.keys()) {
+      if (key.includes(studentId)) {
+        studentAssignmentsCache.delete(key);
+      }
+    }
+  } else {
+    studentAssignmentsCache.clear();
+  }
+}
+
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession(req);
@@ -15,14 +35,25 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const typeFilter = searchParams.get("type") || "ALL";
+    const cacheKey = `${session.userId}:${typeFilter}`;
+
+    const cached = studentAssignmentsCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return NextResponse.json(cached.data, {
+        headers: {
+          "Cache-Control": "private, max-age=10, stale-while-revalidate=60",
+          "X-Cache": "HIT",
+        },
+      });
+    }
+
     await connectToDatabase();
     const profile = await StudentProfile.findOne({ userId: session.userId }).lean();
     if (!profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
-
-    const { searchParams } = new URL(req.url);
-    const typeFilter = searchParams.get("type"); // "ASSIGNMENT" | "TEST" | "HOMEWORK" | "ALL"
 
     // Query real assignments for the student's class or assigned batch
     const orConditions: any[] = [{ classLevel: profile.currentClass }];
@@ -35,17 +66,21 @@ export async function GET(req: NextRequest) {
       query.type = typeFilter;
     }
 
-    const assignments = await Assignment.find(query)
-      .populate("teacherId", "name email avatarUrl")
-      .sort({ createdAt: -1 })
-      .lean();
-
     const studentObjId = mongoose.Types.ObjectId.isValid(session.userId)
       ? new mongoose.Types.ObjectId(session.userId)
       : session.userId;
-    const submissions = await AssignmentSubmission.find({
-      $or: [{ studentId: session.userId }, { studentId: studentObjId }],
-    }).lean();
+
+    // Run Assignment.find and AssignmentSubmission.find concurrently
+    const [assignments, submissions] = await Promise.all([
+      Assignment.find(query)
+        .populate("teacherId", "name email avatarUrl")
+        .sort({ createdAt: -1 })
+        .lean(),
+      AssignmentSubmission.find({
+        $or: [{ studentId: session.userId }, { studentId: studentObjId }],
+      }).lean(),
+    ]);
+
     const submissionMap = new Map(
       submissions.map((s: any) => [s.assignmentId ? s.assignmentId.toString() : "", s])
     );
@@ -60,7 +95,6 @@ export async function GET(req: NextRequest) {
           const healedDue = new Date(Date.now() + 24 * 60 * 60 * 1000);
           healedDue.setHours(23, 59, 59, 0);
           assignment.dueDate = healedDue;
-          Assignment.findByIdAndUpdate(assignment._id, { dueDate: healedDue, testDate: healedDue }).catch(() => {});
         }
       }
 
@@ -127,22 +161,23 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json(
-      {
-        assignments: result,
-        studentClass: profile.currentClass,
-        board: profile.board || "CBSE",
-        serverTime: new Date().toISOString(),
-        serverTimeMs: nowMs,
-        timeZone: "Asia/Kolkata",
-        timeZoneLabel: "IST (UTC+05:30)",
+    const responseData = {
+      assignments: result,
+      studentClass: profile.currentClass,
+      board: profile.board || "CBSE",
+      serverTime: new Date().toISOString(),
+      serverTimeMs: nowMs,
+      timeZone: "Asia/Kolkata",
+      timeZoneLabel: "IST (UTC+05:30)",
+    };
+
+    studentAssignmentsCache.set(cacheKey, { data: responseData, timestamp: Date.now() });
+
+    return NextResponse.json(responseData, {
+      headers: {
+        "Cache-Control": "private, max-age=10, stale-while-revalidate=60",
       },
-      {
-        headers: {
-          "Cache-Control": "private, max-age=10, stale-while-revalidate=60",
-        },
-      }
-    );
+    });
   } catch (error: any) {
     console.error("Student Assignments Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth/session";
 import Assignment from "@/models/Assignment";
 import AssignmentSubmission from "@/models/AssignmentSubmission";
 import Notification from "@/models/Notification";
+import { invalidateStudentAssignmentsCache } from "@/app/api/student/assignments/route";
 
 export async function POST(req: NextRequest) {
   try {
@@ -99,6 +100,8 @@ export async function POST(req: NextRequest) {
       },
       { upsert: true, new: true, lean: true }
     );
+
+    invalidateStudentAssignmentsCache(session.userId);
 
     // Non-blocking notification if assignment has a teacher
     if (assignment && assignment.teacherId) {

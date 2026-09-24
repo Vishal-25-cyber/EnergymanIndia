@@ -7,6 +7,7 @@ import AssignmentSubmission from "@/models/AssignmentSubmission";
 import StudentProfile from "@/models/StudentProfile";
 import Notification from "@/models/Notification";
 import TeacherProfile from "@/models/TeacherProfile";
+import { invalidateStudentAssignmentsCache } from "@/app/api/student/assignments/route";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -283,6 +284,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    invalidateStudentAssignmentsCache();
+
     return NextResponse.json({
       success: true,
       message: `${taskType === "TEST" ? "Proctored Test" : taskType === "HOMEWORK" ? "Daily Homework" : "Assignment"} created! ${eligibleStudents.length} students notified.`,
@@ -312,30 +315,85 @@ export async function PATCH(req: NextRequest) {
     if (testDate || dueDate) updateFields.testDate = new Date(testDate || dueDate);
 
     const updated = await Assignment.findByIdAndUpdate(assignmentId, updateFields, { new: true });
+    invalidateStudentAssignmentsCache();
     return NextResponse.json({ success: true, assignment: updated });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-export async function DELETE(req: NextRequest) {
+export async function DELETE(
+  req: NextRequest,
+  ctx?: { params?: Promise<{ id: string }> | { id: string } }
+) {
   try {
     const session = await getSession(req);
     if (!session || (session.role !== "TEACHER" && session.role !== "ADMIN")) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized. Staff only." }, { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
-    const assignmentId = searchParams.get("id");
+    let assignmentId = searchParams.get("id") || searchParams.get("assignmentId");
+
+    if (!assignmentId && ctx?.params) {
+      const resolved = await ctx.params;
+      assignmentId = resolved?.id;
+    }
+
+    if (!assignmentId) {
+      try {
+        const body = await req.json().catch(() => ({}));
+        assignmentId = body.id || body.assignmentId;
+      } catch {}
+    }
+
+    if (!assignmentId) {
+      const url = new URL(req.url);
+      const parts = url.pathname.split("/").filter(Boolean);
+      const last = parts[parts.length - 1];
+      if (last && last !== "assignments") {
+        assignmentId = last;
+      }
+    }
+
+    if (assignmentId) {
+      try {
+        assignmentId = decodeURIComponent(assignmentId).trim();
+      } catch {}
+    }
+
     if (!assignmentId) {
       return NextResponse.json({ error: "Assignment ID is required" }, { status: 400 });
     }
 
     await connectToDatabase();
-    await Assignment.findByIdAndDelete(assignmentId);
-    await AssignmentSubmission.deleteMany({ assignmentId });
-    return NextResponse.json({ success: true, message: "Assignment deleted successfully" });
+
+    const mongoose = (await import("mongoose")).default;
+    let asg: any = null;
+    if (mongoose.Types.ObjectId.isValid(assignmentId)) {
+      asg = await Assignment.findById(assignmentId);
+    }
+    if (!asg) {
+      asg = await Assignment.findOne({
+        $or: [{ title: assignmentId }, { attachmentName: assignmentId }],
+      });
+    }
+
+    if (!asg) {
+      return NextResponse.json({ error: "Assignment not found." }, { status: 404 });
+    }
+
+    const targetId = asg._id;
+    await Assignment.findByIdAndDelete(targetId);
+    await AssignmentSubmission.deleteMany({ assignmentId: targetId });
+    invalidateStudentAssignmentsCache();
+
+    return NextResponse.json({
+      success: true,
+      message: "Task and all associated submissions deleted successfully",
+    });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("DELETE /api/teacher/assignments error:", error);
+    return NextResponse.json({ error: error.message || "Failed to delete task." }, { status: 500 });
   }
 }

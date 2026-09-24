@@ -157,12 +157,35 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> | { id: string } }
 ) {
   try {
     const session = await getSession(req).catch(() => null);
 
-    const { id } = await params;
+    const resolvedParams = params ? await params : {};
+    let id = resolvedParams?.id || "";
+
+    if (!id) {
+      try {
+        const url = new URL(req.url);
+        const parts = url.pathname.split("/").filter(Boolean);
+        id = parts[parts.length - 1] || "";
+        if (id === "classes" || id === "delete") {
+          id = url.searchParams.get("id") || url.searchParams.get("classId") || "";
+        }
+      } catch {}
+    }
+
+    if (id) {
+      try {
+        id = decodeURIComponent(id).trim();
+      } catch {}
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: "Class ID is required." }, { status: 400 });
+    }
+
     await connectToDatabase();
 
     let liveClass: any = null;
@@ -171,7 +194,24 @@ export async function DELETE(
     }
     if (!liveClass) {
       liveClass = await LiveSession.findOne({
-        $or: [{ meetingId: id }, { livekitRoomId: id }],
+        $or: [
+          { meetingId: id },
+          { livekitRoomId: id },
+          { title: id },
+          { topic: id },
+        ],
+      });
+    }
+    if (!liveClass) {
+      const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const safeRegex = new RegExp(`^${escaped}$`, "i");
+      liveClass = await LiveSession.findOne({
+        $or: [
+          { meetingId: safeRegex },
+          { livekitRoomId: safeRegex },
+          { title: safeRegex },
+          { topic: safeRegex },
+        ],
       });
     }
 
@@ -179,13 +219,20 @@ export async function DELETE(
       return NextResponse.json({ error: "Class not found." }, { status: 404 });
     }
 
-    await LiveSession.findByIdAndDelete(liveClass._id);
+    const classIdToDelete = liveClass._id;
+    await LiveSession.findByIdAndDelete(classIdToDelete);
+
+    try {
+      const Attendance = (await import("@/models/Attendance")).default;
+      await Attendance.deleteMany({ sessionId: classIdToDelete });
+    } catch {}
 
     await recordAuditLog({
       actorId: session?.userId || "staff",
       action: "CLASS_DELETED",
       entityType: "LIVE_SESSION",
-      entityId: liveClass._id.toString(),
+      entityId: classIdToDelete.toString(),
+      details: { title: liveClass.title, subject: liveClass.subject, topic: liveClass.topic },
     });
 
     invalidateClassesCache();

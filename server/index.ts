@@ -125,6 +125,8 @@ app.post("/api/teacher/assignments/upload", adaptRoute(TeacherAssignmentsUpload.
 
 app.get("/api/teacher/assignments", adaptRoute(TeacherAssignments.GET));
 app.post("/api/teacher/assignments", adaptRoute(TeacherAssignments.POST));
+app.delete("/api/teacher/assignments", adaptRoute(TeacherAssignments.DELETE));
+app.delete("/api/teacher/assignments/:id", adaptRoute(TeacherAssignments.DELETE));
 app.post("/api/teacher/assignments/grant-retest", adaptRoute(TeacherGrantRetest.POST));
 app.get("/api/teacher/students", adaptRoute(TeacherStudents.GET));
 app.patch("/api/teacher/students", adaptRoute(TeacherStudents.PATCH));
@@ -139,6 +141,9 @@ app.get("/api/teacher/schedule/batch-timetable", adaptRoute(TeacherBatchTimetabl
 app.post("/api/teacher/schedule/batch-timetable", adaptRoute(TeacherBatchTimetable.POST));
 app.post("/api/teacher/evaluate", adaptRoute(TeacherEvaluate.POST));
 app.get("/api/teacher/classes", adaptRoute(TeacherClasses.GET));
+app.post("/api/teacher/classes", adaptRoute(TeacherClasses.POST));
+app.delete("/api/teacher/classes", adaptRoute(TeacherClasses.DELETE));
+app.delete("/api/teacher/classes/:id", adaptRoute(ClassDetailRoute.DELETE));
 app.get("/api/teacher/attendance", adaptRoute(TeacherAttendance.GET));
 app.post("/api/teacher/attendance", adaptRoute(TeacherAttendance.POST));
 app.post("/api/teacher/live-session", adaptRoute(TeacherLiveSession.POST));
@@ -203,6 +208,7 @@ import * as AttendanceHeartbeatRoute from "../src/app/api/attendance/heartbeat/r
 
 app.get("/api/classes", adaptRoute(ClassesRoute.GET));
 app.post("/api/classes", adaptRoute(ClassesRoute.POST));
+app.delete("/api/classes", adaptRoute(ClassesRoute.DELETE));
 app.get("/api/classes/:id", adaptRoute(ClassDetailRoute.GET));
 app.delete("/api/classes/:id", adaptRoute(ClassDetailRoute.DELETE));
 app.get("/api/classes/:id/attendance", adaptRoute(ClassAttendanceRoute.GET));

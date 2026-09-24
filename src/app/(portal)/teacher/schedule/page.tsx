@@ -298,18 +298,31 @@ export default function TeacherSchedulePage() {
   const handleDeleteClass = async (classId: string) => {
     if (!classId) return;
     try {
-      const res = await fetch(`/api/classes/${classId}`, {
+      let res = await fetch(`/api/classes/${classId}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
         credentials: "include",
       });
-      const data = await res.json().catch(() => ({}));
+      let data = await res.json().catch(() => ({}));
+
+      // Fallback to query param or teacher/classes endpoint if direct path returned 404
+      if (!res.ok && res.status === 404) {
+        res = await fetch(`/api/classes?id=${encodeURIComponent(classId)}`, {
+          method: "DELETE",
+          headers: getAuthHeaders(),
+          credentials: "include",
+        });
+        data = await res.json().catch(() => ({}));
+      }
+
       if (res.ok) {
         setDeleteModalClass(null);
         setLocalClasses((prev) => (prev || classes).filter((c) => c._id !== classId));
-        setActionMessage("Class deleted permanently.");
+        setActionMessage("Class session permanently deleted. Timetable has been updated for students.");
         setTimeout(() => setActionMessage(""), 4000);
         invalidateCache("/api/classes");
+        invalidateCache("/api/student/classes");
+        invalidateCache("/api/student/dashboard");
         refetch();
       } else {
         alert(data.error || "Failed to delete class.");

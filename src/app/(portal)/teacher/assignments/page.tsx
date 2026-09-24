@@ -28,6 +28,7 @@ import {
   Paperclip,
   AlertTriangle,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { getSubjectsForClassAndBoard, CLASS_LIST } from "@/lib/curriculum";
@@ -416,6 +417,36 @@ export default function TeacherAssignmentsPage() {
       console.error("Sync to system time error:", e);
     } finally {
       setSyncingTaskId(null);
+    }
+  };
+
+  const [deleteTargetTask, setDeleteTargetTask] = useState<any>(null);
+  const [isDeletingTask, setIsDeletingTask] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  const handleDeleteTask = async () => {
+    if (!deleteTargetTask) return;
+    setIsDeletingTask(true);
+    setDeleteError("");
+    try {
+      const res = await fetch(`/api/teacher/assignments?id=${encodeURIComponent(deleteTargetTask._id)}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || "Failed to delete task");
+      }
+      invalidateCache("/api/teacher/assignments");
+      invalidateCache("/api/student/assignments");
+      invalidateCache("/api/student/dashboard");
+      await refetch();
+      setDeleteTargetTask(null);
+    } catch (err: any) {
+      console.error("Delete task failed:", err);
+      setDeleteError(err.message || "Failed to delete task.");
+    } finally {
+      setIsDeletingTask(false);
     }
   };
 
@@ -1111,10 +1142,24 @@ export default function TeacherAssignmentsPage() {
             >
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 dark:bg-blue-950 text-[#004b79] dark:text-[#dfb74a]">
-                    {task.subject}
-                  </span>
-                  <span className="text-[11px] font-bold text-slate-500">{task.classLevel}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 dark:bg-blue-950 text-[#004b79] dark:text-[#dfb74a]">
+                      {task.subject}
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-500">{task.classLevel}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setDeleteError("");
+                      setDeleteTargetTask(task);
+                    }}
+                    title="Delete Task"
+                    className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
                 <h3 className="font-bold text-sm text-slate-900 dark:text-slate-100 line-clamp-1">
                   {task.title}
@@ -1761,6 +1806,58 @@ export default function TeacherAssignmentsPage() {
           </div>
         </form>
       </Modal>
+
+      {/* ── 8. DELETE TASK CONFIRMATION MODAL ── */}
+      {deleteTargetTask && (
+        <Modal
+          isOpen={!!deleteTargetTask}
+          onClose={() => !isDeletingTask && setDeleteTargetTask(null)}
+          maxWidth="md"
+          title="Delete Task"
+        >
+          <div className="space-y-4 pt-1">
+            {deleteError && (
+              <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-rose-500" />
+                <span>{deleteError}</span>
+              </div>
+            )}
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              Are you sure you want to permanently delete{" "}
+              <strong className="text-slate-900 dark:text-white font-bold">{deleteTargetTask.title}</strong>?
+              This will permanently delete this {deleteTargetTask.type === "TEST" ? "test" : deleteTargetTask.type === "HOMEWORK" ? "homework worksheet" : "assignment"}, all attached questions, and all student submissions. This action cannot be undone.
+            </p>
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setDeleteTargetTask(null)}
+                disabled={isDeletingTask}
+                className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteTask}
+                disabled={isDeletingTask}
+                className="px-5 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition flex items-center gap-2 shadow-sm cursor-pointer disabled:opacity-50"
+              >
+                {isDeletingTask ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Deleting...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Delete Permanently</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </main>
   );
 }
