@@ -22,7 +22,9 @@ app.use((req: any, res: any, next: any) => {
     "max-age=31536000; includeSubDomains; preload"
   );
   res.setHeader("X-Content-Type-Options", "nosniff");
-  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  if (!req.url.startsWith("/api/materials/file")) {
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  }
 
   // If a request arrives via plain HTTP behind Render/Cloudflare proxy, redirect immediately to HTTPS
   const forwardedProto = req.headers["x-forwarded-proto"];
@@ -117,6 +119,11 @@ app.delete("/api/teacher/materials/:id", adaptRoute(TeacherMaterialDetail.DELETE
 
 import * as MaterialFileRoute from "../src/app/api/materials/file/[id]/route";
 app.get("/api/materials/file/:id", adaptRoute(MaterialFileRoute.GET));
+app.get("/api/materials/file/:id(*)", adaptRoute(MaterialFileRoute.GET));
+
+import * as TeacherAssignmentsUpload from "../src/app/api/teacher/assignments/upload/route";
+app.post("/api/teacher/assignments/upload", adaptRoute(TeacherAssignmentsUpload.POST));
+
 app.get("/api/teacher/assignments", adaptRoute(TeacherAssignments.GET));
 app.post("/api/teacher/assignments", adaptRoute(TeacherAssignments.POST));
 app.post("/api/teacher/assignments/grant-retest", adaptRoute(TeacherGrantRetest.POST));

@@ -13,29 +13,62 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized. Staff access only." }, { status: 401 });
     }
 
-    const formData = await req.formData();
-    const file = formData.get("file") as File | null;
-    if (!file) {
-      return NextResponse.json({ error: "No file provided." }, { status: 400 });
-    }
-
     await connectToDatabase();
     const db = mongoose.connection.db;
     if (!db) {
       return NextResponse.json({ error: "Database connection failed." }, { status: 500 });
     }
 
-    const cleanFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
+    let buffer: Buffer;
+    let fileName: string = "question_paper.pdf";
+    let contentType: string = "application/pdf";
+    let fileSizeNum: number = 0;
+
+    const reqContentType = req.headers.get("content-type") || "";
+
+    if (reqContentType.includes("application/json")) {
+      const body = await req.json();
+      const { fileData, fileName: rawName, fileType } = body;
+      if (!fileData) {
+        return NextResponse.json({ error: "No file data provided." }, { status: 400 });
+      }
+
+      if (rawName) fileName = rawName;
+      if (fileType) contentType = fileType;
+
+      if (fileData.startsWith("data:")) {
+        const commaIdx = fileData.indexOf(",");
+        const header = commaIdx !== -1 ? fileData.substring(0, commaIdx) : "";
+        const base64Data = commaIdx !== -1 ? fileData.substring(commaIdx + 1).replace(/\s/g, "+") : fileData.replace(/\s/g, "+");
+        const match = header.match(/data:([^;,]+)/);
+        if (match && match[1]) contentType = match[1].toLowerCase();
+        buffer = Buffer.from(base64Data, "base64");
+      } else {
+        buffer = Buffer.from(fileData.replace(/\s/g, "+"), "base64");
+      }
+      fileSizeNum = buffer.length;
+    } else {
+      const formData = await req.formData();
+      const file = formData.get("file") as File | null;
+      if (!file) {
+        return NextResponse.json({ error: "No file provided." }, { status: 400 });
+      }
+      fileName = file.name;
+      contentType = file.type || "application/pdf";
+      fileSizeNum = file.size;
+      const arrayBuffer = await file.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+    }
+
+    const cleanFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
 
     const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "materials" });
     const uploadStream = bucket.openUploadStream(cleanFileName, {
-      contentType: file.type || "application/pdf",
+      contentType,
       metadata: {
-        originalName: file.name,
+        originalName: fileName,
         uploadedBy: session.userId,
-        size: file.size,
+        size: fileSizeNum,
         createdAt: new Date(),
       },
     });
@@ -51,14 +84,14 @@ export async function POST(req: NextRequest) {
     const fileId = uploadStream.id.toString();
     const fileUrl = `/api/materials/file/${fileId}`;
 
-    const sizeStr = file.size > 1024 * 1024
-      ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
-      : `${Math.round(file.size / 1024)} KB`;
+    const sizeStr = fileSizeNum > 1024 * 1024
+      ? `${(fileSizeNum / (1024 * 1024)).toFixed(1)} MB`
+      : `${Math.round(fileSizeNum / 1024)} KB`;
 
     return NextResponse.json({
       success: true,
       fileUrl,
-      fileName: file.name,
+      fileName,
       fileSize: sizeStr,
       fileId,
     });

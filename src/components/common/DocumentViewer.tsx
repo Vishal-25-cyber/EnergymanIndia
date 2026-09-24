@@ -15,6 +15,12 @@ import {
   AlertCircle,
   FileCheck,
   Loader2,
+  RefreshCw,
+  HelpCircle,
+  CheckCircle2,
+  Clock,
+  Award,
+  BookOpen,
 } from "lucide-react";
 
 interface DocumentViewerProps {
@@ -22,6 +28,10 @@ interface DocumentViewerProps {
   fileName?: string;
   title?: string;
   description?: string;
+  subject?: string;
+  maxMarks?: number | string;
+  durationMinutes?: number | string;
+  classLevel?: string;
   className?: string;
   defaultZoom?: number;
   showToolbar?: boolean;
@@ -33,7 +43,7 @@ interface DocumentViewerProps {
  * Converts a data URL to a local same-origin Blob URL.
  * Essential for rendering PDFs in Chrome/Edge, which block data: URLs inside iframes and objects.
  */
-function safeDataUrlToBlobUrl(dataUrl: string): { blobUrl: string; mimeType: string } | null {
+export function safeDataUrlToBlobUrl(dataUrl: string): { blobUrl: string; mimeType: string } | null {
   if (!dataUrl || !dataUrl.startsWith("data:")) return null;
   try {
     const parts = dataUrl.split(",");
@@ -58,124 +68,61 @@ function safeDataUrlToBlobUrl(dataUrl: string): { blobUrl: string; mimeType: str
 }
 
 /**
- * Opens any document in a safe new window or tab with full interactive viewer without triggering automatic file downloads.
+ * Downloads document file safely.
  */
-export function openDocumentInNewTab(url: string, fileName?: string) {
-  if (!url) return;
+export function downloadDocumentFile(fileUrl?: string, defaultName = "document.pdf") {
+  if (!fileUrl) return;
 
-  const title = fileName || "Document Preview";
-  let targetUrl = url;
-
-  if (targetUrl.startsWith("/api/materials/file/") && !targetUrl.endsWith(".pdf") && !targetUrl.includes("?")) {
-    targetUrl = `${targetUrl}.pdf`;
-  }
-
-  let finalSrc = targetUrl;
-  let isImage = false;
-
-  if (targetUrl.startsWith("data:")) {
-    const blobResult = safeDataUrlToBlobUrl(targetUrl);
-    finalSrc = blobResult ? blobResult.blobUrl : targetUrl;
-    isImage = (blobResult?.mimeType || "").startsWith("image/") || targetUrl.startsWith("data:image/");
-  } else {
-    isImage = /\.(png|jpe?g|webp|gif|svg|bmp)$/i.test(targetUrl) || /\.(png|jpe?g|webp|gif|svg|bmp)$/i.test(title);
-  }
-
-  const downloadUrl = targetUrl.startsWith("/api/materials/file/")
-    ? targetUrl.includes("?")
-      ? `${targetUrl}&download=1`
-      : `${targetUrl}?download=1`
-    : targetUrl;
-
-  const newWin = window.open("", "_blank");
-  if (newWin) {
-    if (isImage) {
-      newWin.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <title>${title}</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-              body { margin: 0; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-              .header { color: #94a3b8; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
-              img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid #334155; }
-            </style>
-          </head>
-          <body>
-            <div class="header">${title}</div>
-            <img src="${finalSrc}" alt="${title}" />
-          </body>
-        </html>
-      `);
-    } else {
-      newWin.document.write(`
-        <!DOCTYPE html>
-        <html style="height:100%;margin:0;padding:0;">
-          <head>
-            <title>${title}</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-              html, body { height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; background: #0f172a; font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; }
-              .bar { height: 46px; background: #002137; color: #dfb74a; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 13px; font-weight: 700; border-bottom: 1px solid rgba(223, 183, 74, 0.25); box-sizing: border-box; flex-shrink: 0; }
-              .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }
-              .btn { background: #dfb74a; color: #002137; padding: 6px 14px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 700; transition: all 0.2s; white-space: nowrap; }
-              .btn:hover { background: #b89047; color: #ffffff; }
-              iframe { width: 100%; height: calc(100% - 46px); flex: 1; border: none; background: #ffffff; }
-            </style>
-          </head>
-          <body>
-            <div class="bar">
-              <span class="title">${title}</span>
-              <a class="btn" href="${downloadUrl}" download="${title}">Download File</a>
-            </div>
-            <iframe src="${finalSrc}#toolbar=1&navpanes=0" type="application/pdf" title="${title}">
-              <p style="color:white;padding:20px;text-align:center;">Your browser is previewing this document. <a href="${downloadUrl}" download="${title}" style="color:#dfb74a;">Click here to download</a>.</p>
-            </iframe>
-          </body>
-        </html>
-      `);
-    }
-    newWin.document.close();
+  if (fileUrl.startsWith("data:")) {
+    const res = safeDataUrlToBlobUrl(fileUrl);
+    if (!res) return;
+    const a = document.createElement("a");
+    a.href = res.blobUrl;
+    a.download = defaultName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => {
+      try {
+        URL.revokeObjectURL(res.blobUrl);
+      } catch {}
+    }, 15000);
     return;
   }
 
-  // Fallback if popup blocker prevented window.open("", "_blank")
-  window.open(targetUrl, "_blank");
+  const cleanUrl = fileUrl.includes("?")
+    ? `${fileUrl}&download=1`
+    : `${fileUrl}?download=1`;
+
+  const a = document.createElement("a");
+  a.href = cleanUrl;
+  a.download = defaultName;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 /**
- * Triggers a direct download of the document with correct filename and extension.
+ * Safely opens a document in a new window/tab.
  */
-export function downloadDocumentFile(url: string, suggestedName = "document") {
-  if (!url) return;
+export function openDocumentInNewTab(fileUrl?: string, fileName?: string) {
+  if (!fileUrl) return;
 
-  let downloadUrl = url;
-  let isRevocable = false;
-
-  if (url.startsWith("data:")) {
-    const blobResult = safeDataUrlToBlobUrl(url);
-    if (blobResult) {
-      downloadUrl = blobResult.blobUrl;
-      isRevocable = true;
-    }
-  } else if (url.startsWith("/api/materials/file/") || url.startsWith("/uploads/")) {
-    downloadUrl = url.includes("?") ? `${url}&download=1` : `${url}?download=1`;
+  if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://") || fileUrl.startsWith("/")) {
+    window.open(fileUrl, "_blank", "noopener,noreferrer");
+    return;
   }
 
-  const cleanName = suggestedName.includes(".") ? suggestedName : `${suggestedName}.pdf`;
-
-  const link = document.createElement("a");
-  link.href = downloadUrl;
-  link.download = cleanName;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  if (isRevocable) {
+  if (fileUrl.startsWith("data:")) {
+    const res = safeDataUrlToBlobUrl(fileUrl);
+    if (!res) return;
+    const win = window.open(res.blobUrl, "_blank");
+    if (!win) {
+      downloadDocumentFile(fileUrl, fileName);
+    }
     setTimeout(() => {
       try {
-        URL.revokeObjectURL(downloadUrl);
+        URL.revokeObjectURL(res.blobUrl);
       } catch {}
     }, 15000);
   }
@@ -183,9 +130,13 @@ export function downloadDocumentFile(url: string, suggestedName = "document") {
 
 export function DocumentViewer({
   url,
-  fileName = "Document",
+  fileName = "Question_Paper.pdf",
   title,
   description,
+  subject,
+  maxMarks,
+  durationMinutes,
+  classLevel,
   className = "",
   defaultZoom = 100,
   showToolbar = true,
@@ -194,16 +145,21 @@ export function DocumentViewer({
 }: DocumentViewerProps) {
   const [zoom, setZoom] = useState(defaultZoom);
   const [rotation, setRotation] = useState(0);
+  const [viewTab, setViewTab] = useState<"PDF" | "TEXT">("PDF");
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [blobMime, setBlobMime] = useState<string>("");
-  const [loadError, setLoadError] = useState(false);
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pdfLoading, setPdfLoading] = useState<boolean>(true);
+  const [pdfError, setPdfError] = useState<boolean>(false);
+  const [reloadKey, setReloadKey] = useState<number>(0);
+
+  // Word Document rendering
   const [wordHtml, setWordHtml] = useState<string | null>(null);
   const [wordLoading, setWordLoading] = useState(false);
   const [wordError, setWordError] = useState<string | null>(null);
 
   // Convert data URL to Blob URL on mount / url change
   useEffect(() => {
-    setLoadError(false);
     if (!url) {
       setBlobUrl(null);
       setBlobMime("");
@@ -235,7 +191,7 @@ export function DocumentViewer({
     const lowerUrl = (url || "").toLowerCase();
     const effectiveMime = blobMime.toLowerCase();
 
-    // 1. Explicit Word Document (.docx / .doc) - MUST BE CHECKED BEFORE PDF
+    // 1. Explicit Word Document (.docx / .doc)
     if (
       effectiveMime.includes("word") ||
       effectiveMime.includes("openxmlformats") ||
@@ -286,6 +242,80 @@ export function DocumentViewer({
     return "GENERIC";
   }, [url, fileName, blobMime, isExamMode]);
 
+  // Pre-fetch PDF into local Blob URL to bypass iframe cross-origin and header issues
+  useEffect(() => {
+    if (!url || docType !== "PDF") {
+      setPdfLoading(false);
+      setPdfError(false);
+      return;
+    }
+
+    let isCancelled = false;
+    setPdfLoading(true);
+    setPdfError(false);
+
+    // If it's already a data: URL, convert to Blob URL
+    if (url.startsWith("data:")) {
+      const result = safeDataUrlToBlobUrl(url);
+      if (result && !isCancelled) {
+        setPdfBlobUrl(result.blobUrl);
+        setPdfLoading(false);
+      }
+      return () => {
+        if (result?.blobUrl) {
+          try {
+            URL.revokeObjectURL(result.blobUrl);
+          } catch {}
+        }
+      };
+    }
+
+    // If it's already a blob: URL, use it directly
+    if (url.startsWith("blob:")) {
+      setPdfBlobUrl(url);
+      setPdfLoading(false);
+      return;
+    }
+
+    // Fetch the remote/API URL into a local blob
+    let localBlobUrl: string | null = null;
+    fetch(url)
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`HTTP error ${res.status}`);
+        }
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          // If server returned a JSON error, it's not a valid PDF file
+          throw new Error("Received JSON response instead of PDF binary");
+        }
+        const blob = await res.blob();
+        if (!isCancelled) {
+          localBlobUrl = URL.createObjectURL(blob);
+          setPdfBlobUrl(localBlobUrl);
+          setPdfLoading(false);
+          setPdfError(false);
+        }
+      })
+      .catch((fetchErr) => {
+        console.warn("DocumentViewer PDF prefetch warning:", fetchErr);
+        if (!isCancelled) {
+          // If fetch fails (e.g. 404 or network error), flag pdfError so clean fallback is shown
+          setPdfError(true);
+          setPdfLoading(false);
+        }
+      });
+
+    return () => {
+      isCancelled = true;
+      if (localBlobUrl) {
+        try {
+          URL.revokeObjectURL(localBlobUrl);
+        } catch {}
+      }
+    };
+  }, [url, docType, reloadKey]);
+
   // Render Word document via Mammoth on client
   useEffect(() => {
     if (docType === "WORD" && url) {
@@ -328,7 +358,14 @@ export function DocumentViewer({
   }, [docType, url, blobUrl]);
 
   // Active resource URL to use for iframe / embed
-  const activeResourceUrl = blobUrl || url || "";
+  const activeResourceUrl = pdfBlobUrl || blobUrl || url || "";
+
+  // For blob: URLs, do NOT append #toolbar=1 because Chrome PDF plugin fails on hash fragments in blob URLs!
+  const pdfEmbedSrc = activeResourceUrl.startsWith("blob:")
+    ? activeResourceUrl
+    : activeResourceUrl.startsWith("http") || activeResourceUrl.startsWith("/")
+    ? `${activeResourceUrl}${activeResourceUrl.includes("#") ? "" : "#toolbar=1&navpanes=0"}`
+    : activeResourceUrl;
 
   // Zoom handlers
   const handleZoomIn = () => setZoom((prev) => Math.min(250, prev + 15));
@@ -339,17 +376,107 @@ export function DocumentViewer({
   };
   const handleRotate = () => setRotation((prev) => (prev + 90) % 360);
 
-  if (!url) {
-    return (
-      <div className={`flex flex-col items-center justify-center p-8 bg-slate-50 dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center ${className}`} style={{ minHeight }}>
-        <FileText className="w-10 h-10 text-slate-300 dark:text-slate-600 mb-2" />
-        <p className="text-xs font-semibold text-slate-500">No document attached.</p>
-        {description && (
-          <p className="text-xs text-slate-400 mt-2 max-w-md whitespace-pre-wrap">{description}</p>
-        )}
+  // Fallback Question Paper Sheet View (Text Mode)
+  const renderQuestionSheetText = () => (
+    <div className="w-full max-w-4xl p-6 sm:p-10 my-4 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl text-left flex flex-col gap-6 animate-in fade-in duration-300">
+      {/* Header Banner */}
+      <div className="rounded-2xl p-5 bg-gradient-to-r from-[#002137] to-[#004b79] text-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-md">
+        <div>
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-white/20 text-white backdrop-blur-xs">
+            Official Examination Paper
+          </span>
+          <h2 className="text-lg sm:text-xl font-black mt-1.5 tracking-tight text-white">
+            {title || fileName || "Subject Assessment"}
+          </h2>
+          <p className="text-xs text-slate-200 mt-0.5">
+            {subject || "Curriculum Evaluation"} {classLevel ? `• ${classLevel}` : ""}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 shrink-0 flex-wrap">
+          {durationMinutes && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 text-white text-xs font-bold border border-white/10">
+              <Clock className="w-3.5 h-3.5 text-[#dfb74a]" />
+              <span>{durationMinutes} Mins</span>
+            </div>
+          )}
+          {maxMarks && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 text-white text-xs font-bold border border-white/10">
+              <Award className="w-3.5 h-3.5 text-[#dfb74a]" />
+              <span>Max: {maxMarks} Marks</span>
+            </div>
+          )}
+        </div>
       </div>
-    );
-  }
+
+      {/* General Instructions */}
+      <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/60 flex items-start gap-3">
+        <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+        <div className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+          <p className="font-bold text-amber-950 dark:text-amber-100 mb-1">
+            General Instructions for Candidates:
+          </p>
+          <ul className="list-disc list-inside space-y-0.5">
+            <li>Write your full name, student ID, and date at the top of your blank answer sheets.</li>
+            <li>Number all solutions clearly corresponding to the questions below. Show step-by-step working.</li>
+            <li>Maintain camera focus and keep proctoring active throughout the entire session.</li>
+            <li>Scan/photograph and upload your complete answer paper before the submission timer concludes.</li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Questions Content */}
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+          <h3 className="text-sm font-black text-[#004b79] dark:text-[#dfb74a] uppercase tracking-wider flex items-center gap-2">
+            <BookOpen className="w-4 h-4" />
+            <span>Questions &amp; Problem Statements</span>
+          </h3>
+          <span className="text-[11px] font-bold text-slate-400">
+            Section A
+          </span>
+        </div>
+
+        <div className="p-5 sm:p-6 rounded-2xl bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-100 font-sans text-sm leading-relaxed whitespace-pre-wrap select-text">
+          {description?.trim() ? (
+            description
+          ) : (
+            <div className="flex flex-col items-center justify-center p-6 text-center text-slate-500">
+              <HelpCircle className="w-8 h-8 text-slate-300 dark:text-slate-600 mb-2" />
+              <p className="font-semibold text-xs text-slate-600 dark:text-slate-400">
+                Please follow the curriculum problems as specified by your faculty.
+              </p>
+              <p className="text-[11px] text-slate-400 mt-1 max-w-sm">
+                Write complete, clean answers on your paper. If a printed paper was provided, solve according to questions assigned.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Switch to PDF Button if error occurred */}
+      {pdfError && (
+        <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-xs">
+          <span className="text-slate-600 dark:text-slate-300 font-medium">
+            Original PDF synchronization failed. Displaying text questions directly.
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setPdfError(false);
+              setPdfLoading(true);
+              setReloadKey((prev) => prev + 1);
+              setViewTab("PDF");
+            }}
+            className="px-3 py-1.5 rounded-lg bg-[#004b79] hover:bg-[#003b60] text-white font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Retry PDF</span>
+          </button>
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div className={`flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs ${className}`}>
@@ -376,16 +503,48 @@ export function DocumentViewer({
             </span>
           </div>
 
+          {/* Mode Tabs (PDF vs Text Sheet) */}
+          {(docType === "PDF" || isExamMode) && (
+            <div className="flex items-center gap-1 bg-slate-200/80 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-300/80 dark:border-slate-700">
+              <button
+                type="button"
+                onClick={() => setViewTab("PDF")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewTab === "PDF" && !pdfError
+                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                }`}
+                title="View Question Paper as PDF document"
+              >
+                <FileText className="w-3.5 h-3.5 text-rose-500" />
+                <span>PDF Paper</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewTab("TEXT")}
+                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                  viewTab === "TEXT" || pdfError
+                    ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                }`}
+                title="View Questions and Instructions in Text format"
+              >
+                <FileCheck className="w-3.5 h-3.5 text-[#004b79] dark:text-[#dfb74a]" />
+                <span>Questions (Text)</span>
+              </button>
+            </div>
+          )}
+
           {/* Action Tools */}
           <div className="flex items-center gap-1.5 shrink-0">
             {/* Zoom Controls (Images & PDFs) */}
-            {(docType === "PDF" || docType === "IMAGE") && (
+            {viewTab === "PDF" && (docType === "PDF" || docType === "IMAGE") && (
               <div className="flex items-center gap-1 bg-white dark:bg-slate-800 rounded-xl p-1 border border-slate-200 dark:border-slate-700 shadow-2xs">
                 <button
                   type="button"
                   onClick={handleZoomOut}
                   title="Zoom Out"
-                  className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
+                  className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
                 >
                   <ZoomOut className="w-3.5 h-3.5" />
                 </button>
@@ -396,7 +555,7 @@ export function DocumentViewer({
                   type="button"
                   onClick={handleZoomIn}
                   title="Zoom In"
-                  className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
+                  className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
                 >
                   <ZoomIn className="w-3.5 h-3.5" />
                 </button>
@@ -405,7 +564,7 @@ export function DocumentViewer({
                     type="button"
                     onClick={handleRotate}
                     title="Rotate 90°"
-                    className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
+                    className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
                   >
                     <RotateCw className="w-3.5 h-3.5" />
                   </button>
@@ -414,7 +573,7 @@ export function DocumentViewer({
                   type="button"
                   onClick={handleZoomReset}
                   title="Reset View"
-                  className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors"
+                  className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
                 </button>
@@ -456,17 +615,57 @@ export function DocumentViewer({
       <div className="flex-1 overflow-auto relative flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 p-2" style={{ minHeight }}>
         {/* ── 1. PDF DOCUMENT ── */}
         {docType === "PDF" && (
-          <div className="w-full h-full min-h-[420px] flex-1 flex flex-col items-center justify-center overflow-hidden">
-            <iframe
-              src={`${activeResourceUrl}#toolbar=1&navpanes=0`}
-              title={title || "PDF Document"}
-              className="w-full h-full min-h-[500px] flex-1 rounded-xl bg-white shadow-md border-0"
-              style={{
-                transform: zoom !== 100 ? `scale(${zoom / 100})` : undefined,
-                transformOrigin: "top center",
-              }}
-            />
-          </div>
+          <>
+            {viewTab === "PDF" && !pdfError ? (
+              <div className="w-full h-full min-h-[420px] flex-1 flex flex-col items-center justify-center overflow-hidden relative">
+                {pdfLoading && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 dark:bg-slate-900/95 z-20 backdrop-blur-xs gap-3">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#004b79] dark:text-[#dfb74a]" />
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      Loading Question Paper…
+                    </p>
+                  </div>
+                )}
+
+                {activeResourceUrl ? (
+                  <object
+                    data={pdfEmbedSrc}
+                    type="application/pdf"
+                    className="w-full h-full min-h-[500px] flex-1 rounded-xl bg-white shadow-md border-0"
+                    style={{
+                      transform: zoom !== 100 ? `scale(${zoom / 100})` : undefined,
+                      transformOrigin: "top center",
+                    }}
+                  >
+                    <iframe
+                      src={pdfEmbedSrc}
+                      title={title || "PDF Question Paper"}
+                      className="w-full h-full min-h-[500px] flex-1 rounded-xl bg-white shadow-md border-0"
+                    >
+                      {/* Sub-frame fallback if browser plugin is unavailable */}
+                      <div className="flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-slate-900 rounded-xl">
+                        <FileText className="w-10 h-10 text-slate-400 mb-2" />
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                          Direct PDF preview is loading.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setViewTab("TEXT")}
+                          className="mt-3 px-4 py-2 rounded-xl bg-[#004b79] text-white text-xs font-bold"
+                        >
+                          Switch to Text View
+                        </button>
+                      </div>
+                    </iframe>
+                  </object>
+                ) : (
+                  renderQuestionSheetText()
+                )}
+              </div>
+            ) : (
+              renderQuestionSheetText()
+            )}
+          </>
         )}
 
         {/* ── 2. IMAGE DOCUMENT ── */}
@@ -549,23 +748,33 @@ export function DocumentViewer({
         )}
 
         {/* ── 4. TEXT / MONOSPACE DOCUMENT ── */}
-        {docType === "TEXT" && (
-          <div className="w-full h-full min-h-[360px] p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-auto text-left font-mono text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
-            {description || "Text content ready. Click 'Open Full Size' or 'Download' to view raw document file."}
+        {docType === "TEXT" && renderQuestionSheetText()}
+
+        {/* ── 5. GENERIC FILE: EMBED DIRECTLY INLINE OR SHOW QUESTIONS ── */}
+        {docType === "GENERIC" && (
+          <div className="w-full h-full min-h-[420px] flex-1 flex flex-col items-center justify-center overflow-hidden">
+            {activeResourceUrl ? (
+              <object
+                data={pdfEmbedSrc}
+                type="application/pdf"
+                className="w-full h-full min-h-[500px] flex-1 rounded-xl bg-white shadow-md border-0"
+              >
+                <iframe
+                  src={pdfEmbedSrc}
+                  title={title || fileName || "Document"}
+                  className="w-full h-full min-h-[500px] flex-1 rounded-xl bg-white shadow-md border-0"
+                />
+              </object>
+            ) : (
+              renderQuestionSheetText()
+            )}
           </div>
         )}
 
-        {/* ── 5. GENERIC FILE: EMBED DIRECTLY INLINE ── */}
-        {docType === "GENERIC" && (
-          <div className="w-full h-full min-h-[420px] flex-1 flex flex-col items-center justify-center overflow-hidden">
-            <iframe
-              src={activeResourceUrl}
-              title={title || fileName || "Document"}
-              className="w-full h-full min-h-[500px] flex-1 rounded-xl bg-white shadow-md border-0"
-            />
-          </div>
-        )}
+        {/* ── 6. NONE: SHOW QUESTION SHEET DIRECTLY ── */}
+        {docType === "NONE" && renderQuestionSheetText()}
       </div>
     </div>
   );
 }
+export default DocumentViewer;

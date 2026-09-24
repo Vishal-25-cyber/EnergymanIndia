@@ -84,9 +84,16 @@ export async function GET(req: NextRequest) {
         proctoringRequired: assignment.proctoringRequired ?? true,
         dueDate: assignment.dueDate,
         maxMarks: assignment.maxMarks || 20,
-        attachmentUrl: assignment.attachmentUrl?.startsWith("data:") && assignment.attachmentUrl.length > 2048
-          ? `/api/materials/file/${assignment._id}`
-          : assignment.attachmentUrl,
+        attachmentUrl: (() => {
+          const rawUrl = (assignment.attachmentUrl || "").trim();
+          if (!rawUrl || rawUrl.includes("mantif.edu") || rawUrl.includes("acuity.edu")) {
+            return `/api/materials/file/${assignment._id}.pdf`;
+          }
+          if (rawUrl.startsWith("data:") && rawUrl.length > 2048) {
+            return `/api/materials/file/${assignment._id}.pdf`;
+          }
+          return rawUrl;
+        })(),
         teacher: assignment.teacherId,
         submission: submission
           ? {

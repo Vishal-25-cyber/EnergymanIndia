@@ -127,14 +127,46 @@ export default function TeacherAssignmentsPage() {
       console.warn("Direct upload error, falling back to local encoding:", uploadErr);
     }
 
-    // Fallback if direct endpoint fails
+    // Fallback if direct endpoint fails: read as data URL and upload via JSON
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const dataUrl = e.target?.result as string;
+      if (!dataUrl) {
+        setIsUploadingAttachment(false);
+        return;
+      }
+
+      try {
+        const jsonRes = await fetch("/api/teacher/assignments/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fileData: dataUrl,
+            fileName: file.name,
+            fileType: file.type || "application/pdf",
+          }),
+        });
+
+        if (jsonRes.ok) {
+          const jData = await jsonRes.json();
+          setFormData((prev) => ({
+            ...prev,
+            title: prev.title.trim() ? prev.title : defaultTitle,
+            attachmentUrl: jData.fileUrl,
+            attachmentName: jData.fileName || file.name,
+            attachmentSize: jData.fileSize || sizeStr,
+          }));
+          setIsUploadingAttachment(false);
+          return;
+        }
+      } catch (jsonErr) {
+        console.warn("JSON upload fallback warning:", jsonErr);
+      }
+
       setFormData((prev) => ({
         ...prev,
         title: prev.title.trim() ? prev.title : defaultTitle,
-        attachmentUrl: dataUrl || `https://mantif.edu/materials/${file.name}`,
+        attachmentUrl: dataUrl,
         attachmentName: file.name,
         attachmentSize: sizeStr,
       }));

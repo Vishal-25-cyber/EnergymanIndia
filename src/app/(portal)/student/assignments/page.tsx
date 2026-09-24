@@ -1815,14 +1815,23 @@ export default function StudentAssignmentsPage() {
               {/* FULL-SCREEN QUESTION PAPER VIEWER */}
               <div className="w-full h-full flex-1 flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-md">
                 <DocumentViewer
-                  url={
-                    activeProctoredTest.attachmentUrl?.includes("/api/materials/file") && !activeProctoredTest.attachmentUrl.endsWith(".pdf")
-                      ? `${activeProctoredTest.attachmentUrl}.pdf`
-                      : activeProctoredTest.attachmentUrl
-                  }
+                  url={(() => {
+                    const raw = (activeProctoredTest.attachmentUrl || "").trim();
+                    if (!raw || raw.includes("mantif.edu") || raw.includes("acuity.edu")) {
+                      return `/api/materials/file/${activeProctoredTest._id}.pdf`;
+                    }
+                    if (raw.includes("/api/materials/file") && !raw.endsWith(".pdf")) {
+                      return `${raw}.pdf`;
+                    }
+                    return raw;
+                  })()}
                   fileName={activeProctoredTest.attachmentName || `${activeProctoredTest.title || "Question_Paper"}.pdf`}
                   title={`${activeProctoredTest.title} — Question Paper`}
                   description={activeProctoredTest.description || "Answer all questions clearly on your blank paper. Show complete working steps."}
+                  subject={activeProctoredTest.subject}
+                  maxMarks={activeProctoredTest.maxMarks}
+                  durationMinutes={activeProctoredTest.durationMinutes}
+                  classLevel={activeProctoredTest.classLevel}
                   className="w-full h-full flex-1 border-0 rounded-none shadow-none"
                   minHeight="100%"
                   showToolbar={true}
