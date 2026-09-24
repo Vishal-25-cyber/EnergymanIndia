@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth/session";
 import LiveSession from "@/models/LiveSession";
 import StudentProfile from "@/models/StudentProfile";
 import { recordAuditLog } from "@/lib/audit";
+import { invalidateClassesCache } from "@/app/api/classes/route";
 
 export async function GET(
   req: NextRequest,
@@ -145,6 +146,8 @@ export async function PUT(
       details: { title: liveClass.title, topic: liveClass.topic },
     });
 
+    invalidateClassesCache();
+
     return NextResponse.json({ success: true, message: "Class updated successfully.", class: liveClass });
   } catch (error: any) {
     console.error("PUT /api/classes/[id] error:", error);
@@ -184,6 +187,8 @@ export async function DELETE(
       entityType: "LIVE_SESSION",
       entityId: liveClass._id.toString(),
     });
+
+    invalidateClassesCache();
 
     return NextResponse.json({ success: true, message: "Class deleted successfully." });
   } catch (error: any) {

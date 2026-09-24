@@ -23,6 +23,7 @@ import { EditClassModal } from "@/components/classroom/EditClassModal";
 import { BatchTimetableModal } from "@/components/classroom/BatchTimetableModal";
 import { sortClassesByPriority } from "@/lib/class-timing";
 import { useClassLiveTimer } from "@/lib/use-class-timer";
+import { useFastFetch, invalidateCache } from "@/lib/api-cache";
 
 function TeacherScheduleClassRow({
   cls,
@@ -209,8 +210,17 @@ function TeacherScheduleClassRow({
 }
 
 export default function TeacherSchedulePage() {
-  const [classes, setClasses] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: classesData, isLoading, refetch } = useFastFetch<any>("/api/classes", undefined, { pollIntervalMs: 20000 });
+  const [localClasses, setLocalClasses] = useState<any[] | null>(null);
+
+  useEffect(() => {
+    if (classesData?.classes) {
+      setLocalClasses(classesData.classes);
+    }
+  }, [classesData]);
+
+  const classes = localClasses ?? (classesData?.classes || []);
+
   const [selectedTab, setSelectedTab] = useState<"ALL" | "UPCOMING" | "LIVE" | "COMPLETED" | "DRAFT" | "CANCELLED">("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [actionMessage, setActionMessage] = useState("");
@@ -234,26 +244,9 @@ export default function TeacherSchedulePage() {
   };
 
   const loadClasses = async () => {
-    try {
-      setIsLoading(true);
-      const res = await fetch("/api/classes", {
-        headers: getAuthHeaders(),
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.classes) {
-        setClasses(data.classes);
-      }
-    } catch (err) {
-      console.error("Failed to load classes:", err);
-    } finally {
-      setIsLoading(false);
-    }
+    invalidateCache("/api/classes");
+    await refetch();
   };
-
-  useEffect(() => {
-    loadClasses();
-  }, []);
 
   const handlePublishClass = async (classId: string) => {
     try {
@@ -286,12 +279,13 @@ export default function TeacherSchedulePage() {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setCancelModalClass(null);
-        setClasses((prev) =>
-          prev.map((c) => (c._id === classId ? { ...c, status: "CANCELLED" } : c))
+        setLocalClasses((prev) =>
+          (prev || classes).map((c) => (c._id === classId ? { ...c, status: "CANCELLED" } : c))
         );
         setActionMessage("Class session cancelled successfully.");
         setTimeout(() => setActionMessage(""), 4000);
-        loadClasses();
+        invalidateCache("/api/classes");
+        refetch();
       } else {
         alert(data.error || "Failed to cancel class.");
       }
@@ -312,10 +306,11 @@ export default function TeacherSchedulePage() {
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         setDeleteModalClass(null);
-        setClasses((prev) => prev.filter((c) => c._id !== classId));
+        setLocalClasses((prev) => (prev || classes).filter((c) => c._id !== classId));
         setActionMessage("Class deleted permanently.");
         setTimeout(() => setActionMessage(""), 4000);
-        loadClasses();
+        invalidateCache("/api/classes");
+        refetch();
       } else {
         alert(data.error || "Failed to delete class.");
       }
@@ -425,8 +420,26 @@ export default function TeacherSchedulePage() {
 
       {/* ── 3. CLASSES LIST (CARDLESS HAIRLINE TABLE) ── */}
       <div className="space-y-3">
-        {isLoading ? (
-          <div className="p-12 text-center text-xs text-slate-500">Loading schedule...</div>
+        {isLoading && classes.length === 0 ? (
+          <div className="divide-y divide-slate-100 dark:divide-slate-800/60 animate-pulse">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 px-1">
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-2">
+                    <div className="h-5 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="h-4 w-32 bg-slate-200 dark:bg-slate-800 rounded" />
+                    <div className="h-4 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
+                  </div>
+                  <div className="h-5 w-64 bg-slate-200 dark:bg-slate-800 rounded" />
+                  <div className="h-3.5 w-48 bg-slate-200 dark:bg-slate-800 rounded" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-24 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+                  <div className="h-8 w-8 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+                </div>
+              </div>
+            ))}
+          </div>
         ) : filteredClasses.length === 0 ? (
           <div className="p-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-lg space-y-2">
             <Calendar className="w-8 h-8 text-slate-400 mx-auto" />

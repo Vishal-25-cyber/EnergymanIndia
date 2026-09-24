@@ -8,7 +8,29 @@ import Notification from "@/models/Notification";
 import { recordAuditLog } from "@/lib/audit";
 import { sortClassesByPriority } from "@/lib/class-timing";
 
-export const dynamic = "force-dynamic";
+// In-memory cache for ultra-fast schedule & timetable responses
+interface ClassesCacheEntry {
+  data: any;
+  timestamp: number;
+}
+const classesServerCache = new Map<string, ClassesCacheEntry>();
+const CLASSES_CACHE_TTL_MS = 15000; // 15 seconds
+
+export function invalidateClassesCache() {
+  classesServerCache.clear();
+}
+
+function normalizeTutoringHourFast(t?: string) {
+  if (!t) return t;
+  const parts = t.split(":");
+  if (parts.length >= 2) {
+    const nh = parseInt(parts[0], 10);
+    if (nh >= 1 && nh <= 6) {
+      return `${String(nh + 12).padStart(2, "0")}:${parts[1]}`;
+    }
+  }
+  return t;
+}
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,63 +39,45 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized. Please login." }, { status: 401 });
     }
 
+    const { searchParams } = new URL(req.url);
+    const status = searchParams.get("status") || "";
+    const date = searchParams.get("date") || "";
+    const batchId = searchParams.get("batchId") || "";
+    const isFresh = searchParams.get("fresh") === "true" || req.headers.get("x-refresh") === "true";
+
+    const cacheKey = `${session.role}_${session.userId}_${status}_${date}_${batchId}`;
+    if (!isFresh) {
+      const cached = classesServerCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CLASSES_CACHE_TTL_MS) {
+        return NextResponse.json(cached.data, {
+          headers: {
+            "X-Cache": "HIT",
+            "Cache-Control": "private, max-age=15, stale-while-revalidate=60",
+          },
+        });
+      }
+    }
+
     await connectToDatabase();
 
     const now = new Date();
     const todayDateStr = now.toISOString().split("T")[0];
 
-    // Auto-conclude stale LIVE sessions strictly from past calendar dates or running for >12 hours
-    try {
-      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
-      await LiveSession.updateMany(
-        {
-          status: "LIVE",
-          $or: [
-            { date: { $lt: todayDateStr } },
-            { actualStartTime: { $lt: twelveHoursAgo } },
-            { title: /General Live Session/i },
-          ],
-        },
-        {
-          $set: { status: "COMPLETED", actualEndTime: now },
-        }
-      );
-    } catch (cleanErr) {
-      console.warn("Auto-conclude stale classes error:", cleanErr);
-    }
-
-    // Auto-normalize any afternoon classes entered in 12h AM format (e.g. 03:51 -> 15:51)
-    try {
-      const activeSlotsToFix = await LiveSession.find({
-        date: todayDateStr,
-        status: { $in: ["PUBLISHED", "SCHEDULED", "UPCOMING"] },
-        startTime: { $regex: /^0[1-6]:/ },
-      });
-      for (const slot of activeSlotsToFix) {
-        if (slot.startTime) {
-          const [sh, sm] = slot.startTime.split(":");
-          const nh = parseInt(sh, 10);
-          if (nh >= 1 && nh <= 6) {
-            slot.startTime = `${String(nh + 12).padStart(2, "0")}:${sm || "00"}`;
-          }
-        }
-        if (slot.endTime) {
-          const [eh, em] = slot.endTime.split(":");
-          const neh = parseInt(eh, 10);
-          if (neh >= 1 && neh <= 6) {
-            slot.endTime = `${String(neh + 12).padStart(2, "0")}:${em || "00"}`;
-          }
-        }
-        await slot.save();
+    // Auto-conclude stale LIVE sessions asynchronously in background without blocking GET
+    const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+    LiveSession.updateMany(
+      {
+        status: "LIVE",
+        $or: [
+          { date: { $lt: todayDateStr } },
+          { actualStartTime: { $lt: twelveHoursAgo } },
+          { title: /General Live Session/i },
+        ],
+      },
+      {
+        $set: { status: "COMPLETED", actualEndTime: now },
       }
-    } catch (normErr) {
-      console.warn("Time normalization error:", normErr);
-    }
-
-    const { searchParams } = new URL(req.url);
-    const status = searchParams.get("status");
-    const date = searchParams.get("date");
-    const batchId = searchParams.get("batchId");
+    ).catch(() => {});
 
     const query: any = {};
 
@@ -88,7 +92,7 @@ export async function GET(req: NextRequest) {
       }
       if (batchId) query.batchId = batchId;
     } else if (session.role === "STUDENT") {
-      let studentProfile = await StudentProfile.findOne({ userId: session.userId });
+      let studentProfile = await StudentProfile.findOne({ userId: session.userId }).lean();
       if (!studentProfile) {
         studentProfile = await StudentProfile.create({
           userId: session.userId,
@@ -137,6 +141,12 @@ export async function GET(req: NextRequest) {
       .populate("teacherId", "name email avatarUrl")
       .lean();
 
+    // In-memory normalize tutoring hours for any afternoon entries without blocking DB writes
+    for (const c of rawClasses as any[]) {
+      if (c.startTime) c.startTime = normalizeTutoringHourFast(c.startTime);
+      if (c.endTime) c.endTime = normalizeTutoringHourFast(c.endTime);
+    }
+
     const sortedClasses = sortClassesByPriority(rawClasses as any[]);
 
     // Deduplicate identical class records
@@ -151,7 +161,18 @@ export async function GET(req: NextRequest) {
       return true;
     });
 
-    return NextResponse.json({ classes });
+    const responsePayload = { classes };
+    classesServerCache.set(cacheKey, {
+      data: responsePayload,
+      timestamp: Date.now(),
+    });
+
+    return NextResponse.json(responsePayload, {
+      headers: {
+        "X-Cache": "MISS",
+        "Cache-Control": "private, max-age=15, stale-while-revalidate=60",
+      },
+    });
   } catch (error: any) {
     console.error("GET /api/classes error:", error);
     return NextResponse.json({ error: error.message || "Failed to fetch classes" }, { status: 500 });
@@ -247,6 +268,7 @@ export async function POST(req: NextRequest) {
       if (resolvedBatchId) existingSession.batchId = resolvedBatchId;
       if (isLiveNow && !existingSession.actualStartTime) existingSession.actualStartTime = new Date();
       await existingSession.save();
+      invalidateClassesCache();
 
       return NextResponse.json({
         success: true,
@@ -329,6 +351,8 @@ export async function POST(req: NextRequest) {
         details: { title: resolvedTitle, subject, date, startTime, status: newClass.status },
       });
     } catch {}
+
+    invalidateClassesCache();
 
     return NextResponse.json({
       success: true,
