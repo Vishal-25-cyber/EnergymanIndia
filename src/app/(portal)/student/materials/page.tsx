@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useFastFetch } from "@/lib/api-cache";
 import { downloadMaterial, openMaterial, DownloadableMaterial } from "@/lib/download";
+import { DocumentViewer } from "@/components/common/DocumentViewer";
 
 export default function StudentMaterialsPage() {
   const { data, isLoading } = useFastFetch("/api/student/materials");
@@ -347,148 +348,95 @@ export default function StudentMaterialsPage() {
             </div>
           </div>
 
-          {/* ── 4. SPACIOUS RECTANGULAR PDF DOSSIER MODAL ── */}
+          {/* ── 4. INTERACTIVE PDF READER & DOSSIER MODAL ── */}
           {previewMaterial && (
             <Modal
               isOpen={!!previewMaterial}
-              maxWidth="3xl"
+              maxWidth="5xl"
               onClose={() => setPreviewMaterial(null)}
               title=""
               description=""
             >
-              <div className="space-y-5 text-slate-900 dark:text-slate-100 select-none pr-7">
-                
-                {/* Top Bar: Subject Badge + Format + Date */}
-                <div className="flex items-center gap-2.5">
-                  <span className={`text-xs font-bold px-3 py-1 rounded-md border ${getSubjectBadge(previewMaterial.subject)}`}>
-                    {previewMaterial.subject}
-                  </span>
-                  <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                    {previewMaterial.category || "PDF HANDBOOK"}
-                  </span>
-                  <span className="text-xs text-slate-400 font-mono ml-auto">
-                    Mantif Verified Study Pack
-                  </span>
-                </div>
-
-                {/* Main 2-Column Rectangular Layout */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 pt-1">
-                  
-                  {/* Left Column: Title, Summary, Key Highlights & Download CTA (7 cols) */}
-                  <div className="md:col-span-7 space-y-4 flex flex-col justify-between">
-                    <div className="space-y-3">
-                      <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-slate-100 leading-snug">
-                        {previewMaterial.title}
-                      </h3>
-                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                        {previewMaterial.description || `Official reference study material compiled for ${studentClass} curriculum.`}
-                      </p>
-
-                      {/* Syllabus Highlights */}
-                      <div className="space-y-2 pt-1 text-xs sm:text-sm text-slate-700 dark:text-slate-300">
-                        <div className="flex items-start gap-2">
-                          <span className="text-[#b89047] dark:text-[#dfb74a] font-bold mt-0.5">•</span>
-                          <span><strong>Key Formulas:</strong> Standard equations &amp; derivation rules.</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-[#b89047] dark:text-[#dfb74a] font-bold mt-0.5">•</span>
-                          <span><strong>Solved Exemplars:</strong> Step-by-step scoring solutions.</span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-[#b89047] dark:text-[#dfb74a] font-bold mt-0.5">•</span>
-                          <span><strong>Practice Checklist:</strong> Board question preparation.</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Primary Action Buttons: Open & Download */}
-                    <div className="pt-3 flex flex-col sm:flex-row items-center gap-3">
-                      <button
-                        onClick={() => handleOpen(previewMaterial)}
-                        className="w-full sm:flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold bg-[#002137] hover:bg-[#003152] text-[#dfb74a] border border-[#b89047]/40 shadow-sm shadow-[#002137]/20 transition-all cursor-pointer"
-                        title="Open and view full document in new tab"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        <span>Open / Read Document</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleDownload(previewMaterial)}
-                        disabled={downloadingId === (previewMaterial._id || previewMaterial.title)}
-                        className={`w-full sm:flex-1 inline-flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                          downloadedId === (previewMaterial._id || previewMaterial.title)
-                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                            : "border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
-                        }`}
-                        title="Download official file"
-                      >
-                        {downloadingId === (previewMaterial._id || previewMaterial.title) ? (
-                          <span className="inline-flex items-center gap-1.5"><Loader2 className="w-3.5 h-3.5 animate-spin" /><span>Downloading...</span></span>
-                        ) : downloadedId === (previewMaterial._id || previewMaterial.title) ? (
-                          <>
-                            <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                            <span>File Downloaded</span>
-                          </>
-                        ) : (
-                          <>
-                            <Download className="w-4 h-4" />
-                            <span>Download File</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
+              <div className="space-y-4 text-slate-900 dark:text-slate-100 select-none">
+                {/* Top Bar: Subject Badge + Format + Title + Actions */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className={`text-xs font-bold px-3 py-1 rounded-md border ${getSubjectBadge(previewMaterial.subject)}`}>
+                      {previewMaterial.subject}
+                    </span>
+                    <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                      {previewMaterial.category || "NOTES"}
+                    </span>
+                    <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-slate-100 truncate max-w-xs sm:max-w-md">
+                      {previewMaterial.title}
+                    </h3>
                   </div>
 
-                  {/* Right Column: Clean Spacious Dossier Panel (5 cols) */}
-                  <div className="md:col-span-5 p-4 rounded-xl bg-slate-50 dark:bg-slate-850/70 border border-[#b89047]/20 flex flex-col justify-between space-y-4 text-xs sm:text-sm">
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Faculty Specialist</span>
-                        <p className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                          {typeof previewMaterial.uploadedBy === "object"
-                            ? (previewMaterial.uploadedBy as any)?.name
-                            : previewMaterial.uploadedBy || "Senior Faculty Specialist"}
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleOpen(previewMaterial)}
+                      className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold bg-[#002137] hover:bg-[#003152] text-[#dfb74a] border border-[#b89047]/40 shadow-xs transition-all cursor-pointer"
+                      title="Open full size in new tab"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>Open Full Size</span>
+                    </button>
 
-                      <div className="space-y-1">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Curriculum Target</span>
-                        <p className="font-semibold text-slate-700 dark:text-slate-300 text-xs sm:text-sm">
-                          {previewMaterial.classLevel || studentClass} ({studentBoard} Board)
-                        </p>
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">File Specification</span>
-                        <p className="font-mono text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          PDF Document • {previewMaterial.fileSize || "1.8 MB"}
-                        </p>
-                      </div>
-
-                      <div className="space-y-1">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Verification Status</span>
-                        <p className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1.5 text-xs sm:text-sm">
-                          <ShieldCheck className="w-4 h-4" />
-                          <span>Verified Official Release</span>
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between">
-                      <span className="text-xs text-slate-400 font-mono">
-                        Mantif Learning Hub
-                      </span>
-                      <button
-                        onClick={() => setPreviewMaterial(null)}
-                        className="text-xs font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
-                      >
-                        Dismiss
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => handleDownload(previewMaterial)}
+                      disabled={downloadingId === (previewMaterial._id || previewMaterial.title)}
+                      className={`inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        downloadedId === (previewMaterial._id || previewMaterial.title)
+                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                          : "border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200"
+                      }`}
+                      title="Download official file"
+                    >
+                      {downloadingId === (previewMaterial._id || previewMaterial.title) ? (
+                        <span className="inline-flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /><span>Downloading...</span></span>
+                      ) : downloadedId === (previewMaterial._id || previewMaterial.title) ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span>Downloaded</span>
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Download</span>
+                        </>
+                      )}
+                    </button>
                   </div>
-
                 </div>
 
+                {/* Embedded Document Viewer: Real File Preview */}
+                <div className="w-full h-[62vh] min-h-[420px] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner flex flex-col bg-slate-50 dark:bg-slate-900">
+                  <DocumentViewer
+                    url={previewMaterial.fileUrl}
+                    fileName={previewMaterial.fileName || `${previewMaterial.title}.pdf`}
+                    title={previewMaterial.title}
+                    description={previewMaterial.description}
+                    showToolbar={true}
+                    className="w-full h-full flex-1 border-0 rounded-none shadow-none"
+                    minHeight="100%"
+                  />
+                </div>
+
+                {/* Footer details */}
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-[11px] text-slate-400 font-mono">
+                  <span>
+                    Faculty:{" "}
+                    <strong className="text-slate-700 dark:text-slate-300 font-sans">
+                      {typeof previewMaterial.uploadedBy === "object"
+                        ? (previewMaterial.uploadedBy as any)?.name
+                        : previewMaterial.uploadedBy || "Faculty Specialist"}
+                    </strong>
+                  </span>
+                  <span>{previewMaterial.classLevel || studentClass} • {studentBoard} Board</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-sans font-bold flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" /> Verified Study Material
+                  </span>
+                </div>
               </div>
             </Modal>
           )}

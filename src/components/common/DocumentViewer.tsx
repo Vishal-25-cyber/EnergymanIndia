@@ -57,72 +57,90 @@ function safeDataUrlToBlobUrl(dataUrl: string): { blobUrl: string; mimeType: str
 }
 
 /**
- * Opens any document in a safe new window or tab without triggering about:blank errors.
+ * Opens any document in a safe new window or tab with full interactive viewer without triggering automatic file downloads.
  */
 export function openDocumentInNewTab(url: string, fileName?: string) {
   if (!url) return;
 
   const title = fileName || "Document Preview";
+  let targetUrl = url;
 
-  if (url.startsWith("data:")) {
-    const blobResult = safeDataUrlToBlobUrl(url);
-    const targetUrl = blobResult ? blobResult.blobUrl : url;
-    const isImage = (blobResult?.mimeType || "").startsWith("image/") || url.startsWith("data:image/");
-
-    const newWin = window.open("", "_blank");
-    if (newWin) {
-      if (isImage) {
-        newWin.document.write(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>${title}</title>
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <style>
-                body { margin: 0; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; box-sizing: border-box; font-family: system-ui, sans-serif; }
-                .header { color: #94a3b8; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
-                img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid #334155; }
-              </style>
-            </head>
-            <body>
-              <div class="header">${title}</div>
-              <img src="${targetUrl}" alt="${title}" />
-            </body>
-          </html>
-        `);
-      } else {
-        newWin.document.write(`
-          <!DOCTYPE html>
-          <html style="height:100%;margin:0;padding:0;">
-            <head>
-              <title>${title}</title>
-              <meta name="viewport" content="width=device-width, initial-scale=1.0">
-              <style>
-                html, body { height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; background: #334155; font-family: system-ui, sans-serif; }
-                .bar { height: 42px; background: #002137; color: #dfb74a; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 13px; font-weight: bold; }
-                .btn { background: #b89047; color: #002137; padding: 6px 12px; border-radius: 6px; text-decoration: none; font-size: 12px; font-weight: bold; }
-                iframe { width: 100%; height: calc(100% - 42px); border: none; }
-              </style>
-            </head>
-            <body>
-              <div class="bar">
-                <span>${title}</span>
-                <a class="btn" href="${targetUrl}" download="${title}">Download File</a>
-              </div>
-              <iframe src="${targetUrl}#toolbar=1&navpanes=0" type="application/pdf">
-                <p style="color:white;padding:20px;">Your browser cannot display this document inline. <a href="${targetUrl}" download="${title}" style="color:#dfb74a;">Click here to download</a>.</p>
-              </iframe>
-            </body>
-          </html>
-        `);
-      }
-      newWin.document.close();
-      return;
-    }
+  if (targetUrl.startsWith("/api/materials/file/") && !targetUrl.endsWith(".pdf") && !targetUrl.includes("?")) {
+    targetUrl = `${targetUrl}.pdf`;
   }
 
-  // Regular URL
-  window.open(url, "_blank");
+  let finalSrc = targetUrl;
+  let isImage = false;
+
+  if (targetUrl.startsWith("data:")) {
+    const blobResult = safeDataUrlToBlobUrl(targetUrl);
+    finalSrc = blobResult ? blobResult.blobUrl : targetUrl;
+    isImage = (blobResult?.mimeType || "").startsWith("image/") || targetUrl.startsWith("data:image/");
+  } else {
+    isImage = /\.(png|jpe?g|webp|gif|svg|bmp)$/i.test(targetUrl) || /\.(png|jpe?g|webp|gif|svg|bmp)$/i.test(title);
+  }
+
+  const downloadUrl = targetUrl.startsWith("/api/materials/file/")
+    ? targetUrl.includes("?")
+      ? `${targetUrl}&download=1`
+      : `${targetUrl}?download=1`
+    : targetUrl;
+
+  const newWin = window.open("", "_blank");
+  if (newWin) {
+    if (isImage) {
+      newWin.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>${title}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              body { margin: 0; background: #0f172a; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+              .header { color: #94a3b8; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+              img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border: 1px solid #334155; }
+            </style>
+          </head>
+          <body>
+            <div class="header">${title}</div>
+            <img src="${finalSrc}" alt="${title}" />
+          </body>
+        </html>
+      `);
+    } else {
+      newWin.document.write(`
+        <!DOCTYPE html>
+        <html style="height:100%;margin:0;padding:0;">
+          <head>
+            <title>${title}</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+              html, body { height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; background: #0f172a; font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; }
+              .bar { height: 46px; background: #002137; color: #dfb74a; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 13px; font-weight: 700; border-bottom: 1px solid rgba(223, 183, 74, 0.25); box-sizing: border-box; flex-shrink: 0; }
+              .title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 70%; }
+              .btn { background: #dfb74a; color: #002137; padding: 6px 14px; border-radius: 8px; text-decoration: none; font-size: 12px; font-weight: 700; transition: all 0.2s; white-space: nowrap; }
+              .btn:hover { background: #b89047; color: #ffffff; }
+              iframe { width: 100%; height: calc(100% - 46px); flex: 1; border: none; background: #ffffff; }
+            </style>
+          </head>
+          <body>
+            <div class="bar">
+              <span class="title">${title}</span>
+              <a class="btn" href="${downloadUrl}" download="${title}">Download File</a>
+            </div>
+            <iframe src="${finalSrc}#toolbar=1&navpanes=0" type="application/pdf" title="${title}">
+              <p style="color:white;padding:20px;text-align:center;">Your browser is previewing this document. <a href="${downloadUrl}" download="${title}" style="color:#dfb74a;">Click here to download</a>.</p>
+            </iframe>
+          </body>
+        </html>
+      `);
+    }
+    newWin.document.close();
+    return;
+  }
+
+  // Fallback if popup blocker prevented window.open("", "_blank")
+  window.open(targetUrl, "_blank");
 }
 
 /**
@@ -140,11 +158,15 @@ export function downloadDocumentFile(url: string, suggestedName = "document") {
       downloadUrl = blobResult.blobUrl;
       isRevocable = true;
     }
+  } else if (url.startsWith("/api/materials/file/") || url.startsWith("/uploads/")) {
+    downloadUrl = url.includes("?") ? `${url}&download=1` : `${url}?download=1`;
   }
+
+  const cleanName = suggestedName.includes(".") ? suggestedName : `${suggestedName}.pdf`;
 
   const link = document.createElement("a");
   link.href = downloadUrl;
-  link.download = suggestedName;
+  link.download = cleanName;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

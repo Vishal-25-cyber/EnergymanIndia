@@ -6,6 +6,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { formatStudentId } from "@/lib/id-generator";
+import { openDocumentInNewTab } from "@/components/common/DocumentViewer";
 
 export interface DownloadableMaterial {
   _id?: string;
@@ -324,7 +325,7 @@ export function generateStudyNotesPdfDoc(material: DownloadableMaterial): jsPDF 
 
 /**
  * Opens the uploaded document for viewing / reading in the browser.
- * Ensures the student or teacher sees the exact uploaded file.
+ * Ensures the student or teacher sees the exact uploaded file in an interactive viewer without triggering automatic file downloads.
  */
 export async function openMaterial(material: DownloadableMaterial): Promise<boolean> {
   try {
@@ -336,48 +337,16 @@ export async function openMaterial(material: DownloadableMaterial): Promise<bool
       url = `data:application/pdf;base64,${url}`;
     }
 
-    // 1. Direct server streaming route or uploaded asset
-    if (url && (url.startsWith("/api/materials/file/") || url.startsWith("/uploads/"))) {
-      window.open(url, "_blank", "noopener,noreferrer");
+    if (url && !url.includes("acuity.edu")) {
+      openDocumentInNewTab(url, cleanFileName);
       return true;
     }
 
-    // 2. Data URL (Base64 file uploaded by teacher)
-    if (url && url.startsWith("data:")) {
-      const blob = await dataUrlToBlobAsync(url, cleanFileName);
-      if (blob && blob.size > 100) {
-        let finalBlob = blob;
-        if (cleanFileName.toLowerCase().endsWith(".pdf") && (!blob.type || blob.type === "application/octet-stream")) {
-          finalBlob = new Blob([blob], { type: "application/pdf" });
-        }
-        const blobUrl = URL.createObjectURL(finalBlob);
-        const newWin = window.open(blobUrl, "_blank");
-        if (!newWin) {
-          triggerBlobDownload(finalBlob, cleanFileName);
-        }
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 180000);
-        return true;
-      }
-    }
-
-    // 3. Real remote or server URL
-    if (
-      url &&
-      (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("/")) &&
-      !url.includes("acuity.edu")
-    ) {
-      window.open(url, "_blank", "noopener,noreferrer");
-      return true;
-    }
-
-    // 4. Fallback: generate study guide PDF and open in browser tab
+    // Fallback: generate study guide PDF and open in browser tab
     const doc = generateStudyNotesPdfDoc(material);
     const pdfBlob = doc.output("blob");
     const blobUrl = URL.createObjectURL(pdfBlob);
-    const newWin = window.open(blobUrl, "_blank");
-    if (!newWin) {
-      triggerBlobDownload(pdfBlob, cleanFileName);
-    }
+    openDocumentInNewTab(blobUrl, cleanFileName);
     setTimeout(() => URL.revokeObjectURL(blobUrl), 180000);
     return true;
   } catch (err) {

@@ -180,24 +180,71 @@ export async function GET(
       return NextResponse.json({ error: "Study material file not found or corrupted." }, { status: 404 });
     }
 
+    // Inspect buffer magic bytes to ensure exact MIME type (eliminates generic application/octet-stream downloads)
+    if (fileBuffer.length >= 4) {
+      if (
+        fileBuffer[0] === 0x25 && // %
+        fileBuffer[1] === 0x50 && // P
+        fileBuffer[2] === 0x44 && // D
+        fileBuffer[3] === 0x46    // F
+      ) {
+        contentType = "application/pdf";
+      } else if (
+        fileBuffer.length >= 8 &&
+        fileBuffer[0] === 0x89 &&
+        fileBuffer[1] === 0x50 &&
+        fileBuffer[2] === 0x4e &&
+        fileBuffer[3] === 0x47
+      ) {
+        contentType = "image/png";
+      } else if (
+        fileBuffer.length >= 3 &&
+        fileBuffer[0] === 0xff &&
+        fileBuffer[1] === 0xd8 &&
+        fileBuffer[2] === 0xff
+      ) {
+        contentType = "image/jpeg";
+      } else if (
+        fileBuffer.length >= 12 &&
+        fileBuffer.slice(0, 4).toString() === "RIFF" &&
+        fileBuffer.slice(8, 12).toString() === "WEBP"
+      ) {
+        contentType = "image/webp";
+      } else if (fileName.toLowerCase().endsWith(".pdf")) {
+        contentType = "application/pdf";
+      } else if (fileName.toLowerCase().endsWith(".png")) {
+        contentType = "image/png";
+      } else if (/\.(jpe?g)$/i.test(fileName)) {
+        contentType = "image/jpeg";
+      }
+    }
+
     // Guarantee clean extension on filename
     const safeExt = contentType === "application/pdf" ? ".pdf" : "";
     if (safeExt && !fileName.toLowerCase().endsWith(safeExt)) {
       fileName = `${fileName}${safeExt}`;
     }
 
-    const disposition = isDownload ? "attachment" : "inline";
     const encodedFileName = encodeURIComponent(fileName);
+
+    const headers: Record<string, string> = {
+      "Content-Type": contentType,
+      "Content-Length": String(fileBuffer.length),
+      "Cache-Control": "public, max-age=31536000, immutable",
+      "Accept-Ranges": "bytes",
+    };
+
+    if (isDownload) {
+      headers["Content-Disposition"] = `attachment; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`;
+    } else {
+      // In RFC 6266 & Chrome: Content-Disposition "inline" WITHOUT filename renders directly in browser PDF viewer.
+      // Appending filename= to "inline" causes Chrome/Edge to treat it as a download prompt!
+      headers["Content-Disposition"] = "inline";
+    }
 
     return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
-      headers: {
-        "Content-Type": contentType,
-        "Content-Length": String(fileBuffer.length),
-        "Content-Disposition": `${disposition}; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`,
-        "Cache-Control": "public, max-age=31536000, immutable",
-        "Accept-Ranges": "bytes",
-      },
+      headers,
     });
   } catch (error: any) {
     console.error("GET /api/materials/file/[id] error:", error);
