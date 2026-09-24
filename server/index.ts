@@ -119,7 +119,6 @@ app.delete("/api/teacher/materials/:id", adaptRoute(TeacherMaterialDetail.DELETE
 
 import * as MaterialFileRoute from "../src/app/api/materials/file/[id]/route";
 app.get("/api/materials/file/:id", adaptRoute(MaterialFileRoute.GET));
-app.get("/api/materials/file/:id(*)", adaptRoute(MaterialFileRoute.GET));
 
 import * as TeacherAssignmentsUpload from "../src/app/api/teacher/assignments/upload/route";
 app.post("/api/teacher/assignments/upload", adaptRoute(TeacherAssignmentsUpload.POST));
