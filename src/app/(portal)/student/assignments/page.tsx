@@ -2329,37 +2329,67 @@ export default function StudentAssignmentsPage() {
         </form>
       </Modal>
 
-      {/* ── INLINE QUESTION PAPER INSTANT VIEWER MODAL ── */}
+      {/* ── INLINE QUESTION PAPER INSTANT VIEWER OVERLAY ── */}
       {previewQuestionDoc && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-150">
-          <div className="relative w-full max-w-4xl h-[88vh] bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 shrink-0">
+        <div className="fixed inset-0 z-[100] flex flex-col bg-slate-950/95 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative w-full h-full bg-slate-900 flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-slate-800 bg-slate-900/90 shrink-0 text-white">
               <div className="flex items-center gap-2.5 min-w-0">
-                <FileText className="w-4 h-4 text-[#004b79] dark:text-[#dfb74a] shrink-0" />
-                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 truncate">
+                <FileText className="w-4 h-4 text-[#dfb74a] shrink-0" />
+                <h3 className="font-bold text-sm text-slate-100 truncate">
                   {previewQuestionDoc.title}
                 </h3>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => openDocumentInNewTab(previewQuestionDoc.url, previewQuestionDoc.title)}
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors cursor-pointer"
+                  title="Open in new browser tab"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>New Tab</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!document.fullscreenElement) {
+                      document.documentElement.requestFullscreen?.().catch(() => {});
+                    } else {
+                      document.exitFullscreen?.().catch(() => {});
+                    }
+                  }}
+                  className="p-1.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-300 transition-colors cursor-pointer hidden sm:inline-flex"
+                  title="Toggle Fullscreen"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                </button>
                 <button
                   type="button"
                   onClick={() => downloadDocumentFile(previewQuestionDoc.url, previewQuestionDoc.title)}
-                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors cursor-pointer"
                   title="Download Question Paper"
                 >
-                  <Download className="w-4 h-4" />
+                  <Download className="w-3.5 h-3.5 text-[#dfb74a]" />
+                  <span className="hidden sm:inline">Download</span>
                 </button>
                 <button
                   type="button"
-                  onClick={() => setPreviewQuestionDoc(null)}
-                  className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-500 hover:text-rose-600 transition-colors cursor-pointer"
-                  title="Close Preview"
+                  onClick={() => {
+                    setPreviewQuestionDoc(null);
+                    if (document.fullscreenElement) {
+                      document.exitFullscreen?.().catch(() => {});
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-600/90 hover:bg-rose-600 text-white transition-colors cursor-pointer ml-1"
+                  title="Close Preview (Esc)"
                 >
                   <X className="w-4 h-4" />
+                  <span>Close</span>
                 </button>
               </div>
             </div>
-            <div className="flex-1 overflow-hidden p-2">
+            <div className="flex-1 w-full h-[calc(100vh-3.5rem)] overflow-hidden bg-slate-950">
               <DocumentViewer
                 url={previewQuestionDoc.url}
                 fileName={previewQuestionDoc.title}

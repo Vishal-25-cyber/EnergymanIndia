@@ -17,9 +17,10 @@ import {
   Minimize2,
   X,
   ShieldCheck,
+  ExternalLink,
 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
-import { DocumentViewer } from "@/components/common/DocumentViewer";
+import { DocumentViewer, openDocumentInNewTab } from "@/components/common/DocumentViewer";
 import { getSubjectsForClassAndBoard, CLASS_LIST } from "@/lib/curriculum";
 import { useFastFetch, invalidateCache } from "@/lib/api-cache";
 import { downloadMaterial, openMaterial, DownloadableMaterial } from "@/lib/download";
@@ -35,7 +36,25 @@ export default function TeacherMaterialsPage() {
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
   const [previewMaterial, setPreviewMaterial] = useState<any | null>(null);
-  const [isModalFullscreen, setIsModalFullscreen] = useState(false);
+
+  React.useEffect(() => {
+    if (previewMaterial) {
+      document.body.style.overflow = "hidden";
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === "Escape") {
+          setPreviewMaterial(null);
+          if (document.fullscreenElement) {
+            document.exitFullscreen?.().catch(() => {});
+          }
+        }
+      };
+      window.addEventListener("keydown", handleKeyDown);
+      return () => {
+        document.body.style.overflow = "unset";
+        window.removeEventListener("keydown", handleKeyDown);
+      };
+    }
+  }, [previewMaterial]);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -576,89 +595,107 @@ export default function TeacherMaterialsPage() {
         </Modal>
       )}
 
-      {/* ── 5. IN-PAGE DOCUMENT READER MODAL ── */}
+      {/* ── 5. FULL SCREEN DOCUMENT READER OVERLAY ── */}
       {previewMaterial && (
-        <Modal
-          isOpen={!!previewMaterial}
-          maxWidth={isModalFullscreen ? "5xl" : "4xl"}
-          onClose={() => {
-            setPreviewMaterial(null);
-            setIsModalFullscreen(false);
-          }}
-          title={previewMaterial.title || "Study Material"}
-          description={`${previewMaterial.subject || "Subject Resource"} • ${previewMaterial.classLevel || "Class 10"}`}
-        >
-          <div className="space-y-4">
-            {/* Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                  {previewMaterial.title}
-                </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold">
-                  {previewMaterial.category || "NOTES"}
-                </span>
+        <div className="fixed inset-0 z-[100] w-screen h-screen bg-slate-950 flex flex-col overflow-hidden animate-in fade-in duration-150 select-none">
+          {/* Sleek Top Header Navigation Bar */}
+          <div className="h-14 sm:h-16 px-3 sm:px-6 bg-slate-900 border-b border-slate-800 flex items-center justify-between gap-3 shrink-0 text-white shadow-md">
+            {/* Left: Document Info */}
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[#004b79]/40 border border-[#004b79]/60 flex items-center justify-center shrink-0">
+                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 text-[#dfb74a]" />
               </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalFullscreen((prev) => !prev)}
-                  className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
-                >
-                  {isModalFullscreen ? (
-                    <>
-                      <Minimize2 className="w-3.5 h-3.5" />
-                      <span>Compact</span>
-                    </>
-                  ) : (
-                    <>
-                      <Maximize2 className="w-3.5 h-3.5" />
-                      <span>Full Screen</span>
-                    </>
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => downloadMaterial(previewMaterial)}
-                  className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
-                  title="Download file"
-                >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Download</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setPreviewMaterial(null);
-                    setIsModalFullscreen(false);
-                  }}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
-                  title="Close reader"
-                >
-                  <X className="w-4 h-4" />
-                </button>
+              <div className="min-w-0">
+                <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                  <span className={`text-[10px] sm:text-xs font-bold px-2 py-0.5 rounded border ${getSubjectBadge(previewMaterial.subject)}`}>
+                    {previewMaterial.subject || "General"}
+                  </span>
+                  <span className="text-[10px] sm:text-xs font-mono font-semibold px-2 py-0.5 rounded bg-slate-800 text-slate-300">
+                    {previewMaterial.category || "NOTES"}
+                  </span>
+                  <span className="text-[10px] sm:text-xs text-slate-400 hidden sm:inline">
+                    {previewMaterial.classLevel || "Class 10"}
+                  </span>
+                </div>
+                <h2 className="text-xs sm:text-sm font-bold text-slate-100 truncate max-w-xs sm:max-w-md md:max-w-xl">
+                  {previewMaterial.title}
+                </h2>
               </div>
             </div>
 
-            {/* Embedded Document Viewer: Real File Preview on this page */}
-            <div className={`w-full ${isModalFullscreen ? "h-[78vh]" : "h-[62vh]"} min-h-[420px] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner flex flex-col bg-slate-50 dark:bg-slate-900`}>
-              <DocumentViewer
-                url={previewMaterial.fileUrl}
-                fileName={previewMaterial.fileName || `${previewMaterial.title}.pdf`}
-                title={previewMaterial.title}
-                description={previewMaterial.description}
-                subject={previewMaterial.subject}
-                classLevel={previewMaterial.classLevel}
-                showToolbar={true}
-                className="w-full h-full flex-1 border-0 rounded-none shadow-none"
-                minHeight="100%"
-              />
+            {/* Right: Actions */}
+            <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              {/* Download Button */}
+              <button
+                type="button"
+                onClick={() => downloadMaterial(previewMaterial)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all cursor-pointer"
+                title="Download official file"
+              >
+                <Download className="w-3.5 h-3.5 text-[#dfb74a]" />
+                <span className="hidden sm:inline">Download</span>
+              </button>
+
+              {/* Open in Native Tab */}
+              <button
+                type="button"
+                onClick={() => openDocumentInNewTab(previewMaterial.fileUrl, previewMaterial.title)}
+                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all cursor-pointer"
+                title="Open document in a new browser tab"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                <span>New Tab</span>
+              </button>
+
+              {/* Native Browser Fullscreen Toggle */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen?.().catch(() => {});
+                  } else {
+                    document.exitFullscreen?.().catch(() => {});
+                  }
+                }}
+                className="p-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer border border-slate-700/60 hidden sm:inline-flex"
+                title="Toggle Native Browser Fullscreen"
+              >
+                <Maximize2 className="w-4 h-4" />
+              </button>
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewMaterial(null);
+                  if (document.fullscreenElement) {
+                    document.exitFullscreen?.().catch(() => {});
+                  }
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-rose-600/90 hover:bg-rose-600 text-white transition-all cursor-pointer shadow-sm ml-1"
+                title="Close full screen reader (Esc)"
+              >
+                <X className="w-4 h-4" />
+                <span className="hidden sm:inline">Close</span>
+              </button>
             </div>
           </div>
-        </Modal>
+
+          {/* Main Full-Screen Document Viewer */}
+          <div className="flex-1 w-full h-[calc(100vh-3.5rem)] sm:h-[calc(100vh-4rem)] overflow-hidden bg-slate-950 flex flex-col">
+            <DocumentViewer
+              url={previewMaterial.fileUrl}
+              fileName={previewMaterial.fileName || `${previewMaterial.title}.pdf`}
+              title={previewMaterial.title}
+              description={previewMaterial.description}
+              subject={previewMaterial.subject}
+              classLevel={previewMaterial.classLevel}
+              showToolbar={true}
+              className="w-full h-full flex-1 border-0 rounded-none shadow-none"
+              minHeight="100%"
+            />
+          </div>
+        </div>
       )}
     </main>
   );
