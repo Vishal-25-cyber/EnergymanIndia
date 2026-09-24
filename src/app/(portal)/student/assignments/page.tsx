@@ -1829,13 +1829,17 @@ export default function StudentAssignmentsPage() {
                     if (!raw || raw.includes("mantif.edu") || raw.includes("acuity.edu")) {
                       return `/api/materials/file/${activeProctoredTest._id}.pdf`;
                     }
-                    if (raw.includes("/api/materials/file") && !raw.endsWith(".pdf")) {
+                    if (
+                      raw.includes("/api/materials/file") &&
+                      !raw.endsWith(".pdf") &&
+                      !/\.(png|jpe?g|webp|docx?|txt)$/i.test(raw)
+                    ) {
                       return `${raw}.pdf`;
                     }
                     return raw;
                   })()}
-                  fileName={activeProctoredTest.attachmentName || `${activeProctoredTest.title || "Question_Paper"}.pdf`}
-                  title={`${activeProctoredTest.title} — Question Paper`}
+                  fileName={activeProctoredTest.attachmentName || (activeProctoredTest.title ? `${activeProctoredTest.title.replace(/\.[a-zA-Z0-9]+$/, "")}.pdf` : "Question_Paper.pdf")}
+                  title={`${(activeProctoredTest.title || "Subject Assessment").replace(/\.[a-zA-Z0-9]+$/, "")} — Question Paper`}
                   description={activeProctoredTest.description || "Answer all questions clearly on your blank paper. Show complete working steps."}
                   subject={activeProctoredTest.subject}
                   maxMarks={activeProctoredTest.maxMarks}

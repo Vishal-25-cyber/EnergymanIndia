@@ -94,6 +94,8 @@ export async function GET(req: NextRequest) {
           }
           return rawUrl;
         })(),
+        attachmentName: assignment.attachmentName || "",
+        attachmentSize: assignment.attachmentSize || "",
         teacher: assignment.teacherId,
         submission: submission
           ? {
@@ -137,7 +139,7 @@ export async function GET(req: NextRequest) {
       },
       {
         headers: {
-          "Cache-Control": "no-store, max-age=0, must-revalidate",
+          "Cache-Control": "private, max-age=10, stale-while-revalidate=60",
         },
       }
     );

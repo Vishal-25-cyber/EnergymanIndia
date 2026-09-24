@@ -274,6 +274,8 @@ export function DocumentViewer({
   const [numPages, setNumPages] = useState<number>(0);
   const [pdfLoading, setPdfLoading] = useState<boolean>(true);
   const [pdfError, setPdfError] = useState<boolean>(false);
+  const [useNativeFallback, setUseNativeFallback] = useState<boolean>(false);
+  const [detectedType, setDetectedType] = useState<"NONE" | "PDF" | "IMAGE" | "WORD" | "TEXT" | "GENERIC" | null>(null);
   const [reloadKey, setReloadKey] = useState<number>(0);
 
   // Word Document rendering
@@ -308,6 +310,7 @@ export function DocumentViewer({
 
   // Determine file type
   const docType: "NONE" | "PDF" | "IMAGE" | "WORD" | "TEXT" | "GENERIC" = useMemo(() => {
+    if (detectedType) return detectedType;
     if (!url && !fileName) return "NONE";
 
     const lowerName = (fileName || "").toLowerCase();
@@ -363,21 +366,23 @@ export function DocumentViewer({
     }
 
     return "GENERIC";
-  }, [url, fileName, blobMime, isExamMode]);
+  }, [url, fileName, blobMime, isExamMode, detectedType]);
 
-  // Load and parse PDF using PDF.js into canvas document model
+  // Load and parse PDF using PDF.js into canvas document model with robust fallbacks
   useEffect(() => {
     if (!url || docType !== "PDF") {
       setPdfLoading(false);
       setPdfError(false);
       setPdfDoc(null);
       setNumPages(0);
+      setUseNativeFallback(false);
       return;
     }
 
     let isCancelled = false;
     setPdfLoading(true);
     setPdfError(false);
+    setUseNativeFallback(false);
     let localBlobUrl: string | null = null;
 
     const targetUrl = url;
@@ -402,41 +407,137 @@ export function DocumentViewer({
           const buf = await res.arrayBuffer();
           pdfData = new Uint8Array(buf);
         } else {
-          // Standard API or remote URL: fetch arrayBuffer directly
-          const res = await fetch(targetUrl);
+          // Standard API or remote URL: fetch arrayBuffer directly with auth headers
+          const headers: Record<string, string> = {};
+          if (typeof window !== "undefined") {
+            try {
+              const token =
+                localStorage.getItem("acuity_auth_token") ||
+                sessionStorage.getItem("acuity_auth_token");
+              if (token) {
+                headers["Authorization"] = `Bearer ${token}`;
+                headers["x-auth-token"] = token;
+              }
+            } catch {}
+          }
+
+          let fetchUrl = targetUrl;
+          try {
+            fetchUrl = encodeURI(decodeURI(targetUrl));
+          } catch {}
+
+          const res = await fetch(fetchUrl, {
+            credentials: "include",
+            headers: Object.keys(headers).length > 0 ? headers : undefined,
+          });
+
           if (!res.ok) {
             throw new Error(`HTTP error ${res.status}`);
           }
-          const contentType = res.headers.get("content-type") || "";
+
+          const contentType = (res.headers.get("content-type") || "").toLowerCase();
           if (contentType.includes("application/json")) {
             throw new Error("Received JSON response instead of PDF binary");
           }
+
+          // Inspect content-type to see if it's actually an image or word document
+          if (contentType.includes("image/")) {
+            const blob = await res.blob();
+            localBlobUrl = URL.createObjectURL(blob);
+            setBlobUrl(localBlobUrl);
+            setBlobMime(contentType);
+            setDetectedType("IMAGE");
+            setPdfLoading(false);
+            return;
+          }
+
+          if (
+            contentType.includes("word") ||
+            contentType.includes("openxmlformats") ||
+            contentType.includes("msword")
+          ) {
+            const blob = await res.blob();
+            localBlobUrl = URL.createObjectURL(blob);
+            setBlobUrl(localBlobUrl);
+            setBlobMime(contentType);
+            setDetectedType("WORD");
+            setPdfLoading(false);
+            return;
+          }
+
           const blob = await res.blob();
           localBlobUrl = URL.createObjectURL(blob);
           setPdfBlobUrl(localBlobUrl);
           const buf = await blob.arrayBuffer();
           pdfData = new Uint8Array(buf);
+
+          // Magic byte detection
+          if (pdfData.length >= 4) {
+            // PNG: 89 50 4E 47
+            if (pdfData[0] === 0x89 && pdfData[1] === 0x50 && pdfData[2] === 0x4e && pdfData[3] === 0x47) {
+              setBlobUrl(localBlobUrl);
+              setBlobMime("image/png");
+              setDetectedType("IMAGE");
+              setPdfLoading(false);
+              return;
+            }
+            // JPEG: FF D8 FF
+            if (pdfData[0] === 0xff && pdfData[1] === 0xd8 && pdfData[2] === 0xff) {
+              setBlobUrl(localBlobUrl);
+              setBlobMime("image/jpeg");
+              setDetectedType("IMAGE");
+              setPdfLoading(false);
+              return;
+            }
+            // Word: PK\x03\x04
+            if (pdfData[0] === 0x50 && pdfData[1] === 0x4b && pdfData[2] === 0x03 && pdfData[3] === 0x04 && !fileName.toLowerCase().endsWith(".zip")) {
+              setBlobUrl(localBlobUrl);
+              setBlobMime("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+              setDetectedType("WORD");
+              setPdfLoading(false);
+              return;
+            }
+          }
         }
 
         if (isCancelled || !pdfData) return;
 
-        const loadingTask = pdfjsLib.getDocument({
-          data: pdfData,
-          cMapUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/",
-          cMapPacked: true,
-        });
+        // Try parsing with PDF.js
+        try {
+          const loadingTask = pdfjsLib.getDocument({
+            data: pdfData,
+            cMapUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/",
+            cMapPacked: true,
+            standardFontDataUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/standard_fonts/",
+            isEvalSupported: false,
+          });
 
-        const doc = await loadingTask.promise;
-        if (!isCancelled) {
-          setPdfDoc(doc);
-          setNumPages(doc.numPages);
-          setPdfLoading(false);
-          setPdfError(false);
+          const doc = await loadingTask.promise;
+          if (!isCancelled) {
+            setPdfDoc(doc);
+            setNumPages(doc.numPages);
+            setPdfLoading(false);
+            setPdfError(false);
+            setUseNativeFallback(false);
+          }
+        } catch (canvasParseErr) {
+          console.warn("PDF.js canvas parser warning, activating native browser PDF fallback:", canvasParseErr);
+          if (!isCancelled) {
+            // Activate Layer 2 Native Browser PDF Fallback: renders PDF in native object/iframe
+            setUseNativeFallback(true);
+            setPdfLoading(false);
+            setPdfError(false);
+          }
         }
       } catch (err: any) {
-        console.warn("DocumentViewer PDF prefetch/render error:", err);
+        console.warn("DocumentViewer PDF prefetch error, checking native fallback:", err);
         if (!isCancelled) {
-          setPdfError(true);
+          if (localBlobUrl || targetUrl) {
+            setUseNativeFallback(true);
+            setPdfError(false);
+          } else {
+            setPdfError(true);
+          }
           setPdfLoading(false);
         }
       }
@@ -648,7 +749,7 @@ export function DocumentViewer({
                 type="button"
                 onClick={() => setViewTab("PDF")}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  viewTab === "PDF" && !pdfError
+                  viewTab === "PDF"
                     ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                 }`}
@@ -661,7 +762,7 @@ export function DocumentViewer({
                 type="button"
                 onClick={() => setViewTab("TEXT")}
                 className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                  viewTab === "TEXT" || pdfError
+                  viewTab === "TEXT"
                     ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs"
                     : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                 }`}
@@ -756,7 +857,7 @@ export function DocumentViewer({
         {/* ── 1. PDF DOCUMENT ── */}
         {docType === "PDF" && (
           <>
-            {viewTab === "PDF" && !pdfError ? (
+            {viewTab === "PDF" ? (
               <div className="w-full h-full min-h-[420px] flex-1 flex flex-col items-center overflow-auto relative">
                 {pdfLoading && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 dark:bg-slate-900/95 z-20 backdrop-blur-xs gap-3">
@@ -767,7 +868,8 @@ export function DocumentViewer({
                   </div>
                 )}
 
-                {pdfDoc && numPages > 0 ? (
+                {/* Layer 1: PDF.js Canvas Pages */}
+                {!useNativeFallback && pdfDoc && numPages > 0 ? (
                   <div className="w-full max-w-4xl flex flex-col items-center py-2 px-2">
                     {Array.from({ length: numPages }, (_, i) => (
                       <PdfCanvasPage
@@ -779,9 +881,27 @@ export function DocumentViewer({
                       />
                     ))}
                   </div>
-                ) : (
-                  !pdfLoading && renderQuestionSheetText()
-                )}
+                ) : (useNativeFallback || (!pdfLoading && (!pdfDoc || numPages === 0))) && (pdfBlobUrl || blobUrl || url) ? (
+                  /* Layer 2: Automatic Native Browser PDF Viewer Fallback */
+                  <div className="w-full h-full min-h-[550px] flex-1 flex flex-col items-center justify-center p-1 sm:p-2">
+                    <object
+                      data={pdfEmbedSrc}
+                      type="application/pdf"
+                      className="w-full h-full min-h-[550px] flex-1 rounded-xl bg-white shadow-md border-0"
+                    >
+                      <iframe
+                        src={pdfEmbedSrc}
+                        title={title || fileName || "Document"}
+                        className="w-full h-full min-h-[550px] flex-1 rounded-xl bg-white shadow-md border-0"
+                      />
+                    </object>
+                  </div>
+                ) : pdfError ? (
+                  /* Layer 3: Questions & Text Instructions Sheet if Binary is Completely Unavailable */
+                  renderQuestionSheetText()
+                ) : !pdfLoading ? (
+                  renderQuestionSheetText()
+                ) : null}
               </div>
             ) : (
               renderQuestionSheetText()

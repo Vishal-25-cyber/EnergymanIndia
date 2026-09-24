@@ -19,6 +19,18 @@ async function streamToBuffer(readableStream: NodeJS.ReadableStream): Promise<Bu
   });
 }
 
+function sanitizePdfText(str?: string): string {
+  if (!str) return "";
+  return str
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2013\u2014]/g, "--")
+    .replace(/\u2022/g, "*")
+    .replace(/\u2026/g, "...")
+    .replace(/₹/g, "Rs. ")
+    .replace(/[^\x00-\x7F]/g, " ");
+}
+
 /**
  * Generates an official, publication-quality Acuity Tutoring PDF Question Paper
  * when an assignment/test has no file binary or references an external/corrupted file.
@@ -39,6 +51,10 @@ function generateQuestionPaperPdf(asg: {
 
   const pageWidth = doc.internal.pageSize.getWidth();
   let y = 18;
+
+  const safeTitle = sanitizePdfText(asg.title || "Subject Assessment");
+  const safeSubject = sanitizePdfText(asg.subject || "Mathematics");
+  const safeClassLevel = sanitizePdfText(asg.classLevel || "Class 10");
 
   // Institute Header Banner
   doc.setFillColor(0, 75, 121); // #004b79 Deep Navy Brand
@@ -63,13 +79,13 @@ function generateQuestionPaperPdf(asg: {
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.text(asg.title || "Subject Assessment", 16, y + 7);
+  doc.text(safeTitle, 16, y + 7);
 
   doc.setFontSize(9);
   doc.setFont("helvetica", "normal");
   doc.setTextColor(51, 65, 85);
-  doc.text(`Subject: ${asg.subject || "Mathematics"}`, 16, y + 15);
-  doc.text(`Grade / Class: ${asg.classLevel || "Class 10"}`, 16, y + 21);
+  doc.text(`Subject: ${safeSubject}`, 16, y + 15);
+  doc.text(`Grade / Class: ${safeClassLevel}`, 16, y + 21);
 
   const rightColX = pageWidth - 16;
   doc.text(`Time Allowed: ${asg.durationMinutes || 45} Minutes`, rightColX, y + 15, { align: "right" });
@@ -104,11 +120,11 @@ function generateQuestionPaperPdf(asg: {
   doc.setTextColor(0, 75, 121);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10.5);
-  doc.text("SECTION A — QUESTIONS & PROBLEM SET", 14, y);
+  doc.text("SECTION A -- QUESTIONS & PROBLEM SET", 14, y);
   y += 8;
 
   // Format Description or Questions
-  const rawText = (asg.description || "").trim() || "1. Answer all questions presented in your curriculum syllabus.\n2. Write your answers with complete working steps on blank paper.\n3. Capture clear photos and upload before the examination window closes.";
+  const rawText = sanitizePdfText((asg.description || "").trim()) || "1. Answer all questions presented in your curriculum syllabus.\n2. Write your answers with complete working steps on blank paper.\n3. Capture clear photos and upload before the examination window closes.";
   const lines = doc.splitTextToSize(rawText, pageWidth - 30);
 
   doc.setFont("helvetica", "normal");
@@ -135,11 +151,15 @@ function generateQuestionPaperPdf(asg: {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(148, 163, 184);
-    doc.text("Acuity Tutoring System • Confidential Proctored Test Document", 14, 287);
+    doc.text("Acuity Tutoring System * Confidential Proctored Test Document", 14, 287);
     doc.text(`Page ${p} of ${totalPages}`, pageWidth - 14, 287, { align: "right" });
   }
 
   return Buffer.from(doc.output("arraybuffer"));
+}
+
+function escapeRegex(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 export async function GET(
@@ -164,46 +184,70 @@ export async function GET(
     const urlObj = req.nextUrl || new URL(req.url);
     const isDownload = urlObj.searchParams.get("download") === "1";
 
+    let decodedRawId = rawId;
+    try {
+      decodedRawId = decodeURIComponent(rawId);
+    } catch {}
+
     // Clean ID: strip file extension if appended e.g. "65c123.pdf" -> "65c123"
-    const cleanId = rawId.replace(/\.[a-zA-Z0-9]+$/, "");
+    const cleanId = decodedRawId.replace(/\.[a-zA-Z0-9]+$/, "").trim();
+    const rawCleanId = rawId.replace(/\.[a-zA-Z0-9]+$/, "").trim();
+    const sanitizedCleanId = cleanId.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const sanitizedRawId = decodedRawId.replace(/[^a-zA-Z0-9._-]/g, "_");
 
     await connectToDatabase();
     const db = mongoose.connection.db;
 
     let fileBuffer: Buffer | null = null;
     let contentType = "application/pdf";
-    let fileName = "study_material.pdf";
+    let fileName = `${cleanId}.pdf`;
 
-    // 1. Try finding in MongoDB GridFS by ObjectId
-    if (db && mongoose.Types.ObjectId.isValid(cleanId)) {
+    // 1. Try finding in MongoDB GridFS by ObjectId (cleanId or rawCleanId)
+    const possibleObjId = mongoose.Types.ObjectId.isValid(cleanId)
+      ? cleanId
+      : mongoose.Types.ObjectId.isValid(rawCleanId)
+      ? rawCleanId
+      : null;
+
+    if (db && possibleObjId) {
       try {
         const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "materials" });
-        const files = await bucket.find({ _id: new mongoose.Types.ObjectId(cleanId) }).toArray();
+        const files = await bucket.find({ _id: new mongoose.Types.ObjectId(possibleObjId) }).toArray();
         if (files && files.length > 0) {
           const fileDoc = files[0];
           const downloadStream = bucket.openDownloadStream(fileDoc._id);
           fileBuffer = await streamToBuffer(downloadStream);
           contentType = fileDoc.contentType || "application/pdf";
-          fileName = fileDoc.filename || fileDoc.metadata?.originalName || "study_material.pdf";
+          fileName = fileDoc.filename || fileDoc.metadata?.originalName || `${cleanId}.pdf`;
         }
       } catch (gridFsErr) {
         console.warn("GridFS lookup warning:", gridFsErr);
       }
     }
 
-    // 1b. Try finding in GridFS by filename or originalName
+    // 1b. Try finding in GridFS by filename or originalName (exact + safe pattern)
     if (!fileBuffer && db) {
       try {
         const bucket = new mongoose.mongo.GridFSBucket(db, { bucketName: "materials" });
-        const cleanPattern = cleanId.replace(/[_-]/g, "[_\\s-]");
+        const safeRegexStr = escapeRegex(cleanId).replace(/[_\s-]+/g, "[_\\s-]+");
+        const matchNames = Array.from(new Set([
+          cleanId,
+          decodedRawId,
+          rawId,
+          sanitizedCleanId,
+          sanitizedRawId,
+          `${cleanId}.pdf`,
+          `${sanitizedCleanId}.pdf`,
+          `${rawCleanId}.pdf`,
+        ])).filter(Boolean);
+
         const files = await bucket
           .find({
             $or: [
-              { filename: cleanId },
-              { filename: rawId },
-              { filename: { $regex: cleanPattern, $options: "i" } },
-              { "metadata.originalName": rawId },
-              { "metadata.originalName": cleanId },
+              { filename: { $in: matchNames } },
+              { "metadata.originalName": { $in: matchNames } },
+              { filename: { $regex: safeRegexStr, $options: "i" } },
+              { "metadata.originalName": { $regex: safeRegexStr, $options: "i" } },
             ],
           })
           .toArray();
@@ -213,7 +257,7 @@ export async function GET(
           const downloadStream = bucket.openDownloadStream(fileDoc._id);
           fileBuffer = await streamToBuffer(downloadStream);
           contentType = fileDoc.contentType || "application/pdf";
-          fileName = fileDoc.filename || fileDoc.metadata?.originalName || "study_material.pdf";
+          fileName = fileDoc.filename || fileDoc.metadata?.originalName || `${cleanId}.pdf`;
         }
       } catch (gridFsByNameErr) {
         console.warn("GridFS filename lookup warning:", gridFsByNameErr);
@@ -224,20 +268,22 @@ export async function GET(
     if (!fileBuffer) {
       try {
         let material: any = null;
-        if (mongoose.Types.ObjectId.isValid(cleanId)) {
-          material = await Material.findById(cleanId).lean();
+        if (possibleObjId) {
+          material = await Material.findById(possibleObjId).lean();
         }
         if (!material) {
+          const safeRegexStr = escapeRegex(cleanId).replace(/[_\s-]+/g, "[_\\s-]+");
           material = await Material.findOne({
             $or: [
-              { fileName: { $regex: cleanId, $options: "i" } },
-              { title: { $regex: cleanId.replace(/[_-]/g, "[_\\s-]"), $options: "i" } },
+              { fileName: { $in: [cleanId, decodedRawId, sanitizedCleanId, `${cleanId}.pdf`] } },
+              { fileName: { $regex: safeRegexStr, $options: "i" } },
+              { title: { $regex: safeRegexStr, $options: "i" } },
             ],
           }).lean();
         }
 
         if (material) {
-          fileName = material.fileName || `${material.title.replace(/\s+/g, "_")}.pdf`;
+          fileName = material.fileName || `${(material.title || "study_material").replace(/\s+/g, "_")}.pdf`;
 
           // If material references a GridFS file:
           const gridFsMatch = material.fileUrl?.match(/\/api\/materials\/file\/([0-9a-fA-F]{24})/);
@@ -286,16 +332,19 @@ export async function GET(
         const Assignment = (await import("@/models/Assignment")).default;
         let asg: any = null;
 
-        if (mongoose.Types.ObjectId.isValid(cleanId)) {
-          asg = await Assignment.findById(cleanId).lean();
+        if (possibleObjId) {
+          asg = await Assignment.findById(possibleObjId).lean();
         }
         if (!asg) {
-          const cleanPattern = cleanId.replace(/[_-]/g, "[_\\s-]");
+          const safeRegexStr = escapeRegex(cleanId).replace(/[_\s-]+/g, "[_\\s-]+");
+          const asgNames = [cleanId, decodedRawId, rawCleanId, sanitizedCleanId, `${cleanId}.pdf`].filter(Boolean);
           asg = await Assignment.findOne({
             $or: [
-              { title: { $regex: cleanPattern, $options: "i" } },
-              { attachmentName: { $regex: cleanId, $options: "i" } },
-              { attachmentUrl: { $regex: cleanId, $options: "i" } },
+              { title: { $in: asgNames } },
+              { attachmentName: { $in: asgNames } },
+              { title: { $regex: safeRegexStr, $options: "i" } },
+              { attachmentName: { $regex: safeRegexStr, $options: "i" } },
+              { attachmentUrl: { $regex: escapeRegex(cleanId), $options: "i" } },
             ],
           }).lean();
         }
@@ -364,7 +413,13 @@ export async function GET(
         if (fs.existsSync(uploadsDir)) {
           const entries = fs.readdirSync(uploadsDir);
           const matchedFile = entries.find(
-            (f) => f.startsWith(cleanId) || f === rawId || f.includes(cleanId)
+            (f) =>
+              f.startsWith(cleanId) ||
+              f === rawId ||
+              f === decodedRawId ||
+              f.includes(cleanId) ||
+              f.startsWith(sanitizedCleanId) ||
+              f.includes(sanitizedCleanId)
           );
           if (matchedFile) {
             fileBuffer = fs.readFileSync(path.join(uploadsDir, matchedFile));

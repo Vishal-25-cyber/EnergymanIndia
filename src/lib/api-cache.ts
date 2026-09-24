@@ -29,12 +29,13 @@ function getAuthHeaders(isAuthMe = false): Record<string, string> {
 }
 
 function getFromStorage(url: string) {
-  if (typeof window === "undefined" || !url || url.includes("/api/auth/me")) return null;
+  if (typeof window === "undefined" || !url) return null;
   try {
     const raw = sessionStorage.getItem(`mantif_cache_${url}`);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && Date.now() - parsed.timestamp < 300000) { // 5 min TTL
+      const ttl = url.includes("/api/auth/me") ? 60000 : 300000; // 60s TTL for auth, 5m for static
+      if (parsed && Date.now() - parsed.timestamp < ttl) {
         memoryCache.set(url, parsed);
         return parsed.data;
       }
@@ -46,7 +47,7 @@ function getFromStorage(url: string) {
 }
 
 function saveToStorage(url: string, data: any) {
-  if (typeof window === "undefined" || !url || url.includes("/api/auth/me")) return;
+  if (typeof window === "undefined" || !url) return;
   try {
     sessionStorage.setItem(`mantif_cache_${url}`, JSON.stringify({ data, timestamp: Date.now() }));
   } catch {
@@ -58,7 +59,7 @@ function saveToStorage(url: string, data: any) {
  * Prefetches and caches an API endpoint in the background with deduplication.
  */
 export async function prefetchApi(url: string): Promise<any> {
-  if (!url || typeof window === "undefined" || url.includes("/api/auth/me")) return null;
+  if (!url || typeof window === "undefined") return null;
 
   const cached = memoryCache.get(url)?.data ?? getFromStorage(url);
   if (cached) {
@@ -71,17 +72,15 @@ export async function prefetchApi(url: string): Promise<any> {
 
   const fetchPromise = (async () => {
     try {
-      const headers = getAuthHeaders(false);
+      const headers = getAuthHeaders(url.includes("/api/auth/me"));
       const res = await fetch(url, {
         credentials: "include",
         headers: Object.keys(headers).length > 0 ? headers : undefined,
       });
       if (res.ok) {
         const data = await res.json();
-        if (!url.includes("/api/auth/me")) {
-          memoryCache.set(url, { data, timestamp: Date.now() });
-          saveToStorage(url, data);
-        }
+        memoryCache.set(url, { data, timestamp: Date.now() });
+        saveToStorage(url, data);
         return data;
       }
     } catch (e) {
@@ -105,6 +104,7 @@ export function warmupPortalCache(role: string = "STUDENT") {
   const endpoints =
     role === "STUDENT"
       ? [
+        "/api/auth/me",
         "/api/student/dashboard",
         "/api/student/classes",
         "/api/student/materials",
@@ -115,6 +115,7 @@ export function warmupPortalCache(role: string = "STUDENT") {
       ]
       : role === "TEACHER"
       ? [
+        "/api/auth/me",
         "/api/teacher/dashboard",
         "/api/classes",
         "/api/teacher/materials",
@@ -124,6 +125,7 @@ export function warmupPortalCache(role: string = "STUDENT") {
         "/api/notifications",
       ]
       : [
+        "/api/auth/me",
         "/api/admin/dashboard",
         "/api/admin/students",
         "/api/admin/teachers?status=ALL",
@@ -139,7 +141,7 @@ export function warmupPortalCache(role: string = "STUDENT") {
       ];
 
   endpoints.forEach((ep, i) => {
-    setTimeout(() => prefetchApi(ep), i * 20);
+    setTimeout(() => prefetchApi(ep), i * 15);
   });
 }
 
@@ -153,14 +155,12 @@ export function useFastFetch<T = any>(
   initialFallback?: T,
   options: { pollIntervalMs?: number; disableAutoRevalidate?: boolean } = {}
 ): { data: T | null; isLoading: boolean; isRevalidating: boolean; error: any; refetch: () => Promise<void> } {
-  const isAuthMe = url?.includes("/api/auth/me");
-
   const getCached = useCallback(() => {
-    if (!url || isAuthMe) return null;
+    if (!url) return null;
     const entry = memoryCache.get(url);
     if (entry && entry.data !== undefined) return entry.data;
     return getFromStorage(url);
-  }, [url, isAuthMe]);
+  }, [url]);
 
   const [data, setData] = useState<T | null>(() => {
     const cached = getCached();
@@ -183,10 +183,6 @@ export function useFastFetch<T = any>(
       setIsLoading(false);
       return;
     }
-    if (isAuthMe) {
-      setIsLoading(true);
-      return;
-    }
     const cached = memoryCache.get(url)?.data ?? getFromStorage(url);
     if (cached !== undefined && cached !== null) {
       setData(cached);
@@ -194,13 +190,13 @@ export function useFastFetch<T = any>(
     } else {
       setIsLoading(true);
     }
-  }, [url, isAuthMe]);
+  }, [url]);
 
   const executeFetch = useCallback(
     async (isManual = false) => {
       if (!url) return;
 
-      const cached = isAuthMe ? null : (memoryCache.get(url)?.data ?? getFromStorage(url));
+      const cached = memoryCache.get(url)?.data ?? getFromStorage(url);
       if (!isManual && cached !== undefined && cached !== null) {
         setIsLoading(false);
         setIsRevalidating(true);
@@ -209,37 +205,43 @@ export function useFastFetch<T = any>(
       }
 
       try {
-        const headers = getAuthHeaders(Boolean(isAuthMe));
-        const res = await fetch(url, {
-          credentials: "include",
-          headers: Object.keys(headers).length > 0 ? headers : undefined,
-        });
+        let fetchPromise = inflightRequests.get(url);
+        if (!fetchPromise) {
+          fetchPromise = (async () => {
+            const headers = getAuthHeaders(url.includes("/api/auth/me"));
+            const res = await fetch(url, {
+              credentials: "include",
+              headers: Object.keys(headers).length > 0 ? headers : undefined,
+            });
+            if (!res.ok) {
+              throw new Error(`Request failed with status ${res.status}`);
+            }
+            return await res.json();
+          })();
+          inflightRequests.set(url, fetchPromise);
+        }
 
-        if (res.ok) {
-          const json = await res.json();
-          if (!isAuthMe) {
-            memoryCache.set(url, { data: json, timestamp: Date.now() });
-            saveToStorage(url, json);
-          }
-          if (isMountedRef.current) {
-            setData(json);
-            setError(null);
-          }
-        } else {
-          throw new Error(`Request failed with status ${res.status}`);
+        const json = await fetchPromise;
+        memoryCache.set(url, { data: json, timestamp: Date.now() });
+        saveToStorage(url, json);
+
+        if (isMountedRef.current) {
+          setData(json);
+          setError(null);
         }
       } catch (err) {
         if (isMountedRef.current) {
           setError(err);
         }
       } finally {
+        inflightRequests.delete(url);
         if (isMountedRef.current) {
           setIsLoading(false);
           setIsRevalidating(false);
         }
       }
     },
-    [url, isAuthMe]
+    [url]
   );
 
   useEffect(() => {

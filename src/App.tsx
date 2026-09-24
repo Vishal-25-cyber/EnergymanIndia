@@ -52,6 +52,64 @@ const AdminSettingsPage = lazy(() => import("./app/(portal)/admin/settings/page"
 // Live Classroom (Lazy)
 const ClassroomPage = lazy(() => import("./app/classroom/[classId]/page"));
 
+// ── Instant Route Chunk Preloaders ──
+const studentChunkImports = [
+  () => import("./app/(portal)/student/layout"),
+  () => import("./app/(portal)/student/dashboard/page"),
+  () => import("./app/(portal)/student/classes/page"),
+  () => import("./app/(portal)/student/materials/page"),
+  () => import("./app/(portal)/student/assignments/page"),
+  () => import("./app/(portal)/student/attendance/page"),
+  () => import("./app/(portal)/student/fees/page"),
+  () => import("./app/(portal)/student/performance/page"),
+  () => import("./app/(portal)/student/parent-view/page"),
+];
+
+const teacherChunkImports = [
+  () => import("./app/(portal)/teacher/layout"),
+  () => import("./app/(portal)/teacher/dashboard/page"),
+  () => import("./app/(portal)/teacher/schedule/page"),
+  () => import("./app/(portal)/teacher/materials/page"),
+  () => import("./app/(portal)/teacher/assignments/page"),
+  () => import("./app/(portal)/teacher/students/page"),
+  () => import("./app/(portal)/teacher/reports/page"),
+  () => import("./app/(portal)/teacher/attendance/page"),
+];
+
+const adminChunkImports = [
+  () => import("./app/(portal)/admin/layout"),
+  () => import("./app/(portal)/admin/dashboard/page"),
+  () => import("./app/(portal)/admin/students/page"),
+  () => import("./app/(portal)/admin/teachers/page"),
+  () => import("./app/(portal)/admin/batches/page"),
+  () => import("./app/(portal)/admin/classes/page"),
+  () => import("./app/(portal)/admin/attendance/page"),
+  () => import("./app/(portal)/admin/finance/page"),
+];
+
+export function preloadPortalChunks(role?: string) {
+  if (typeof window === "undefined") return;
+  const loadChunks = (chunks: (() => Promise<any>)[]) => {
+    chunks.forEach((loader, i) => {
+      setTimeout(() => {
+        try {
+          loader();
+        } catch {}
+      }, i * 25);
+    });
+  };
+
+  if (!role || role === "STUDENT") {
+    loadChunks(studentChunkImports);
+  }
+  if (!role || role === "TEACHER") {
+    loadChunks(teacherChunkImports);
+  }
+  if (!role || role === "ADMIN") {
+    loadChunks(adminChunkImports);
+  }
+}
+
 class PortalErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean; error?: Error }
@@ -201,6 +259,16 @@ function RouteSEOAndScroll() {
 }
 
 export default function App() {
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if ("requestIdleCallback" in window) {
+        (window as any).requestIdleCallback(() => preloadPortalChunks());
+      } else {
+        setTimeout(() => preloadPortalChunks(), 50);
+      }
+    }
+  }, []);
+
   return (
     <PortalErrorBoundary>
       <RouteSEOAndScroll />
