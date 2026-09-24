@@ -36,6 +36,7 @@
     "livekit-client": "^2.7.2",
     "livekit-server-sdk": "^2.9.3",
     "lucide-react": "^0.468.0",
+    "mammoth": "^1.12.3",
     "mongodb": "^6.11.0",
     "mongoose": "^8.8.4",
     "next": "^15.1.0",

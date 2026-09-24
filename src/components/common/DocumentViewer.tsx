@@ -14,6 +14,7 @@ import {
   Maximize2,
   AlertCircle,
   FileCheck,
+  Loader2,
 } from "lucide-react";
 
 interface DocumentViewerProps {
@@ -196,6 +197,9 @@ export function DocumentViewer({
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [blobMime, setBlobMime] = useState<string>("");
   const [loadError, setLoadError] = useState(false);
+  const [wordHtml, setWordHtml] = useState<string | null>(null);
+  const [wordLoading, setWordLoading] = useState(false);
+  const [wordError, setWordError] = useState<string | null>(null);
 
   // Convert data URL to Blob URL on mount / url change
   useEffect(() => {
@@ -231,7 +235,38 @@ export function DocumentViewer({
     const lowerUrl = (url || "").toLowerCase();
     const effectiveMime = blobMime.toLowerCase();
 
-    // 1. Explicit or detected PDF (including all material file routes and exam question papers)
+    // 1. Explicit Word Document (.docx / .doc) - MUST BE CHECKED BEFORE PDF
+    if (
+      effectiveMime.includes("word") ||
+      effectiveMime.includes("openxmlformats") ||
+      lowerUrl.startsWith("data:application/vnd.openxmlformats") ||
+      lowerUrl.startsWith("data:application/msword") ||
+      /\.(docx?|rtf)$/i.test(lowerName) ||
+      /\.(docx?|rtf)/i.test(lowerUrl)
+    ) {
+      return "WORD";
+    }
+
+    // 2. Images
+    if (
+      effectiveMime.startsWith("image/") ||
+      lowerUrl.startsWith("data:image/") ||
+      /\.(png|jpe?g|webp|gif|svg|bmp)$/i.test(lowerName) ||
+      /\.(png|jpe?g|webp|gif|svg|bmp)/i.test(lowerUrl)
+    ) {
+      return "IMAGE";
+    }
+
+    // 3. Text / Markdown
+    if (
+      effectiveMime.startsWith("text/") ||
+      lowerUrl.startsWith("data:text/") ||
+      /\.(txt|md|csv)$/i.test(lowerName)
+    ) {
+      return "TEXT";
+    }
+
+    // 4. PDF (including material file routes and exam question papers)
     if (
       effectiveMime.includes("pdf") ||
       lowerUrl.startsWith("data:application/pdf") ||
@@ -248,36 +283,49 @@ export function DocumentViewer({
       return "PDF";
     }
 
-    if (
-      effectiveMime.startsWith("image/") ||
-      lowerUrl.startsWith("data:image/") ||
-      /\.(png|jpe?g|webp|gif|svg|bmp)$/i.test(lowerName) ||
-      /\.(png|jpe?g|webp|gif|svg|bmp)/i.test(lowerUrl)
-    ) {
-      return "IMAGE";
-    }
-
-    if (
-      effectiveMime.includes("word") ||
-      effectiveMime.includes("openxmlformats") ||
-      lowerUrl.startsWith("data:application/vnd.openxmlformats") ||
-      lowerUrl.startsWith("data:application/msword") ||
-      /\.(docx?|rtf)$/i.test(lowerName) ||
-      /\.(docx?|rtf)/i.test(lowerUrl)
-    ) {
-      return "WORD";
-    }
-
-    if (
-      effectiveMime.startsWith("text/") ||
-      lowerUrl.startsWith("data:text/") ||
-      /\.(txt|md|csv)$/i.test(lowerName)
-    ) {
-      return "TEXT";
-    }
-
     return "GENERIC";
   }, [url, fileName, blobMime, isExamMode]);
+
+  // Render Word document via Mammoth on client
+  useEffect(() => {
+    if (docType === "WORD" && url) {
+      setWordLoading(true);
+      setWordError(null);
+      let isCancelled = false;
+
+      (async () => {
+        try {
+          const fetchUrl = blobUrl || url;
+          const res = await fetch(fetchUrl);
+          if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+          const arrayBuffer = await res.arrayBuffer();
+
+          const mammoth = await import("mammoth");
+          const result = await mammoth.convertToHtml({ arrayBuffer });
+          if (!isCancelled) {
+            setWordHtml(result.value || "<p>Empty document</p>");
+          }
+        } catch (err: any) {
+          console.warn("Mammoth conversion error:", err);
+          if (!isCancelled) {
+            setWordError("Could not convert Word document for inline preview.");
+          }
+        } finally {
+          if (!isCancelled) {
+            setWordLoading(false);
+          }
+        }
+      })();
+
+      return () => {
+        isCancelled = true;
+      };
+    } else {
+      setWordHtml(null);
+      setWordError(null);
+      setWordLoading(false);
+    }
+  }, [docType, url, blobUrl]);
 
   // Active resource URL to use for iframe / embed
   const activeResourceUrl = blobUrl || url || "";
@@ -439,50 +487,62 @@ export function DocumentViewer({
 
         {/* ── 3. WORD DOCUMENT (.docx / .doc) ── */}
         {docType === "WORD" && (
-          <div className="p-8 text-center flex flex-col items-center justify-center gap-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md max-w-lg my-auto">
-            <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 shadow-sm">
-              <FileCheck className="w-8 h-8" />
-            </div>
+          <div className="w-full h-full min-h-[420px] flex-1 flex flex-col bg-slate-100 dark:bg-slate-950 overflow-hidden">
+            {wordLoading ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-8 gap-3 text-slate-500">
+                <Loader2 className="w-8 h-8 animate-spin text-[#002137] dark:text-[#dfb74a]" />
+                <p className="text-xs font-semibold">Opening Word document…</p>
+              </div>
+            ) : wordHtml ? (
+              <div className="flex-1 overflow-auto p-4 sm:p-8 flex justify-center">
+                <div
+                  className="w-full max-w-3xl bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 p-6 sm:p-12 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 font-serif leading-relaxed text-sm sm:text-base prose dark:prose-invert max-w-none"
+                  style={{
+                    transform: zoom !== 100 ? `scale(${zoom / 100})` : undefined,
+                    transformOrigin: "top center",
+                  }}
+                  dangerouslySetInnerHTML={{ __html: wordHtml }}
+                />
+              </div>
+            ) : (
+              <div className="p-8 text-center flex flex-col items-center justify-center gap-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-md max-w-lg m-auto">
+                <div className="w-16 h-16 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 shadow-sm">
+                  <FileCheck className="w-8 h-8" />
+                </div>
 
-            <div>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
-                Microsoft Word Document
-              </span>
-              <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 mt-2">
-                {fileName || "Question_Paper.docx"}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
-                This document is ready to view. Click below to download and open it in Word, or view online.
-              </p>
-            </div>
+                <div>
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-900">
+                    Microsoft Word Document
+                  </span>
+                  <h3 className="font-bold text-base text-slate-900 dark:text-slate-100 mt-2">
+                    {fileName || "Document.docx"}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md">
+                    {wordError || "This document is ready to view. Click below to download and open it in Word."}
+                  </p>
+                </div>
 
-            <div className="flex items-center gap-2 pt-1 flex-wrap justify-center">
-              <button
-                type="button"
-                onClick={() => downloadDocumentFile(url, fileName)}
-                className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download &amp; Open Document</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => openDocumentInNewTab(url, fileName)}
-                className="px-3.5 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Open in New Tab</span>
-              </button>
-            </div>
+                <div className="flex items-center gap-2 pt-1 flex-wrap justify-center">
+                  <button
+                    type="button"
+                    onClick={() => downloadDocumentFile(url, fileName)}
+                    className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download &amp; Open Document</span>
+                  </button>
+                </div>
 
-            {description && (
-              <div className="w-full text-left p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 mt-2">
-                <span className="text-[11px] font-bold text-[#004b79] dark:text-[#dfb74a] block mb-1">
-                  Questions &amp; Instructions:
-                </span>
-                <p className="text-xs font-mono text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
-                  {description}
-                </p>
+                {description && (
+                  <div className="w-full text-left p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 mt-2">
+                    <span className="text-[11px] font-bold text-[#004b79] dark:text-[#dfb74a] block mb-1">
+                      Questions &amp; Instructions:
+                    </span>
+                    <p className="text-xs font-mono text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                      {description}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
           </div>

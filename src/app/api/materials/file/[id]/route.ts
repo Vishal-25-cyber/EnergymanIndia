@@ -210,6 +210,10 @@ export async function GET(
         fileBuffer.slice(8, 12).toString() === "WEBP"
       ) {
         contentType = "image/webp";
+      } else if (fileName.toLowerCase().endsWith(".docx")) {
+        contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      } else if (fileName.toLowerCase().endsWith(".doc")) {
+        contentType = "application/msword";
       } else if (fileName.toLowerCase().endsWith(".pdf")) {
         contentType = "application/pdf";
       } else if (fileName.toLowerCase().endsWith(".png")) {
@@ -220,7 +224,11 @@ export async function GET(
     }
 
     // Guarantee clean extension on filename
-    const safeExt = contentType === "application/pdf" ? ".pdf" : "";
+    let safeExt = "";
+    if (contentType === "application/pdf") safeExt = ".pdf";
+    else if (contentType.includes("wordprocessingml") || fileName.toLowerCase().endsWith(".docx")) safeExt = ".docx";
+    else if (contentType === "application/msword" || fileName.toLowerCase().endsWith(".doc")) safeExt = ".doc";
+
     if (safeExt && !fileName.toLowerCase().endsWith(safeExt)) {
       fileName = `${fileName}${safeExt}`;
     }

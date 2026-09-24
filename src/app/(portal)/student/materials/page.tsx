@@ -17,6 +17,9 @@ import {
   ShieldCheck,
   Loader2,
   ExternalLink,
+  Maximize2,
+  Minimize2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
@@ -31,6 +34,7 @@ export default function StudentMaterialsPage() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [downloadedId, setDownloadedId] = useState<string | null>(null);
   const [previewMaterial, setPreviewMaterial] = useState<DownloadableMaterial | null>(null);
+  const [isModalFullscreen, setIsModalFullscreen] = useState(false);
 
   const studentClass = data?.studentClass || "Class 10";
   const studentBoard = data?.board || "CBSE";
@@ -84,7 +88,8 @@ export default function StudentMaterialsPage() {
   };
 
   const handleOpen = (mat: DownloadableMaterial) => {
-    openMaterial(mat);
+    setPreviewMaterial(mat);
+    setIsModalFullscreen(false);
   };
 
   const getSubjectBadge = (subject: string) => {
@@ -280,7 +285,11 @@ export default function StudentMaterialsPage() {
 
                       {/* Column 2: Title & Description (col-span-5) */}
                       <div className="col-span-5 space-y-0.5">
-                        <h2 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-snug">
+                        <h2
+                          onClick={() => handleOpen(mat)}
+                          className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-snug hover:text-[#002137] dark:hover:text-[#dfb74a] transition-colors cursor-pointer"
+                          title="Click to open study material"
+                        >
                           {mat.title}
                         </h2>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
@@ -300,20 +309,11 @@ export default function StudentMaterialsPage() {
                       <div className="col-span-2 flex items-center justify-start md:justify-end gap-1.5">
                         <button
                           onClick={() => handleOpen(mat)}
-                          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-[#002137] dark:hover:text-[#dfb74a] transition-colors cursor-pointer"
-                          title="Open and read document in browser tab"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-[#dfb74a] bg-[#002137] hover:bg-[#003152] transition-colors cursor-pointer shadow-xs border border-[#b89047]/30"
+                          title="Open and read document on this page"
                         >
-                          <ExternalLink className="w-3.5 h-3.5 text-[#002137] dark:text-[#dfb74a]" />
+                          <BookOpen className="w-3.5 h-3.5" />
                           <span>Open</span>
-                        </button>
-
-                        <button
-                          onClick={() => setPreviewMaterial(mat)}
-                          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-[#002137] dark:hover:text-[#dfb74a] transition-colors cursor-pointer"
-                          title="Preview details"
-                        >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>Preview</span>
                         </button>
 
                         <button
@@ -348,12 +348,15 @@ export default function StudentMaterialsPage() {
             </div>
           </div>
 
-          {/* ── 4. INTERACTIVE PDF READER & DOSSIER MODAL ── */}
+          {/* ── 4. INTERACTIVE READER & DOSSIER MODAL (SAME PAGE) ── */}
           {previewMaterial && (
             <Modal
               isOpen={!!previewMaterial}
-              maxWidth="5xl"
-              onClose={() => setPreviewMaterial(null)}
+              maxWidth={isModalFullscreen ? "6xl" : "5xl"}
+              onClose={() => {
+                setPreviewMaterial(null);
+                setIsModalFullscreen(false);
+              }}
               title=""
               description=""
             >
@@ -373,16 +376,28 @@ export default function StudentMaterialsPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {/* Toggle Full Screen on the SAME PAGE */}
                     <button
-                      onClick={() => handleOpen(previewMaterial)}
+                      type="button"
+                      onClick={() => setIsModalFullscreen(!isModalFullscreen)}
                       className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold bg-[#002137] hover:bg-[#003152] text-[#dfb74a] border border-[#b89047]/40 shadow-xs transition-all cursor-pointer"
-                      title="Open full size in new tab"
+                      title={isModalFullscreen ? "Exit full screen view" : "View full screen on this page"}
                     >
-                      <ExternalLink className="w-3.5 h-3.5" />
-                      <span>Open Full Size</span>
+                      {isModalFullscreen ? (
+                        <>
+                          <Minimize2 className="w-3.5 h-3.5" />
+                          <span>Exit Full Screen</span>
+                        </>
+                      ) : (
+                        <>
+                          <Maximize2 className="w-3.5 h-3.5" />
+                          <span>Full Screen</span>
+                        </>
+                      )}
                     </button>
 
                     <button
+                      type="button"
                       onClick={() => handleDownload(previewMaterial)}
                       disabled={downloadingId === (previewMaterial._id || previewMaterial.title)}
                       className={`inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -406,11 +421,23 @@ export default function StudentMaterialsPage() {
                         </>
                       )}
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreviewMaterial(null);
+                        setIsModalFullscreen(false);
+                      }}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      title="Close reader"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
 
-                {/* Embedded Document Viewer: Real File Preview */}
-                <div className="w-full h-[62vh] min-h-[420px] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner flex flex-col bg-slate-50 dark:bg-slate-900">
+                {/* Embedded Document Viewer: Real File Preview on this page */}
+                <div className={`w-full ${isModalFullscreen ? "h-[78vh]" : "h-[62vh]"} min-h-[420px] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner flex flex-col bg-slate-50 dark:bg-slate-900`}>
                   <DocumentViewer
                     url={previewMaterial.fileUrl}
                     fileName={previewMaterial.fileName || `${previewMaterial.title}.pdf`}
