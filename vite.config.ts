@@ -35,6 +35,9 @@ export default defineConfig({
             if (id.includes("react") || id.includes("react-dom") || id.includes("react-router")) {
               return "vendor-react";
             }
+            if (id.includes("pdfjs-dist")) {
+              return "vendor-pdf";
+            }
             if (id.includes("livekit")) {
               return "vendor-livekit";
             }

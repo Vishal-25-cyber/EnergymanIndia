@@ -22,6 +22,18 @@ import {
   Award,
   BookOpen,
 } from "lucide-react";
+import * as pdfjsLib from "pdfjs-dist";
+
+// Initialize PDF.js worker: local worker with cdnjs fallback
+if (typeof window !== "undefined") {
+  try {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.js";
+  } catch {
+    try {
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version || "3.11.174"}/pdf.worker.min.js`;
+    } catch {}
+  }
+}
 
 interface DocumentViewerProps {
   url?: string;
@@ -133,6 +145,108 @@ export function openDocumentInNewTab(fileUrl?: string, fileName?: string) {
   }
 }
 
+/**
+ * Renders a single PDF page crisp onto an HTML5 <canvas>.
+ * Completely eliminates browser download prompts and plugin crashes.
+ */
+function PdfCanvasPage({
+  pdfDoc,
+  pageNum,
+  zoom,
+  rotation,
+}: {
+  pdfDoc: any;
+  pageNum: number;
+  zoom: number;
+  rotation: number;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const renderTaskRef = useRef<any>(null);
+  const [pageLoading, setPageLoading] = useState(true);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function renderPage() {
+      if (!pdfDoc || !canvasRef.current) return;
+      try {
+        setPageLoading(true);
+
+        if (renderTaskRef.current) {
+          try {
+            renderTaskRef.current.cancel();
+          } catch {}
+        }
+
+        const page = await pdfDoc.getPage(pageNum);
+        if (isCancelled || !canvasRef.current) return;
+
+        // Base responsive scale: 1.35x for crisp text on screens
+        const baseScale = (zoom / 100) * 1.35;
+        const viewport = page.getViewport({ scale: baseScale, rotation });
+        const canvas = canvasRef.current;
+        const context = canvas.getContext("2d", { alpha: false });
+        if (!context) return;
+
+        const pixelRatio = window.devicePixelRatio || 1;
+        canvas.width = Math.floor(viewport.width * pixelRatio);
+        canvas.height = Math.floor(viewport.height * pixelRatio);
+        canvas.style.width = `${Math.floor(viewport.width)}px`;
+        canvas.style.height = `${Math.floor(viewport.height)}px`;
+
+        const transform = pixelRatio !== 1 ? [pixelRatio, 0, 0, pixelRatio, 0, 0] : null;
+
+        const renderContext = {
+          canvasContext: context,
+          transform: transform || undefined,
+          viewport: viewport,
+        };
+
+        const renderTask = page.render(renderContext);
+        renderTaskRef.current = renderTask;
+
+        await renderTask.promise;
+        if (!isCancelled) {
+          setPageLoading(false);
+        }
+      } catch (err: any) {
+        if (err?.name === "RenderingCancelledException") {
+          return;
+        }
+        console.warn(`Error rendering PDF page ${pageNum}:`, err);
+        if (!isCancelled) {
+          setPageLoading(false);
+        }
+      }
+    }
+
+    renderPage();
+
+    return () => {
+      isCancelled = true;
+      if (renderTaskRef.current) {
+        try {
+          renderTaskRef.current.cancel();
+        } catch {}
+      }
+    };
+  }, [pdfDoc, pageNum, zoom, rotation]);
+
+  return (
+    <div className="relative my-3 flex flex-col items-center shadow-lg rounded-xl overflow-hidden bg-white border border-slate-200 dark:border-slate-800 transition-all max-w-full">
+      {pageLoading && (
+        <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 flex items-center justify-center z-10">
+          <Loader2 className="w-6 h-6 animate-spin text-[#004b79]" />
+        </div>
+      )}
+      <canvas ref={canvasRef} className="block max-w-full bg-white select-none" />
+      <div className="w-full py-1 text-center bg-slate-100 dark:bg-slate-800 text-[11px] font-bold text-slate-500 border-t border-slate-200 dark:border-slate-700">
+        Page {pageNum} of {pdfDoc.numPages}
+      </div>
+    </div>
+  );
+}
+
 export function DocumentViewer({
   url,
   fileName = "Question_Paper.pdf",
@@ -156,6 +270,8 @@ export function DocumentViewer({
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [blobMime, setBlobMime] = useState<string>("");
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [pdfDoc, setPdfDoc] = useState<any>(null);
+  const [numPages, setNumPages] = useState<number>(0);
   const [pdfLoading, setPdfLoading] = useState<boolean>(true);
   const [pdfError, setPdfError] = useState<boolean>(false);
   const [reloadKey, setReloadKey] = useState<number>(0);
@@ -249,69 +365,84 @@ export function DocumentViewer({
     return "GENERIC";
   }, [url, fileName, blobMime, isExamMode]);
 
-  // Pre-fetch PDF into local Blob URL to bypass iframe cross-origin and header issues
+  // Load and parse PDF using PDF.js into canvas document model
   useEffect(() => {
     if (!url || docType !== "PDF") {
       setPdfLoading(false);
       setPdfError(false);
+      setPdfDoc(null);
+      setNumPages(0);
       return;
     }
 
     let isCancelled = false;
     setPdfLoading(true);
     setPdfError(false);
-
-    // If it's already a data: URL, convert to Blob URL
-    if (url.startsWith("data:")) {
-      const result = safeDataUrlToBlobUrl(url);
-      if (result && !isCancelled) {
-        setPdfBlobUrl(result.blobUrl);
-        setPdfLoading(false);
-      }
-      return () => {
-        if (result?.blobUrl) {
-          try {
-            URL.revokeObjectURL(result.blobUrl);
-          } catch {}
-        }
-      };
-    }
-
-    // If it's already a blob: URL, use it directly
-    if (url.startsWith("blob:")) {
-      setPdfBlobUrl(url);
-      setPdfLoading(false);
-      return;
-    }
-
-    // Fetch the remote/API URL into a local blob
     let localBlobUrl: string | null = null;
-    fetch(url)
-      .then(async (res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error ${res.status}`);
-        }
-        const contentType = res.headers.get("content-type") || "";
-        if (contentType.includes("application/json")) {
-          // If server returned a JSON error, it's not a valid PDF file
-          throw new Error("Received JSON response instead of PDF binary");
-        }
-        const blob = await res.blob();
-        if (!isCancelled) {
+
+    const targetUrl = url;
+    if (!targetUrl) return;
+
+    async function loadPdf() {
+      try {
+        let pdfData: Uint8Array | null = null;
+
+        if (targetUrl.startsWith("data:")) {
+          const result = safeDataUrlToBlobUrl(targetUrl);
+          if (result) {
+            localBlobUrl = result.blobUrl;
+            setPdfBlobUrl(result.blobUrl);
+            const res = await fetch(result.blobUrl);
+            const buf = await res.arrayBuffer();
+            pdfData = new Uint8Array(buf);
+          }
+        } else if (targetUrl.startsWith("blob:")) {
+          setPdfBlobUrl(targetUrl);
+          const res = await fetch(targetUrl);
+          const buf = await res.arrayBuffer();
+          pdfData = new Uint8Array(buf);
+        } else {
+          // Standard API or remote URL: fetch arrayBuffer directly
+          const res = await fetch(targetUrl);
+          if (!res.ok) {
+            throw new Error(`HTTP error ${res.status}`);
+          }
+          const contentType = res.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            throw new Error("Received JSON response instead of PDF binary");
+          }
+          const blob = await res.blob();
           localBlobUrl = URL.createObjectURL(blob);
           setPdfBlobUrl(localBlobUrl);
+          const buf = await blob.arrayBuffer();
+          pdfData = new Uint8Array(buf);
+        }
+
+        if (isCancelled || !pdfData) return;
+
+        const loadingTask = pdfjsLib.getDocument({
+          data: pdfData,
+          cMapUrl: "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/cmaps/",
+          cMapPacked: true,
+        });
+
+        const doc = await loadingTask.promise;
+        if (!isCancelled) {
+          setPdfDoc(doc);
+          setNumPages(doc.numPages);
           setPdfLoading(false);
           setPdfError(false);
         }
-      })
-      .catch((fetchErr) => {
-        console.warn("DocumentViewer PDF prefetch warning:", fetchErr);
+      } catch (err: any) {
+        console.warn("DocumentViewer PDF prefetch/render error:", err);
         if (!isCancelled) {
-          // If fetch fails (e.g. 404 or network error), flag pdfError so clean fallback is shown
           setPdfError(true);
           setPdfLoading(false);
         }
-      });
+      }
+    }
+
+    loadPdf();
 
     return () => {
       isCancelled = true;
@@ -626,49 +757,30 @@ export function DocumentViewer({
         {docType === "PDF" && (
           <>
             {viewTab === "PDF" && !pdfError ? (
-              <div className="w-full h-full min-h-[420px] flex-1 flex flex-col items-center justify-center overflow-hidden relative">
+              <div className="w-full h-full min-h-[420px] flex-1 flex flex-col items-center overflow-auto relative">
                 {pdfLoading && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/95 dark:bg-slate-900/95 z-20 backdrop-blur-xs gap-3">
                     <Loader2 className="w-8 h-8 animate-spin text-[#004b79] dark:text-[#dfb74a]" />
                     <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      Loading Question Paper…
+                      Loading Question Paper Pages…
                     </p>
                   </div>
                 )}
 
-                {activeResourceUrl ? (
-                  <object
-                    data={pdfEmbedSrc}
-                    type="application/pdf"
-                    className="w-full h-full min-h-[500px] flex-1 rounded-xl bg-white shadow-md border-0"
-                    style={{
-                      transform: zoom !== 100 ? `scale(${zoom / 100})` : undefined,
-                      transformOrigin: "top center",
-                    }}
-                  >
-                    <iframe
-                      src={pdfEmbedSrc}
-                      title={title || "PDF Question Paper"}
-                      className="w-full h-full min-h-[500px] flex-1 rounded-xl bg-white shadow-md border-0"
-                    >
-                      {/* Sub-frame fallback if browser plugin is unavailable */}
-                      <div className="flex flex-col items-center justify-center p-8 text-center bg-white dark:bg-slate-900 rounded-xl">
-                        <FileText className="w-10 h-10 text-slate-400 mb-2" />
-                        <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                          Direct PDF preview is loading.
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => setViewTab("TEXT")}
-                          className="mt-3 px-4 py-2 rounded-xl bg-[#004b79] text-white text-xs font-bold"
-                        >
-                          Switch to Text View
-                        </button>
-                      </div>
-                    </iframe>
-                  </object>
+                {pdfDoc && numPages > 0 ? (
+                  <div className="w-full max-w-4xl flex flex-col items-center py-2 px-2">
+                    {Array.from({ length: numPages }, (_, i) => (
+                      <PdfCanvasPage
+                        key={i + 1}
+                        pdfDoc={pdfDoc}
+                        pageNum={i + 1}
+                        zoom={zoom}
+                        rotation={rotation}
+                      />
+                    ))}
+                  </div>
                 ) : (
-                  renderQuestionSheetText()
+                  !pdfLoading && renderQuestionSheetText()
                 )}
               </div>
             ) : (

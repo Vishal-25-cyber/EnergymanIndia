@@ -457,9 +457,6 @@ export async function GET(
 
     if (isDownload) {
       headers["Content-Disposition"] = `attachment; filename="${encodedFileName}"; filename*=UTF-8''${encodedFileName}`;
-    } else {
-      // In RFC 6266 & Chrome: Content-Disposition "inline" renders directly in browser PDF viewer
-      headers["Content-Disposition"] = "inline";
     }
 
     return new NextResponse(new Uint8Array(fileBuffer), {
@@ -480,7 +477,7 @@ export async function GET(
         headers: {
           "Content-Type": "application/pdf",
           "Content-Length": String(fallbackPdf.length),
-          "Content-Disposition": "inline",
+          "Cache-Control": "public, max-age=300",
         },
       });
     } catch {
