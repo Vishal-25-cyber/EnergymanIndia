@@ -112,6 +112,7 @@ export default function StudentAssignmentsPage() {
   // Security & Attention Monitor State
   const [isExamFullscreen, setIsExamFullscreen] = useState<boolean>(false);
   const [splitViewMode, setSplitViewMode] = useState<"SPLIT" | "PDF_FULL" | "SUBMIT_FULL">("SPLIT");
+  const [isCameraMinimized, setIsCameraMinimized] = useState<boolean>(false);
   const [pdfZoom, setPdfZoom] = useState<number>(100);
   const [warningCount, setWarningCount] = useState<number>(0);
   const [activeWarning, setActiveWarning] = useState<{
@@ -622,13 +623,17 @@ export default function StudentAssignmentsPage() {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         setIsWindowAway(true);
-      } else if (document.hasFocus()) {
+      } else {
         setIsWindowAway(false);
       }
     };
 
     const handleBlur = () => {
-      setIsWindowAway(true);
+      // In web browsers, clicking inside an iframe (like the question paper) fires window.blur.
+      // We only flag window away if the document is genuinely hidden (tab switched / window minimized)
+      if (document.hidden) {
+        setIsWindowAway(true);
+      }
     };
 
     const handleFocus = () => {
@@ -1550,19 +1555,20 @@ export default function StudentAssignmentsPage() {
                     {formatTime(timeLeftSeconds)}
                   </div>
 
-                  {/* Split View toggle - only during active test */}
-                  <div className="hidden md:flex items-center p-1 rounded-xl bg-gray-100 border border-gray-200 text-xs font-bold">
-                    {(["PDF_FULL", "SPLIT", "SUBMIT_FULL"] as const).map((mode) => (
-                      <button key={mode} type="button" onClick={() => setSplitViewMode(mode)}
-                        className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
-                          splitViewMode === mode
-                            ? "bg-[#004b79] text-white shadow-xs"
-                            : "text-gray-500 hover:text-gray-800"
-                        }`}>
-                        {mode === "PDF_FULL" ? "Paper" : mode === "SPLIT" ? "Split" : "Camera"}
-                      </button>
-                    ))}
+                  {/* Full screen question paper indicator & camera toggle */}
+                  <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700">
+                    <FileText className="w-3.5 h-3.5 text-[#004b79]" />
+                    <span>Full Screen Question Paper</span>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraMinimized((prev) => !prev)}
+                    className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                    title={isCameraMinimized ? "Expand Camera" : "Minimize Camera"}
+                  >
+                    <Camera className="w-3.5 h-3.5 text-[#004b79]" />
+                    <span className="hidden md:inline">{isCameraMinimized ? "Show Camera" : "Minimize Camera"}</span>
+                  </button>
                 </>
               ) : (
                 /* Post-test: Big Upload Countdown */
@@ -1804,135 +1810,141 @@ export default function StudentAssignmentsPage() {
               </div>
             </div>
           ) : (
-            /* DURING TEST VIEW: PDF VIEWER (LEFT) + CAMERA PROCTORING (RIGHT) */
-            <div className="flex-1 p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-3 overflow-hidden">
-              {/* LEFT PANE: QUESTION PAPER / UNIVERSAL DOCUMENT VIEWER - light theme */}
-              <div className={`${
-                splitViewMode === "SUBMIT_FULL"
-                  ? "hidden"
-                  : splitViewMode === "PDF_FULL"
-                  ? "lg:col-span-12"
-                  : "lg:col-span-7"
-              } h-full flex flex-col rounded-2xl bg-white border border-gray-200 overflow-hidden shadow-lg`}>
+            /* DURING TEST VIEW: FULL SCREEN QUESTION PAPER + MINIMIZED FLOATING CAMERA OVERLAY */
+            <div className="flex-1 relative w-full h-full overflow-hidden flex flex-col p-2 sm:p-3 bg-slate-100 dark:bg-slate-950">
+              {/* FULL-SCREEN QUESTION PAPER VIEWER */}
+              <div className="w-full h-full flex-1 flex flex-col rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-md">
                 <DocumentViewer
-                  url={activeProctoredTest.attachmentUrl}
-                  fileName={activeProctoredTest.attachmentName || `${activeProctoredTest.title} — Question Paper`}
+                  url={
+                    activeProctoredTest.attachmentUrl?.includes("/api/materials/file") && !activeProctoredTest.attachmentUrl.endsWith(".pdf")
+                      ? `${activeProctoredTest.attachmentUrl}.pdf`
+                      : activeProctoredTest.attachmentUrl
+                  }
+                  fileName={activeProctoredTest.attachmentName || `${activeProctoredTest.title || "Question_Paper"}.pdf`}
                   title={`${activeProctoredTest.title} — Question Paper`}
                   description={activeProctoredTest.description || "Answer all questions clearly on your blank paper. Show complete working steps."}
                   className="w-full h-full flex-1 border-0 rounded-none shadow-none"
                   minHeight="100%"
                   showToolbar={true}
+                  isExamMode={true}
                 />
               </div>
 
-              {/* RIGHT PANE: CAMERA PROCTORING - light theme */}
-              <div className={`${
-                splitViewMode === "PDF_FULL"
-                  ? "hidden"
-                  : splitViewMode === "SUBMIT_FULL"
-                  ? "lg:col-span-12"
-                  : "lg:col-span-5"
-              } h-full flex flex-col overflow-hidden`}>
-                {/* Camera card - full height, no wordings underneath */}
-                <div className="rounded-2xl bg-white border border-gray-200 overflow-hidden shadow-md flex-1 flex flex-col">
-                  {/* Camera Header */}
-                  <div className="px-3.5 py-2.5 flex items-center justify-between bg-gray-50 border-b border-gray-200 shrink-0">
-                    <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${ isCameraStarted ? "bg-emerald-500 animate-pulse" : "bg-amber-400 animate-bounce" }`} />
-                      <span className="text-[11px] font-bold text-gray-700">Live Proctoring</span>
+              {/* MINIMIZED FLOATING PICTURE-IN-PICTURE CAMERA PROCTORING CARD */}
+              <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 transition-all duration-300">
+                {isCameraMinimized ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsCameraMinimized(false)}
+                    className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-700 shadow-2xl text-xs font-bold text-slate-800 dark:text-slate-200 hover:scale-105 active:scale-95 transition-all cursor-pointer ring-1 ring-slate-900/10"
+                    title="Click to expand camera preview"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                    <Camera className="w-3.5 h-3.5 text-[#004b79] dark:text-[#dfb74a]" />
+                    <span>Camera Proctoring Active</span>
+                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
+                      {faceStatus === "OK" ? "● In Frame" : "● Attention"}
+                    </span>
+                    <Maximize2 className="w-3 h-3 text-slate-400 ml-1" />
+                  </button>
+                ) : (
+                  <div className="w-64 sm:w-72 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/90 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col ring-1 ring-slate-900/10">
+                    {/* Header */}
+                    <div className="px-3 py-2 bg-slate-50/90 dark:bg-slate-800/90 border-b border-slate-200/80 dark:border-slate-700/80 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-2 h-2 rounded-full shrink-0 ${isCameraStarted ? "bg-emerald-500 animate-pulse" : "bg-amber-400 animate-bounce"}`} />
+                        <span className="text-[11px] font-black text-slate-800 dark:text-slate-200 tracking-tight">AI Camera Proctoring</span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {warningCount > 0 && (
+                          <span className="text-[9px] font-black px-1.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+                            {warningCount}/3
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setIsCameraMinimized(true)}
+                          title="Minimize camera overlay"
+                          className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                        >
+                          <Minimize2 className="w-3 h-3" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {/* Face detection status badge */}
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        faceStatus === "OK"
-                          ? "text-emerald-700 bg-emerald-100"
-                          : faceStatus === "MULTIPLE_FACES"
-                          ? "text-rose-700 bg-rose-100 border border-rose-300 animate-pulse"
-                          : "text-rose-600 bg-rose-100 animate-pulse"
-                      }`}>
-                        {faceStatus === "OK"
-                          ? "● In Frame"
-                          : faceStatus === "MULTIPLE_FACES"
-                          ? `● Multiple Faces (${detectedFaceCount})`
-                          : "● No Face Detected"}
-                      </span>
-                      {warningCount > 0 && (
-                        <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 border border-rose-200 text-rose-600 flex items-center gap-1">
-                          <ShieldAlert className="w-2.5 h-2.5" />
-                          {warningCount} {warningCount === 1 ? "Warning" : "Warnings"}
+
+                    {/* Video Area */}
+                    <div className="relative w-full h-40 sm:h-44 bg-black overflow-hidden flex items-center justify-center">
+                      <video
+                        ref={(node) => {
+                          videoRef.current = node;
+                          if (node && streamRef.current) {
+                            if (node.srcObject !== streamRef.current) {
+                              node.srcObject = streamRef.current;
+                            }
+                            node.play().catch(() => {});
+                          }
+                        }}
+                        autoPlay
+                        playsInline
+                        muted
+                        onCanPlay={(e) => {
+                          e.currentTarget.play().catch(() => {});
+                        }}
+                        className="w-full h-full object-cover"
+                        style={{ transform: "scaleX(-1)" }}
+                      />
+                      <canvas ref={canvasRef} className="hidden" />
+
+                      {/* Face guide frame */}
+                      {isCameraStarted && (
+                        <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
+                          <div className="w-24 h-32 sm:w-28 sm:h-36 relative transition-all duration-300">
+                            {[
+                              "top-0 left-0 border-t-2 border-l-2 rounded-tl-lg",
+                              "top-0 right-0 border-t-2 border-r-2 rounded-tr-lg",
+                              "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-lg",
+                              "bottom-0 right-0 border-b-2 border-r-2 rounded-br-lg",
+                            ].map((cls, i) => (
+                              <div
+                                key={i}
+                                className={`absolute w-4 h-4 ${
+                                  faceStatus === "OK"
+                                    ? "border-emerald-400/90"
+                                    : "border-rose-500 animate-pulse"
+                                } ${cls}`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Bottom Status Overlay */}
+                      <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between pointer-events-none">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full backdrop-blur-md shadow-xs ${
+                          faceStatus === "OK"
+                            ? "text-emerald-100 bg-emerald-900/80 border border-emerald-500/50"
+                            : faceStatus === "MULTIPLE_FACES"
+                            ? "text-rose-100 bg-rose-900/90 border border-rose-500/50 animate-pulse"
+                            : "text-amber-100 bg-amber-900/90 border border-amber-500/50 animate-pulse"
+                        }`}>
+                          {faceStatus === "OK"
+                            ? "● In Frame"
+                            : faceStatus === "MULTIPLE_FACES"
+                            ? `● Multi Face (${detectedFaceCount})`
+                            : "● Looking Down / Writing"}
                         </span>
+                      </div>
+
+                      {!isCameraStarted && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 p-3 text-center text-xs text-gray-400 bg-gray-900">
+                          <Camera className="w-6 h-6 text-[#dfb74a] animate-pulse" />
+                          <span className="text-[11px] text-gray-300">Camera active…</span>
+                        </div>
                       )}
                     </div>
                   </div>
-
-                  {/* Video Feed */}
-                  <div className="relative w-full flex-1 bg-black overflow-hidden flex items-center justify-center min-h-[320px]">
-                    <video
-                      ref={(node) => {
-                        videoRef.current = node;
-                        if (node && streamRef.current) {
-                          if (node.srcObject !== streamRef.current) {
-                            node.srcObject = streamRef.current;
-                          }
-                          node.play().catch(() => {});
-                        }
-                      }}
-                      autoPlay
-                      playsInline
-                      muted
-                      onCanPlay={(e) => {
-                        e.currentTarget.play().catch(() => {});
-                      }}
-                      className="w-full h-full object-cover"
-                      style={{ transform: "scaleX(-1)" }}
-                    />
-                    <canvas ref={canvasRef} className="hidden" />
-
-                    {/* Face guide frame */}
-                    {isCameraStarted && (
-                      <div className="absolute inset-0 pointer-events-none flex flex-col items-center justify-center">
-                        <div className="w-44 h-56 sm:w-56 sm:h-72 relative transition-all duration-300">
-                          {[
-                            "top-0 left-0 border-t-2 border-l-2 rounded-tl-xl",
-                            "top-0 right-0 border-t-2 border-r-2 rounded-tr-xl",
-                            "bottom-0 left-0 border-b-2 border-l-2 rounded-bl-xl",
-                            "bottom-0 right-0 border-b-2 border-r-2 rounded-br-xl",
-                          ].map((cls, i) => (
-                            <div
-                              key={i}
-                              className={`absolute w-7 h-7 ${
-                                faceStatus === "OK"
-                                  ? "border-emerald-400/80"
-                                  : "border-rose-500 animate-pulse"
-                              } ${cls}`}
-                            />
-                          ))}
-                        </div>
-                        {faceStatus === "MULTIPLE_FACES" && (
-                          <div className="mt-3 px-3 py-1 rounded-full bg-rose-600/90 text-white text-[11px] font-bold shadow-lg animate-bounce flex items-center gap-1.5">
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-300" />
-                            <span>Multiple Faces Detected ({detectedFaceCount})!</span>
-                          </div>
-                        )}
-                        {faceStatus === "NO_FACE" && (
-                          <div className="mt-3 px-3 py-1 rounded-full bg-rose-600/90 text-white text-[11px] font-bold shadow-lg animate-pulse flex items-center gap-1.5">
-                            <AlertTriangle className="w-3.5 h-3.5 text-amber-300" />
-                            <span>No Face Detected in Frame!</span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Camera initializing state */}
-                    {!isCameraStarted && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 p-4 text-center text-xs text-gray-400 bg-gray-900">
-                        <Camera className="w-8 h-8 text-[#dfb74a] animate-pulse" />
-                        <span className="text-gray-300 font-medium">Camera initializing…</span>
-                        {cameraError && <p className="text-[11px] text-rose-400 font-bold">{cameraError}</p>}
-                      </div>
-                    )}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           )}

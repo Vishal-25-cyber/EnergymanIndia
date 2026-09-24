@@ -25,6 +25,7 @@ interface DocumentViewerProps {
   defaultZoom?: number;
   showToolbar?: boolean;
   minHeight?: string;
+  isExamMode?: boolean;
 }
 
 /**
@@ -166,6 +167,7 @@ export function DocumentViewer({
   defaultZoom = 100,
   showToolbar = true,
   minHeight = "400px",
+  isExamMode = false,
 }: DocumentViewerProps) {
   const [zoom, setZoom] = useState(defaultZoom);
   const [rotation, setRotation] = useState(0);
@@ -200,18 +202,26 @@ export function DocumentViewer({
   }, [url]);
 
   // Determine file type
-  const docType = useMemo(() => {
+  const docType: "NONE" | "PDF" | "IMAGE" | "WORD" | "TEXT" | "GENERIC" = useMemo(() => {
     if (!url && !fileName) return "NONE";
 
     const lowerName = (fileName || "").toLowerCase();
     const lowerUrl = (url || "").toLowerCase();
     const effectiveMime = blobMime.toLowerCase();
 
+    // 1. Explicit or detected PDF (including all material file routes and exam question papers)
     if (
       effectiveMime.includes("pdf") ||
       lowerUrl.startsWith("data:application/pdf") ||
       lowerName.endsWith(".pdf") ||
-      lowerUrl.includes(".pdf")
+      lowerUrl.includes(".pdf") ||
+      lowerUrl.includes("/api/materials/file") ||
+      lowerUrl.includes("/materials/") ||
+      lowerName.includes("question") ||
+      lowerName.includes("paper") ||
+      lowerName.includes("test") ||
+      lowerName.includes("worksheet") ||
+      isExamMode
     ) {
       return "PDF";
     }
@@ -245,7 +255,7 @@ export function DocumentViewer({
     }
 
     return "GENERIC";
-  }, [url, fileName, blobMime]);
+  }, [url, fileName, blobMime, isExamMode]);
 
   // Active resource URL to use for iframe / embed
   const activeResourceUrl = blobUrl || url || "";
@@ -341,26 +351,33 @@ export function DocumentViewer({
               </div>
             )}
 
-            {/* Open Full Size in New Tab */}
-            <button
-              type="button"
-              onClick={() => openDocumentInNewTab(url, fileName)}
-              title="Open Fullscreen in New Window"
-              className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
-            >
-              <ExternalLink className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Open Full Size</span>
-            </button>
+            {/* Open Full Size in New Tab (Hidden in Exam Mode to prevent tab switch violations) */}
+            {!isExamMode ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => openDocumentInNewTab(url, fileName)}
+                  title="Open Fullscreen in New Window"
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Open Full Size</span>
+                </button>
 
-            {/* Download Button */}
-            <button
-              type="button"
-              onClick={() => downloadDocumentFile(url, fileName)}
-              title="Download Document"
-              className="p-1.5 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
-            >
-              <Download className="w-4 h-4" />
-            </button>
+                <button
+                  type="button"
+                  onClick={() => downloadDocumentFile(url, fileName)}
+                  title="Download Document"
+                  className="p-1.5 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+              </>
+            ) : (
+              <span className="px-2.5 py-1 rounded-xl text-[11px] font-bold bg-[#004b79]/10 text-[#004b79] dark:bg-[#dfb74a]/10 dark:text-[#dfb74a] border border-[#004b79]/20">
+                Exam Mode • Full Inline View
+              </span>
+            )}
           </div>
         </div>
       )}
@@ -369,68 +386,16 @@ export function DocumentViewer({
       <div className="flex-1 overflow-auto relative flex flex-col items-center justify-center bg-slate-100 dark:bg-slate-950 p-2" style={{ minHeight }}>
         {/* ── 1. PDF DOCUMENT ── */}
         {docType === "PDF" && (
-          <div className="w-full h-full min-h-[380px] flex-1 flex flex-col items-center justify-center overflow-auto">
-            {!loadError ? (
-              <object
-                data={`${activeResourceUrl}#toolbar=1&navpanes=0`}
-                type="application/pdf"
-                className="w-full h-full min-h-[420px] rounded-xl bg-white shadow-md border-0"
-                style={{
-                  transform: zoom !== 100 ? `scale(${zoom / 100})` : undefined,
-                  transformOrigin: "top center",
-                }}
-                onError={() => setLoadError(true)}
-              >
-                {/* Fallback iframe inside object */}
-                <iframe
-                  src={`${activeResourceUrl}#toolbar=1&navpanes=0`}
-                  title={title || "PDF Document"}
-                  className="w-full h-full min-h-[420px] rounded-xl bg-white shadow-md border-0"
-                  onError={() => setLoadError(true)}
-                >
-                  <div className="p-8 text-center flex flex-col items-center justify-center h-full gap-3 bg-white dark:bg-slate-900 rounded-xl">
-                    <FileText className="w-12 h-12 text-rose-500" />
-                    <p className="font-bold text-slate-800 dark:text-slate-200">PDF Ready</p>
-                    <p className="text-xs text-slate-400">Click below to open in full viewer</p>
-                    <button
-                      type="button"
-                      onClick={() => openDocumentInNewTab(url, fileName)}
-                      className="px-4 py-2 bg-[#004b79] text-white text-xs font-bold rounded-xl"
-                    >
-                      Open PDF in New Window
-                    </button>
-                  </div>
-                </iframe>
-              </object>
-            ) : (
-              <div className="p-8 text-center flex flex-col items-center justify-center gap-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm max-w-md my-auto">
-                <FileText className="w-12 h-12 text-rose-500" />
-                <div>
-                  <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">{fileName}</h4>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Your browser has restricted inline PDF display. Use the button below to view it with built-in viewer:
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => openDocumentInNewTab(url, fileName)}
-                    className="px-4 py-2 bg-[#004b79] hover:bg-[#003b60] text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                    <span>Open in New Window</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => downloadDocumentFile(url, fileName)}
-                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl flex items-center gap-1.5"
-                  >
-                    <Download className="w-3.5 h-3.5" />
-                    <span>Download</span>
-                  </button>
-                </div>
-              </div>
-            )}
+          <div className="w-full h-full min-h-[420px] flex-1 flex flex-col items-center justify-center overflow-hidden">
+            <iframe
+              src={`${activeResourceUrl}#toolbar=1&navpanes=0`}
+              title={title || "PDF Document"}
+              className="w-full h-full min-h-[500px] flex-1 rounded-xl bg-white shadow-md border-0"
+              style={{
+                transform: zoom !== 100 ? `scale(${zoom / 100})` : undefined,
+                transformOrigin: "top center",
+              }}
+            />
           </div>
         )}
 
@@ -508,30 +473,14 @@ export function DocumentViewer({
           </div>
         )}
 
-        {/* ── 5. GENERIC FILE FALLBACK ── */}
+        {/* ── 5. GENERIC FILE: EMBED DIRECTLY INLINE ── */}
         {docType === "GENERIC" && (
-          <div className="p-8 text-center flex flex-col items-center justify-center gap-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm max-w-md my-auto">
-            <FileCode className="w-12 h-12 text-[#004b79] dark:text-[#dfb74a]" />
-            <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">{fileName}</h4>
-            <p className="text-xs text-slate-400">Click below to open or download this file.</p>
-            <div className="flex items-center gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => openDocumentInNewTab(url, fileName)}
-                className="px-4 py-2 bg-[#004b79] text-white text-xs font-bold rounded-xl flex items-center gap-1.5"
-              >
-                <ExternalLink className="w-3.5 h-3.5" />
-                <span>Open File</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => downloadDocumentFile(url, fileName)}
-                className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-xl flex items-center gap-1.5"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Download</span>
-              </button>
-            </div>
+          <div className="w-full h-full min-h-[420px] flex-1 flex flex-col items-center justify-center overflow-hidden">
+            <iframe
+              src={activeResourceUrl}
+              title={title || fileName || "Document"}
+              className="w-full h-full min-h-[500px] flex-1 rounded-xl bg-white shadow-md border-0"
+            />
           </div>
         )}
       </div>
