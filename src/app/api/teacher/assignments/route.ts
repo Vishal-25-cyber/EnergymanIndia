@@ -384,8 +384,10 @@ export async function DELETE(
     }
 
     const targetId = asg._id;
-    await Assignment.findByIdAndDelete(targetId);
-    await AssignmentSubmission.deleteMany({ assignmentId: targetId });
+    await Promise.all([
+      Assignment.findByIdAndDelete(targetId),
+      AssignmentSubmission.deleteMany({ assignmentId: targetId }),
+    ]);
     invalidateStudentAssignmentsCache();
 
     return NextResponse.json({

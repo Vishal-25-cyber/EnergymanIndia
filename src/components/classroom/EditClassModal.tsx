@@ -4,13 +4,14 @@ import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, BookOpen, FileText, CheckCircle2, AlertCircle } from "lucide-react";
+import { Calendar, Clock, BookOpen, FileText, CheckCircle2, AlertCircle, Trash2 } from "lucide-react";
 
 interface EditClassModalProps {
   isOpen: boolean;
   onClose: () => void;
   sessionDoc: any;
   onSuccess: () => void;
+  onDelete?: (classId: string) => void;
 }
 
 const COMMON_SUBJECTS = [
@@ -29,6 +30,7 @@ export function EditClassModal({
   onClose,
   sessionDoc,
   onSuccess,
+  onDelete,
 }: EditClassModalProps) {
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
@@ -229,23 +231,42 @@ export function EditClassModal({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            disabled={isLoading}
-            className="text-xs font-bold"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="bg-[#004b79] hover:bg-[#003b60] text-white text-xs font-bold shadow-xs"
-          >
-            {isLoading ? "Saving Changes..." : "Save Class Changes"}
-          </Button>
+        <div className="flex items-center justify-between gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+          {onDelete ? (
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm(`Are you sure you want to permanently delete "${sessionDoc.title || "this class"}"? It will be removed from student timetables.`)) {
+                  onDelete(sessionDoc._id);
+                  onClose();
+                }
+              }}
+              className="text-xs font-bold text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/40 px-3 py-2 rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete Class</span>
+            </button>
+          ) : (
+            <div />
+          )}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={isLoading}
+              className="text-xs font-bold"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="bg-[#004b79] hover:bg-[#003b60] text-white text-xs font-bold shadow-xs"
+            >
+              {isLoading ? "Saving Changes..." : "Save Class Changes"}
+            </Button>
+          </div>
         </div>
       </form>
     </Modal>

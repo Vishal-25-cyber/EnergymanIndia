@@ -297,38 +297,43 @@ export default function TeacherSchedulePage() {
 
   const handleDeleteClass = async (classId: string) => {
     if (!classId) return;
+    const backupClasses = localClasses ?? (classesData?.classes || []);
+
+    // 0ms Optimistic Delete: close modal immediately & remove class from screen
+    setDeleteModalClass(null);
+    setLocalClasses(backupClasses.filter((c: any) => c._id !== classId));
+    setActionMessage("Class session deleted. Timetable updated.");
+    setTimeout(() => setActionMessage(""), 3500);
+
     try {
       let res = await fetch(`/api/classes/${classId}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
         credentials: "include",
       });
-      let data = await res.json().catch(() => ({}));
 
-      // Fallback to query param or teacher/classes endpoint if direct path returned 404
-      if (!res.ok && res.status === 404) {
+      // Fallback if needed
+      if (!res.ok) {
         res = await fetch(`/api/classes?id=${encodeURIComponent(classId)}`, {
           method: "DELETE",
           headers: getAuthHeaders(),
           credentials: "include",
         });
-        data = await res.json().catch(() => ({}));
       }
 
-      if (res.ok) {
-        setDeleteModalClass(null);
-        setLocalClasses((prev) => (prev || classes).filter((c) => c._id !== classId));
-        setActionMessage("Class session permanently deleted. Timetable has been updated for students.");
-        setTimeout(() => setActionMessage(""), 4000);
-        invalidateCache("/api/classes");
-        invalidateCache("/api/student/classes");
-        invalidateCache("/api/student/dashboard");
-        refetch();
-      } else {
-        alert(data.error || "Failed to delete class.");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to delete class.");
       }
+
+      invalidateCache("/api/classes");
+      invalidateCache("/api/student/classes");
+      invalidateCache("/api/student/dashboard");
+      refetch();
     } catch (e: any) {
       console.error("Delete class error:", e);
+      // Revert if error
+      setLocalClasses(backupClasses);
       alert("Error deleting class: " + (e.message || "Network error"));
     }
   };
@@ -540,6 +545,7 @@ export default function TeacherSchedulePage() {
           onClose={() => setEditModalClass(null)}
           sessionDoc={editModalClass}
           onSuccess={loadClasses}
+          onDelete={handleDeleteClass}
         />
       )}
 

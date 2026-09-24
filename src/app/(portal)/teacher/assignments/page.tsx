@@ -217,8 +217,20 @@ export default function TeacherAssignmentsPage() {
 
   const [subTab, setSubTab] = useState<"PENDING" | "COMPLETED" | "ALL">("PENDING");
 
-  const allAssignments = data?.assignments || [];
-  const allSubmissions = data?.submissions || [];
+  const [localAssignments, setLocalAssignments] = useState<any[] | null>(null);
+  const [localSubmissions, setLocalSubmissions] = useState<any[] | null>(null);
+
+  useEffect(() => {
+    if (data?.assignments) {
+      setLocalAssignments(data.assignments);
+    }
+    if (data?.submissions) {
+      setLocalSubmissions(data.submissions);
+    }
+  }, [data]);
+
+  const allAssignments = localAssignments ?? (data?.assignments || []);
+  const allSubmissions = localSubmissions ?? (data?.submissions || []);
 
   // Filter tasks by selected category
   const filteredAssignments = React.useMemo(() => {
@@ -426,10 +438,20 @@ export default function TeacherAssignmentsPage() {
 
   const handleDeleteTask = async () => {
     if (!deleteTargetTask) return;
-    setIsDeletingTask(true);
-    setDeleteError("");
+    const taskToDelete = deleteTargetTask;
+    const backupAssignments = localAssignments ?? (data?.assignments || []);
+    const backupSubmissions = localSubmissions ?? (data?.submissions || []);
+
+    // 0ms Optimistic Delete: close modal immediately & remove task and associated submissions
+    setDeleteTargetTask(null);
+    setLocalAssignments(backupAssignments.filter((a: any) => a._id !== taskToDelete._id));
+    setLocalSubmissions(backupSubmissions.filter((s: any) => {
+      const aId = s.assignmentId?._id?.toString() || s.assignmentId?.toString();
+      return aId !== taskToDelete._id;
+    }));
+
     try {
-      const res = await fetch(`/api/teacher/assignments?id=${encodeURIComponent(deleteTargetTask._id)}`, {
+      const res = await fetch(`/api/teacher/assignments?id=${encodeURIComponent(taskToDelete._id)}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });
@@ -440,13 +462,13 @@ export default function TeacherAssignmentsPage() {
       invalidateCache("/api/teacher/assignments");
       invalidateCache("/api/student/assignments");
       invalidateCache("/api/student/dashboard");
-      await refetch();
-      setDeleteTargetTask(null);
+      refetch();
     } catch (err: any) {
       console.error("Delete task failed:", err);
-      setDeleteError(err.message || "Failed to delete task.");
-    } finally {
-      setIsDeletingTask(false);
+      // Revert if error
+      setLocalAssignments(backupAssignments);
+      setLocalSubmissions(backupSubmissions);
+      alert("Failed to delete task: " + (err.message || "Network error"));
     }
   };
 

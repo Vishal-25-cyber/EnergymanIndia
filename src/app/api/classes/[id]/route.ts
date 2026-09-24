@@ -221,21 +221,24 @@ export async function DELETE(
 
     const classIdToDelete = liveClass._id;
     await LiveSession.findByIdAndDelete(classIdToDelete);
-
-    try {
-      const Attendance = (await import("@/models/Attendance")).default;
-      await Attendance.deleteMany({ sessionId: classIdToDelete });
-    } catch {}
-
-    await recordAuditLog({
-      actorId: session?.userId || "staff",
-      action: "CLASS_DELETED",
-      entityType: "LIVE_SESSION",
-      entityId: classIdToDelete.toString(),
-      details: { title: liveClass.title, subject: liveClass.subject, topic: liveClass.topic },
-    });
-
     invalidateClassesCache();
+
+    // Secondary cleanups non-blocking in background
+    (async () => {
+      try {
+        const Attendance = (await import("@/models/Attendance")).default;
+        await Attendance.deleteMany({ sessionId: classIdToDelete });
+      } catch {}
+      try {
+        await recordAuditLog({
+          actorId: session?.userId || "staff",
+          action: "CLASS_DELETED",
+          entityType: "LIVE_SESSION",
+          entityId: classIdToDelete.toString(),
+          details: { title: liveClass.title, subject: liveClass.subject, topic: liveClass.topic },
+        });
+      } catch {}
+    })().catch(() => {});
 
     return NextResponse.json({ success: true, message: "Class deleted successfully." });
   } catch (error: any) {
