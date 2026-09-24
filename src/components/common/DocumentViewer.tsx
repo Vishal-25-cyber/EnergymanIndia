@@ -118,15 +118,18 @@ export function openDocumentInNewTab(fileUrl?: string, fileName?: string) {
   if (fileUrl.startsWith("data:")) {
     const res = safeDataUrlToBlobUrl(fileUrl);
     if (!res) return;
-    const win = window.open(res.blobUrl, "_blank");
-    if (!win) {
-      downloadDocumentFile(fileUrl, fileName);
-    }
+    const a = document.createElement("a");
+    a.href = res.blobUrl;
+    a.target = "_blank";
+    a.rel = "noopener noreferrer";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     setTimeout(() => {
       try {
         URL.revokeObjectURL(res.blobUrl);
       } catch {}
-    }, 15000);
+    }, 60000);
   }
 }
 

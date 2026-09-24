@@ -13,8 +13,13 @@ import {
   Eye,
   Check,
   Loader2,
+  Maximize2,
+  Minimize2,
+  X,
+  ShieldCheck,
 } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
+import { DocumentViewer } from "@/components/common/DocumentViewer";
 import { getSubjectsForClassAndBoard, CLASS_LIST } from "@/lib/curriculum";
 import { useFastFetch, invalidateCache } from "@/lib/api-cache";
 import { downloadMaterial, openMaterial, DownloadableMaterial } from "@/lib/download";
@@ -29,6 +34,8 @@ export default function TeacherMaterialsPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadSuccess, setUploadSuccess] = useState(false);
   const [deletedIds, setDeletedIds] = useState<string[]>([]);
+  const [previewMaterial, setPreviewMaterial] = useState<any | null>(null);
+  const [isModalFullscreen, setIsModalFullscreen] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -387,9 +394,9 @@ export default function TeacherMaterialsPage() {
                   {/* Col 4: Actions (View, Download, Delete) */}
                   <div className="col-span-2 flex items-center justify-start md:justify-end gap-1.5">
                     <button
-                      onClick={() => openMaterial(mat)}
+                      onClick={() => setPreviewMaterial(mat)}
                       className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
-                      title="Open and view uploaded document in browser tab"
+                      title="View uploaded document in reader"
                     >
                       <Eye className="w-3.5 h-3.5 text-[#004b79] dark:text-[#dfb74a]" />
                       <span>View</span>
@@ -564,6 +571,91 @@ export default function TeacherMaterialsPage() {
               </div>
             </form>
           )}
+        </Modal>
+      )}
+
+      {/* ── 5. IN-PAGE DOCUMENT READER MODAL ── */}
+      {previewMaterial && (
+        <Modal
+          isOpen={!!previewMaterial}
+          maxWidth={isModalFullscreen ? "5xl" : "4xl"}
+          onClose={() => {
+            setPreviewMaterial(null);
+            setIsModalFullscreen(false);
+          }}
+          title={previewMaterial.title || "Study Material"}
+          description={`${previewMaterial.subject || "Subject Resource"} • ${previewMaterial.classLevel || "Class 10"}`}
+        >
+          <div className="space-y-4">
+            {/* Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-slate-100/80 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  {previewMaterial.title}
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold">
+                  {previewMaterial.category || "NOTES"}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalFullscreen((prev) => !prev)}
+                  className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
+                >
+                  {isModalFullscreen ? (
+                    <>
+                      <Minimize2 className="w-3.5 h-3.5" />
+                      <span>Compact</span>
+                    </>
+                  ) : (
+                    <>
+                      <Maximize2 className="w-3.5 h-3.5" />
+                      <span>Full Screen</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => downloadMaterial(previewMaterial)}
+                  className="inline-flex items-center gap-1.5 py-1.5 px-3 rounded-xl border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer"
+                  title="Download file"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Download</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreviewMaterial(null);
+                    setIsModalFullscreen(false);
+                  }}
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                  title="Close reader"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Embedded Document Viewer: Real File Preview on this page */}
+            <div className={`w-full ${isModalFullscreen ? "h-[78vh]" : "h-[62vh]"} min-h-[420px] rounded-xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-inner flex flex-col bg-slate-50 dark:bg-slate-900`}>
+              <DocumentViewer
+                url={previewMaterial.fileUrl}
+                fileName={previewMaterial.fileName || `${previewMaterial.title}.pdf`}
+                title={previewMaterial.title}
+                description={previewMaterial.description}
+                subject={previewMaterial.subject}
+                classLevel={previewMaterial.classLevel}
+                showToolbar={true}
+                className="w-full h-full flex-1 border-0 rounded-none shadow-none"
+                minHeight="100%"
+              />
+            </div>
+          </div>
         </Modal>
       )}
     </main>
