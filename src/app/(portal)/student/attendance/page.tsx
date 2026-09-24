@@ -49,17 +49,19 @@ export default function StudentAttendancePage() {
     return `${dd}-${mm}-${yyyy}`;
   };
 
-  const filteredRecords = records.filter((r: any) => {
-    const matchesStatus = statusFilter === "ALL" || r.status?.toUpperCase() === statusFilter.toUpperCase();
-    const formattedRecordDate = formatDateDDMMYYYY(r.date);
-    const matchesDate =
-      !dateFilter ||
-      r.date === dateFilter ||
-      r.date?.startsWith(dateFilter) ||
-      formattedRecordDate === formatDateDDMMYYYY(dateFilter) ||
-      formattedRecordDate.includes(dateFilter);
-    return matchesStatus && matchesDate;
-  });
+  const filteredRecords = React.useMemo(() => {
+    return records.filter((r: any) => {
+      const matchesStatus = statusFilter === "ALL" || r.status?.toUpperCase() === statusFilter.toUpperCase();
+      const formattedRecordDate = formatDateDDMMYYYY(r.date);
+      const matchesDate =
+        !dateFilter ||
+        r.date === dateFilter ||
+        r.date?.startsWith(dateFilter) ||
+        formattedRecordDate === formatDateDDMMYYYY(dateFilter) ||
+        formattedRecordDate.includes(dateFilter);
+      return matchesStatus && matchesDate;
+    });
+  }, [records, statusFilter, dateFilter]);
 
   const getSubjectColor = (subject?: string) => {
     switch (subject?.toLowerCase()) {
@@ -235,18 +237,19 @@ export default function StudentAttendancePage() {
             </div>
 
             {/* Quick Filter Chips */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 overflow-x-auto no-scrollbar py-1">
               {["ALL", "PRESENT", "LATE", "ABSENT"].map((st) => (
                 <button
                   key={st}
+                  type="button"
                   onClick={() => setStatusFilter(st)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+                  className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 active:scale-95 ${
                     statusFilter === st
-                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs"
-                      : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                      ? "bg-[#002137] text-[#dfb74a] shadow-xs font-black"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
                   }`}
                 >
-                  {st === "ALL" ? "All" : st}
+                  {st === "ALL" ? "All" : st.charAt(0) + st.slice(1).toLowerCase()}
                 </button>
               ))}
             </div>
@@ -264,7 +267,13 @@ export default function StudentAttendancePage() {
         )}
 
         {/* History Rows or Empty State */}
-        {filteredRecords.length === 0 ? (
+        {isLoading && !data ? (
+          <div className="py-6 space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-14 rounded-xl bg-slate-100 dark:bg-slate-800/60 animate-pulse" />
+            ))}
+          </div>
+        ) : filteredRecords.length === 0 ? (
           <div className="py-12 text-center text-slate-400 space-y-2">
             <CalendarCheck2 className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-700" />
             <p className="text-sm font-semibold text-slate-600 dark:text-slate-400">No Attendance Records Found</p>

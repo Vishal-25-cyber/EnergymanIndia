@@ -192,7 +192,7 @@ export default function TeacherStudentReportsPage() {
   };
 
   return (
-    <main className="w-full max-w-7xl mx-auto p-6 sm:p-8 space-y-8 animate-in fade-in duration-150 select-none pb-24">
+    <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 animate-in fade-in duration-150 select-none pb-24">
       {/* ── 1. HEADER (CLEAN, NO BADGES, EXACT ALIGNMENT) ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
         <div className="space-y-1">

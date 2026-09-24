@@ -327,32 +327,34 @@ export default function TeacherSchedulePage() {
 
   const todayStr = new Date().toISOString().split("T")[0];
 
-  const filteredClasses = sortClassesByPriority(
-    classes.filter((c: any) => {
-      const status = (c.status || "").toUpperCase();
-      const isLive = status === "LIVE";
-      const isUpcoming = (status === "PUBLISHED" || status === "SCHEDULED" || status === "UPCOMING") && (!c.date || c.date >= todayStr);
-      const isCompleted = status === "COMPLETED" || (c.date && c.date < todayStr && status !== "CANCELLED" && status !== "DRAFT");
-      const isDraft = status === "DRAFT";
-      const isCancelled = status === "CANCELLED";
+  const filteredClasses = React.useMemo(() => {
+    return sortClassesByPriority(
+      classes.filter((c: any) => {
+        const status = (c.status || "").toUpperCase();
+        const isLive = status === "LIVE";
+        const isUpcoming = (status === "PUBLISHED" || status === "SCHEDULED" || status === "UPCOMING") && (!c.date || c.date >= todayStr);
+        const isCompleted = status === "COMPLETED" || (c.date && c.date < todayStr && status !== "CANCELLED" && status !== "DRAFT");
+        const isDraft = status === "DRAFT";
+        const isCancelled = status === "CANCELLED";
 
-      if (selectedTab === "LIVE" && !isLive) return false;
-      if (selectedTab === "UPCOMING" && !isUpcoming) return false;
-      if (selectedTab === "COMPLETED" && !isCompleted) return false;
-      if (selectedTab === "DRAFT" && !isDraft) return false;
-      if (selectedTab === "CANCELLED" && !isCancelled) return false;
+        if (selectedTab === "LIVE" && !isLive) return false;
+        if (selectedTab === "UPCOMING" && !isUpcoming) return false;
+        if (selectedTab === "COMPLETED" && !isCompleted) return false;
+        if (selectedTab === "DRAFT" && !isDraft) return false;
+        if (selectedTab === "CANCELLED" && !isCancelled) return false;
 
-      if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        return (
-          c.title?.toLowerCase().includes(q) ||
-          c.subject?.toLowerCase().includes(q) ||
-          c.topic?.toLowerCase().includes(q)
-        );
-      }
-      return true;
-    })
-  );
+        if (searchQuery.trim()) {
+          const q = searchQuery.toLowerCase();
+          return (
+            c.title?.toLowerCase().includes(q) ||
+            c.subject?.toLowerCase().includes(q) ||
+            c.topic?.toLowerCase().includes(q)
+          );
+        }
+        return true;
+      })
+    );
+  }, [classes, selectedTab, searchQuery, todayStr]);
 
   return (
     <main className="w-full max-w-7xl mx-auto p-6 sm:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-150 select-none">
@@ -393,14 +395,15 @@ export default function TeacherSchedulePage() {
 
       {/* ── 2. FILTER TABS & SEARCH (FLAT, NO CARDS) ── */}
       <div className="flex items-center justify-between gap-4 flex-wrap pb-3 border-b border-slate-200 dark:border-slate-800">
-        <div className="flex items-center gap-1.5 flex-wrap">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth py-1 max-w-full">
           {(["ALL", "LIVE", "UPCOMING", "COMPLETED", "DRAFT", "CANCELLED"] as const).map((tab) => (
             <button
               key={tab}
+              type="button"
               onClick={() => setSelectedTab(tab)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${selectedTab === tab
-                  ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 active:scale-95 ${selectedTab === tab
+                  ? "bg-[#002137] text-[#dfb74a] dark:bg-[#002842] dark:text-[#dfb74a] shadow-xs font-black border border-[#b89047]/40"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                 }`}
             >
               {tab === "ALL" ? "All Sessions" : tab}

@@ -140,12 +140,16 @@ export default function TeacherStudentsPage() {
   });
 
   // Active classes to display based on classFilter
-  const displayClasses: string[] = classFilter === "ALL" ? distinctClasses : [classFilter];
+  const displayClasses: string[] = React.useMemo(() => {
+    return classFilter === "ALL" ? distinctClasses : [classFilter];
+  }, [classFilter, distinctClasses]);
 
-  const totalFilteredCount = students.filter((s: any) => {
-    const matchesClass = classFilter === "ALL" || s.currentClass === classFilter;
-    return matchesClass && matchesSearch(s);
-  }).length;
+  const totalFilteredCount = React.useMemo(() => {
+    return students.filter((s: any) => {
+      const matchesClass = classFilter === "ALL" || s.currentClass === classFilter;
+      return matchesClass && matchesSearch(s);
+    }).length;
+  }, [students, classFilter, search]);
 
   return (
     <main className="w-full max-w-7xl mx-auto p-6 sm:p-8 space-y-8 animate-in fade-in duration-150 select-none">
@@ -195,16 +199,17 @@ export default function TeacherStudentsPage() {
         </div>
 
         {/* Class-wise Filter Tabs / Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 -mx-1 px-1">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
             Class Filter:
           </span>
 
           <button
+            type="button"
             onClick={() => setClassFilter("ALL")}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 active:scale-95 ${
               classFilter === "ALL"
-                ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-xs"
+                ? "bg-[#002137] text-[#dfb74a] dark:bg-[#002842] dark:text-[#dfb74a] shadow-xs font-black border border-[#b89047]/40"
                 : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
             }`}
           >

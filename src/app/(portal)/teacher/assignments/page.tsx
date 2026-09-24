@@ -36,8 +36,8 @@ import { DocumentViewer, openDocumentInNewTab, downloadDocumentFile } from "@/co
 import { formatGlobalDueDateTime, formatGlobalDateTime, GLOBAL_TIMEZONE_LABEL } from "@/lib/global-time";
 
 export default function TeacherAssignmentsPage() {
-  // Category Tab: "ASSIGNMENT" | "TEST" | "HOMEWORK"
-  const [activeCategory, setActiveCategory] = useState<"ASSIGNMENT" | "TEST" | "HOMEWORK">("ASSIGNMENT");
+  // Category Tab: "ALL" | "ASSIGNMENT" | "TEST" | "HOMEWORK"
+  const [activeCategory, setActiveCategory] = useState<"ALL" | "ASSIGNMENT" | "TEST" | "HOMEWORK">("ALL");
 
   const { data, refetch, isLoading } = useFastFetch("/api/teacher/assignments");
   const [isCreateModal, setIsCreateModal] = useState(false);
@@ -220,31 +220,48 @@ export default function TeacherAssignmentsPage() {
   const allSubmissions = data?.submissions || [];
 
   // Filter tasks by selected category
-  const filteredAssignments = allAssignments.filter(
-    (a: any) => (a.type || "ASSIGNMENT") === activeCategory
-  );
-  const categoryAssignmentIds = new Set(filteredAssignments.map((a: any) => a._id?.toString()));
+  const filteredAssignments = React.useMemo(() => {
+    return allAssignments.filter((a: any) => {
+      if (activeCategory === "ALL") return true;
+      return (a.type || "ASSIGNMENT") === activeCategory;
+    });
+  }, [allAssignments, activeCategory]);
 
-  const filteredCategorySubmissions = allSubmissions.filter((s: any) => {
-    const aId = s.assignmentId?._id?.toString() || s.assignmentId?.toString();
-    return categoryAssignmentIds.has(aId) || (s.type || "ASSIGNMENT") === activeCategory;
-  });
+  const categoryAssignmentIds = React.useMemo(() => {
+    return new Set(filteredAssignments.map((a: any) => a._id?.toString()));
+  }, [filteredAssignments]);
 
-  const pendingSubmissions = filteredCategorySubmissions.filter((s: any) => s.status !== "EVALUATED");
-  const gradedSubmissions = filteredCategorySubmissions.filter((s: any) => s.status === "EVALUATED");
+  const filteredCategorySubmissions = React.useMemo(() => {
+    return allSubmissions.filter((s: any) => {
+      if (activeCategory === "ALL") return true;
+      const aId = s.assignmentId?._id?.toString() || s.assignmentId?.toString();
+      return categoryAssignmentIds.has(aId) || (s.type || "ASSIGNMENT") === activeCategory;
+    });
+  }, [allSubmissions, activeCategory, categoryAssignmentIds]);
 
-  const displayedSubmissions =
-    subTab === "PENDING"
+  const pendingSubmissions = React.useMemo(() => {
+    return filteredCategorySubmissions.filter((s: any) => s.status !== "EVALUATED");
+  }, [filteredCategorySubmissions]);
+
+  const gradedSubmissions = React.useMemo(() => {
+    return filteredCategorySubmissions.filter((s: any) => s.status === "EVALUATED");
+  }, [filteredCategorySubmissions]);
+
+  const displayedSubmissions = React.useMemo(() => {
+    return subTab === "PENDING"
       ? pendingSubmissions
       : subTab === "COMPLETED"
         ? gradedSubmissions
         : filteredCategorySubmissions;
+  }, [subTab, pendingSubmissions, gradedSubmissions, filteredCategorySubmissions]);
 
   const [grantingRetestId, setGrantingRetestId] = useState<string | null>(null);
 
-  const pendingRetestRequests = allSubmissions.filter(
-    (s: any) => (s.retestRequested || s.retestStatus === "REQUESTED") && !s.retestPermitted
-  );
+  const pendingRetestRequests = React.useMemo(() => {
+    return allSubmissions.filter(
+      (s: any) => (s.retestRequested || s.retestStatus === "REQUESTED") && !s.retestPermitted
+    );
+  }, [allSubmissions]);
 
   const [retestDecisionModal, setRetestDecisionModal] = useState<{
     isOpen: boolean;
@@ -551,7 +568,7 @@ export default function TeacherAssignmentsPage() {
   };
 
   return (
-    <main className="w-full max-w-7xl mx-auto p-6 sm:p-8 space-y-8 animate-in fade-in duration-150 select-none pb-24">
+    <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8 animate-in fade-in duration-150 select-none pb-24">
       {/* ── 1. HEADER & CATEGORY TABS ── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
         <div className="space-y-1">
@@ -572,7 +589,7 @@ export default function TeacherAssignmentsPage() {
               setPublishError("");
               setIsPublishing(false);
               setFormData({
-                type: activeCategory,
+                type: activeCategory === "ALL" ? "ASSIGNMENT" : activeCategory,
                 title: "",
                 description: "",
                 subject: availableSubjects[0] || "Mathematics",
@@ -589,7 +606,7 @@ export default function TeacherAssignmentsPage() {
               });
               setIsCreateModal(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white transition-all cursor-pointer shadow-sm shadow-[#004b79]/20"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white transition-all cursor-pointer shadow-sm shadow-[#004b79]/20 active:scale-95"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>
@@ -685,11 +702,26 @@ export default function TeacherAssignmentsPage() {
       )}
 
       {/* ── 2. CATEGORY SWITCHER (ASSIGNMENTS vs TIMED TESTS vs HOMEWORK) ── */}
-      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800">
+      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 overflow-x-auto no-scrollbar scroll-smooth">
+        <button
+          type="button"
+          onClick={() => setActiveCategory("ALL")}
+          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95 ${activeCategory === "ALL"
+              ? "bg-[#004b79] text-white shadow-xs"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+            }`}
+        >
+          <Layers className="w-4 h-4 text-sky-300" />
+          <span>All Tasks</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-mono">
+            {allAssignments.length}
+          </span>
+        </button>
+
         <button
           type="button"
           onClick={() => setActiveCategory("ASSIGNMENT")}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${activeCategory === "ASSIGNMENT"
+          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95 ${activeCategory === "ASSIGNMENT"
               ? "bg-[#004b79] text-white shadow-xs"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             }`}
@@ -704,7 +736,7 @@ export default function TeacherAssignmentsPage() {
         <button
           type="button"
           onClick={() => setActiveCategory("TEST")}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${activeCategory === "TEST"
+          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95 ${activeCategory === "TEST"
               ? "bg-[#004b79] text-white shadow-xs"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             }`}
@@ -724,7 +756,7 @@ export default function TeacherAssignmentsPage() {
         <button
           type="button"
           onClick={() => setActiveCategory("HOMEWORK")}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${activeCategory === "HOMEWORK"
+          className={`flex-1 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95 ${activeCategory === "HOMEWORK"
               ? "bg-[#004b79] text-white shadow-xs"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             }`}
@@ -746,22 +778,36 @@ export default function TeacherAssignmentsPage() {
                 ? "Proctored Test Answer Submissions"
                 : activeCategory === "HOMEWORK"
                   ? "Homework Worksheet Submissions"
-                  : "Assignment Solution Submissions"}
+                  : activeCategory === "ALL"
+                    ? "All Student Task Submissions"
+                    : "Assignment Solution Submissions"}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {activeCategory === "TEST"
                 ? "Review student answers, inspect webcam proctoring audit snapshots, and award marks."
                 : activeCategory === "HOMEWORK"
                   ? "Review student daily homework worksheet solutions and award marks."
-                  : "Review student coursework assignment solutions and award marks."}
+                  : activeCategory === "ALL"
+                    ? "Review student submissions across assignments, proctored tests, and homework."
+                    : "Review student coursework assignment solutions and award marks."}
             </p>
           </div>
 
           {/* Submission Filter Tabs */}
-          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 self-start sm:self-auto">
+          <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 overflow-x-auto no-scrollbar scroll-smooth self-start sm:self-auto shrink-0 max-w-full">
+            <button
+              onClick={() => setSubTab("ALL")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95 ${subTab === "ALL"
+                  ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs"
+                  : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                }`}
+            >
+              <span>All ({filteredCategorySubmissions.length})</span>
+            </button>
+
             <button
               onClick={() => setSubTab("PENDING")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${subTab === "PENDING"
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95 ${subTab === "PENDING"
                   ? "bg-white dark:bg-slate-900 text-amber-700 dark:text-amber-300 shadow-xs"
                   : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
@@ -774,7 +820,7 @@ export default function TeacherAssignmentsPage() {
 
             <button
               onClick={() => setSubTab("COMPLETED")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${subTab === "COMPLETED"
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95 ${subTab === "COMPLETED"
                   ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 shadow-xs"
                   : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}

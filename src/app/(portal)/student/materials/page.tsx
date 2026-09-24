@@ -39,12 +39,16 @@ export default function StudentMaterialsPage() {
   const studentClass = data?.studentClass || "Class 10";
   const studentBoard = data?.board || "CBSE";
 
-  const rawMaterials: DownloadableMaterial[] = Array.isArray(data?.materials) ? data.materials : [];
+  const rawMaterials: DownloadableMaterial[] = React.useMemo(() => {
+    return Array.isArray(data?.materials) ? data.materials : [];
+  }, [data?.materials]);
 
   // Filter strictly by student's class
-  const classMaterials = rawMaterials.filter((m: any) => {
-    return !m.classLevel || m.classLevel === studentClass;
-  });
+  const classMaterials = React.useMemo(() => {
+    return rawMaterials.filter((m: any) => {
+      return !m.classLevel || m.classLevel === studentClass;
+    });
+  }, [rawMaterials, studentClass]);
 
   const availableSubjects = ["ALL", "Mathematics", "Science", "Social Science", "English"];
 
@@ -60,18 +64,21 @@ export default function StudentMaterialsPage() {
     return m.includes(f) || f.includes(m);
   };
 
-  const filtered = classMaterials.filter((m: any) => {
-    const matchesSearch =
-      !search.trim() ||
-      m.title?.toLowerCase().includes(search.toLowerCase()) ||
-      m.subject?.toLowerCase().includes(search.toLowerCase()) ||
-      m.description?.toLowerCase().includes(search.toLowerCase()) ||
-      (typeof m.uploadedBy === "object" && (m.uploadedBy as any)?.name?.toLowerCase().includes(search.toLowerCase())) ||
-      (typeof m.uploadedBy === "string" && m.uploadedBy.toLowerCase().includes(search.toLowerCase()));
+  const filtered = React.useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return classMaterials.filter((m: any) => {
+      const matchesSearch =
+        !query ||
+        m.title?.toLowerCase().includes(query) ||
+        m.subject?.toLowerCase().includes(query) ||
+        m.description?.toLowerCase().includes(query) ||
+        (typeof m.uploadedBy === "object" && (m.uploadedBy as any)?.name?.toLowerCase().includes(query)) ||
+        (typeof m.uploadedBy === "string" && m.uploadedBy.toLowerCase().includes(query));
 
-    const matchesSubject = isSubjectMatch(m.subject, selectedSubject);
-    return matchesSearch && matchesSubject;
-  });
+      const matchesSubject = isSubjectMatch(m.subject, selectedSubject);
+      return matchesSearch && matchesSubject;
+    });
+  }, [classMaterials, search, selectedSubject]);
 
   const handleDownload = async (mat: DownloadableMaterial) => {
     const matId = mat._id || mat.title;
@@ -212,17 +219,18 @@ export default function StudentMaterialsPage() {
             </div>
 
             {/* Subject Filter Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1 -mx-1 px-1">
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
                 Subjects:
               </span>
               {availableSubjects.map((s) => (
                 <button
                   key={s}
+                  type="button"
                   onClick={() => setSelectedSubject(s)}
-                  className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 active:scale-95 ${
                     selectedSubject === s
-                      ? "bg-[#002137] text-[#dfb74a] border border-[#b89047]/40 shadow-xs font-bold"
+                      ? "bg-[#002137] text-[#dfb74a] border border-[#b89047]/40 shadow-xs font-black"
                       : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
                   }`}
                 >
@@ -244,7 +252,13 @@ export default function StudentMaterialsPage() {
 
             {/* Materials Rows */}
             <div className="divide-y divide-slate-100 dark:divide-slate-850">
-              {filtered.length === 0 ? (
+              {isLoading && !data ? (
+                <div className="py-8 space-y-3">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="h-16 rounded-xl bg-slate-100 dark:bg-slate-800/60 animate-pulse" />
+                  ))}
+                </div>
+              ) : filtered.length === 0 ? (
                 <div className="py-12 text-center text-slate-400 text-xs space-y-1">
                   <BookOpen className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-700" />
                   <p className="font-semibold text-slate-700 dark:text-slate-300">

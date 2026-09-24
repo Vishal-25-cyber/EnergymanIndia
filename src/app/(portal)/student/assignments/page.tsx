@@ -66,8 +66,8 @@ function saveAttendedTestId(id: string) {
 }
 
 export default function StudentAssignmentsPage() {
-  // Category Tab: "ASSIGNMENT" | "TEST" | "HOMEWORK"
-  const [activeCategory, setActiveCategory] = useState<"ASSIGNMENT" | "TEST" | "HOMEWORK">("ASSIGNMENT");
+  // Category Tab: "ALL" | "ASSIGNMENT" | "TEST" | "HOMEWORK"
+  const [activeCategory, setActiveCategory] = useState<"ALL" | "ASSIGNMENT" | "TEST" | "HOMEWORK">("ALL");
 
   const [attendedTestIds, setAttendedTestIds] = useState<Set<string>>(() => getStoredAttendedTests());
 
@@ -151,12 +151,17 @@ export default function StudentAssignmentsPage() {
   const studentClass = data?.studentClass || "Class 10";
   const studentBoard = data?.board || "CBSE";
 
-  const allAssignments = Array.isArray(data?.assignments) ? data.assignments : [];
+  const allAssignments = React.useMemo(() => {
+    return Array.isArray(data?.assignments) ? data.assignments : [];
+  }, [data?.assignments]);
 
   // Filter tasks for active category
-  const filteredTasks = allAssignments.filter(
-    (a: any) => (a.type || "ASSIGNMENT") === activeCategory
-  );
+  const filteredTasks = React.useMemo(() => {
+    return allAssignments.filter((a: any) => {
+      if (activeCategory === "ALL") return true;
+      return (a.type || "ASSIGNMENT") === activeCategory;
+    });
+  }, [allAssignments, activeCategory]);
 
   const formatDueDateTime = (dStr: string | Date) => {
     return formatGlobalDueDateTime(dStr);
@@ -1043,14 +1048,30 @@ export default function StudentAssignmentsPage() {
         </div>
       </div>
 
-      {/* ── 2. CATEGORY SWITCHER (ASSIGNMENTS vs PROCTORED TESTS vs HOMEWORK) ── */}
-      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800">
+      {/* ── 2. CATEGORY SWITCHER (ALL / ASSIGNMENTS / TESTS / HOMEWORK) ── */}
+      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 overflow-x-auto no-scrollbar scroll-smooth">
+        <button
+          type="button"
+          onClick={() => setActiveCategory("ALL")}
+          className={`shrink-0 sm:flex-1 py-2.5 px-3.5 sm:px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap min-h-[42px] active:scale-95 ${
+            activeCategory === "ALL"
+              ? "bg-[#004b79] text-white shadow-xs font-black"
+              : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-amber-300" />
+          <span>All Tasks</span>
+          <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-mono">
+            {allAssignments.length}
+          </span>
+        </button>
+
         <button
           type="button"
           onClick={() => setActiveCategory("ASSIGNMENT")}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`shrink-0 sm:flex-1 py-2.5 px-3.5 sm:px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap min-h-[42px] active:scale-95 ${
             activeCategory === "ASSIGNMENT"
-              ? "bg-[#004b79] text-white shadow-xs"
+              ? "bg-[#004b79] text-white shadow-xs font-black"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
           }`}
         >
@@ -1064,14 +1085,14 @@ export default function StudentAssignmentsPage() {
         <button
           type="button"
           onClick={() => setActiveCategory("TEST")}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`shrink-0 sm:flex-1 py-2.5 px-3.5 sm:px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap min-h-[42px] active:scale-95 ${
             activeCategory === "TEST"
-              ? "bg-[#004b79] text-white shadow-xs"
+              ? "bg-[#004b79] text-white shadow-xs font-black"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
           }`}
         >
           <Timer className="w-4 h-4 text-[#dfb74a]" />
-          <span>Proctored Tests &amp; Exams</span>
+          <span>Proctored Tests</span>
           <span className="px-2 py-0.5 rounded-full text-[10px] bg-white/20 text-white font-mono">
             {allAssignments.filter((a: any) => a.type === "TEST").length}
           </span>
@@ -1080,9 +1101,9 @@ export default function StudentAssignmentsPage() {
         <button
           type="button"
           onClick={() => setActiveCategory("HOMEWORK")}
-          className={`flex-1 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+          className={`shrink-0 sm:flex-1 py-2.5 px-3.5 sm:px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap min-h-[42px] active:scale-95 ${
             activeCategory === "HOMEWORK"
-              ? "bg-[#004b79] text-white shadow-xs"
+              ? "bg-[#004b79] text-white shadow-xs font-black"
               : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
           }`}
         >
@@ -1099,7 +1120,9 @@ export default function StudentAssignmentsPage() {
         <div className="flex items-center justify-between pb-2 border-b border-slate-200 dark:border-slate-800">
           <div>
             <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
-              {activeCategory === "TEST"
+              {activeCategory === "ALL"
+                ? "All Academic Tasks & Assessments"
+                : activeCategory === "TEST"
                 ? "Timed Proctored Tests & Assessments"
                 : activeCategory === "HOMEWORK"
                 ? "Daily Homework Worksheets"
@@ -1116,14 +1139,20 @@ export default function StudentAssignmentsPage() {
           </span>
         </div>
 
-        {filteredTasks.length === 0 ? (
+        {isLoading && !data ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="h-44 rounded-2xl bg-slate-100 dark:bg-slate-900/60 animate-pulse border border-slate-200/60 dark:border-slate-800/60" />
+            ))}
+          </div>
+        ) : filteredTasks.length === 0 ? (
           <div className="p-12 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl space-y-2">
             <CheckCircle2 className="w-8 h-8 text-slate-300 dark:text-slate-600 mx-auto" />
             <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
-              No {activeCategory.toLowerCase()} tasks assigned
+              No {activeCategory === "ALL" ? "" : activeCategory.toLowerCase()} tasks assigned
             </p>
             <p className="text-xs text-slate-400">
-              You are all caught up! Check back when your teacher publishes new {activeCategory.toLowerCase()} items.
+              You are all caught up! Check back when your teacher publishes new items.
             </p>
           </div>
         ) : (
@@ -1494,15 +1523,15 @@ export default function StudentAssignmentsPage() {
       {activeProctoredTest && mounted && createPortal(
         <div className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[99999] bg-gray-50 text-gray-900 flex flex-col h-screen w-screen overflow-hidden select-none">
           {/* Top Secure Examination Control Bar - Light Theme */}
-          <div className="h-14 px-4 sm:px-6 bg-white border-b border-gray-200 shadow-xs flex items-center justify-between gap-3 shrink-0 z-20">
+          <div className="min-h-14 py-2 px-3 sm:px-6 bg-white border-b border-gray-200 shadow-xs flex flex-wrap items-center justify-between gap-2.5 shrink-0 z-20">
             {/* Left: Test ID */}
-            <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <div className="w-8 h-8 rounded-xl bg-[#004b79]/10 border border-[#004b79]/20 flex items-center justify-center text-[#004b79] shrink-0">
                 {isTestLocked ? <Upload className="w-4 h-4" /> : <Camera className="w-4 h-4" />}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-black tracking-tight truncate text-gray-900">
+                  <h2 className="text-xs sm:text-sm font-black tracking-tight truncate max-w-[140px] sm:max-w-xs text-gray-900">
                     {activeProctoredTest.title}
                   </h2>
                   {!isTestLocked ? (
@@ -1511,14 +1540,14 @@ export default function StudentAssignmentsPage() {
                     </span>
                   ) : (
                     <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-amber-500 text-white shrink-0">
-                      Test Ended
+                      Ended
                     </span>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-[10px] text-gray-500 truncate">
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-500 truncate">
                   <span>{activeProctoredTest.subject}</span>
                   <span>•</span>
-                  <span>Max: {activeProctoredTest.maxMarks} Marks</span>
+                  <span>{activeProctoredTest.maxMarks}M</span>
                   {!isTestLocked && (
                     <>
                       <span>•</span>
@@ -1526,13 +1555,9 @@ export default function StudentAssignmentsPage() {
                         <span className="text-emerald-600 font-bold flex items-center gap-1">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> In Frame
                         </span>
-                      ) : faceStatus === "MULTIPLE_FACES" ? (
-                        <span className="text-rose-500 font-bold flex items-center gap-1 animate-pulse">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" /> Multiple Faces ({detectedFaceCount})
-                        </span>
                       ) : (
                         <span className="text-rose-500 font-bold flex items-center gap-1 animate-pulse">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" /> No Face Detected
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block" /> Warning
                         </span>
                       )}
                     </>
@@ -1542,11 +1567,11 @@ export default function StudentAssignmentsPage() {
             </div>
 
             {/* Center: Timer + View switcher */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {!isTestLocked ? (
                 <>
                   {/* Test Timer */}
-                  <div className={`px-3 py-1.5 rounded-xl border flex items-center gap-1.5 font-mono font-black text-sm transition-all ${
+                  <div className={`px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl border flex items-center gap-1.5 font-mono font-black text-xs sm:text-sm transition-all ${
                     timeLeftSeconds <= 300
                       ? "bg-rose-50 border-rose-300 text-rose-600 animate-pulse"
                       : "bg-amber-50 border-amber-300 text-amber-700"
@@ -1559,7 +1584,7 @@ export default function StudentAssignmentsPage() {
                   <button
                     type="button"
                     onClick={toggleFullscreen}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-bold text-slate-700 transition-all cursor-pointer shadow-2xs"
+                    className="flex items-center gap-1 px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-xs font-bold text-slate-700 transition-all cursor-pointer shadow-2xs"
                     title={isExamFullscreen ? "Exit Fullscreen" : "Full Screen Question Paper"}
                   >
                     {isExamFullscreen ? (
@@ -1567,12 +1592,13 @@ export default function StudentAssignmentsPage() {
                     ) : (
                       <Maximize2 className="w-3.5 h-3.5 text-[#004b79]" />
                     )}
-                    <span>{isExamFullscreen ? "Exit Fullscreen" : "Full Screen Question Paper"}</span>
+                    <span className="hidden sm:inline">{isExamFullscreen ? "Exit Fullscreen" : "Full Screen Paper"}</span>
+                    <span className="sm:hidden">{isExamFullscreen ? "Exit" : "Paper"}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsCameraMinimized((prev) => !prev)}
-                    className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                    className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs"
                     title={isCameraMinimized ? "Expand Camera" : "Minimize Camera"}
                   >
                     <Camera className="w-3.5 h-3.5 text-[#004b79]" />
@@ -1582,62 +1608,58 @@ export default function StudentAssignmentsPage() {
               ) : (
                 /* Post-test: Big Upload Countdown */
                 !uploadExpired && (
-                  <div className={`px-3.5 py-1.5 rounded-xl border flex items-center gap-2 font-mono font-black text-sm transition-all ${
+                  <div className={`px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl border flex items-center gap-1.5 sm:gap-2 font-mono font-black text-xs sm:text-sm transition-all ${
                     uploadWindowSeconds <= 60
                       ? "bg-rose-50 border-rose-300 text-rose-600 animate-pulse"
                       : "bg-blue-50 border-blue-300 text-[#004b79]"
                   }`}>
-                    <Timer className="w-4 h-4" />
-                    <span>Upload Closes In: {Math.floor(uploadWindowSeconds / 60).toString().padStart(2, "0")}:{(uploadWindowSeconds % 60).toString().padStart(2, "0")}</span>
+                    <Timer className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span>Upload: {Math.floor(uploadWindowSeconds / 60).toString().padStart(2, "0")}:{(uploadWindowSeconds % 60).toString().padStart(2, "0")}</span>
                   </div>
                 )
               )}
             </div>
 
             {/* Right Controls */}
-            <div className="flex items-center gap-1.5 shrink-0">
+            <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
               {!isTestLocked && (
                 <>
                   {/* Single Clean Proctoring Warnings Badge */}
-                  <div className={`px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 text-xs font-bold font-mono ${
+                  <div className={`px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl border flex items-center gap-1 text-[11px] sm:text-xs font-bold font-mono ${
                     warningCount === 0
                       ? "bg-slate-100 border-slate-200 text-slate-700"
                       : warningCount === 1
                       ? "bg-amber-50 border-amber-300 text-amber-800"
                       : "bg-rose-50 border-rose-300 text-rose-700 animate-pulse"
                   }`}>
-                    <ShieldAlert className="w-3.5 h-3.5" />
-                    <span>Warnings: {warningCount}/3</span>
+                    <ShieldAlert className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                    <span><span className="hidden sm:inline">Warn: </span>{warningCount}/3</span>
                   </div>
 
                   <button type="button" onClick={() => setIsSoundMuted(!isSoundMuted)}
                     title={isSoundMuted ? "Unmute" : "Mute"}
-                    className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                    className={`p-1.5 sm:p-2 rounded-xl border transition-all cursor-pointer ${
                       isSoundMuted
                         ? "bg-gray-100 border-gray-200 text-gray-400"
                         : "bg-emerald-50 border-emerald-200 text-emerald-600"
                     }`}>
-                    {isSoundMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                    {isSoundMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
                   </button>
                 </>
               )}
 
-              <button type="button" onClick={toggleFullscreen} title="Toggle Fullscreen"
-                className="p-2 rounded-xl bg-gray-100 border border-gray-200 text-gray-600 hover:bg-gray-200 cursor-pointer transition-all">
-                {isExamFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              </button>
-
               {!isTestLocked ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 sm:gap-2">
                   <button type="button" onClick={handleFinishTest}
-                    className="px-3.5 py-1.5 rounded-xl bg-[#004b79] hover:bg-[#003b60] text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-xs">
+                    className="px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl bg-[#004b79] hover:bg-[#003b60] text-white text-xs font-black transition-all cursor-pointer flex items-center gap-1 shadow-xs">
                     <Check className="w-3.5 h-3.5" />
-                    <span>Finish Test</span>
+                    <span className="hidden sm:inline">Finish Test</span>
+                    <span className="sm:hidden">Finish</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => handleCloseTestRoom()}
-                    className="px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-600 hover:text-rose-600 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs group"
+                    className="px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-600 hover:text-rose-600 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 shadow-2xs group"
                     title="Exit Test (Concludes & Locks Test)"
                   >
                     <X className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform duration-200" />
@@ -1648,13 +1670,10 @@ export default function StudentAssignmentsPage() {
                 <button
                   type="button"
                   onClick={() => handleCloseTestRoom()}
-                  className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 border border-slate-200/90 hover:border-rose-200 text-slate-700 hover:text-rose-600 text-xs font-bold transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-2xs hover:shadow-xs group"
-                  title="Close & Exit Test Room"
+                  className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 border border-slate-200 hover:border-rose-200 text-slate-700 hover:text-rose-600 text-xs font-bold transition-all cursor-pointer flex items-center gap-1"
                 >
-                  <span className="w-5 h-5 rounded-lg bg-white group-hover:bg-rose-100 flex items-center justify-center transition-colors shadow-2xs text-slate-500 group-hover:text-rose-600">
-                    <X className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform duration-200" />
-                  </span>
-                  <span>Exit Room</span>
+                  <X className="w-3.5 h-3.5" />
+                  <span>Exit</span>
                 </button>
               )}
             </div>
@@ -1870,9 +1889,9 @@ export default function StudentAssignmentsPage() {
                     <Maximize2 className="w-3 h-3 text-slate-400 ml-0.5" />
                   </button>
                 ) : (
-                  <div className="w-40 sm:w-44 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-300 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col ring-1 ring-black/10">
+                  <div className="w-32 sm:w-44 rounded-2xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-300 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col ring-1 ring-black/10">
                     {/* Compact Header */}
-                    <div className="px-2.5 py-1.5 bg-slate-900/95 text-white flex items-center justify-between gap-1">
+                    <div className="px-2 py-1 bg-slate-900/95 text-white flex items-center justify-between gap-1">
                       <div className="flex items-center gap-1.5 truncate">
                         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isCameraStarted ? "bg-emerald-500 animate-pulse" : "bg-amber-400 animate-bounce"}`} />
                         <span className="text-[10px] font-bold text-white tracking-tight truncate">AI Camera</span>
@@ -1896,7 +1915,7 @@ export default function StudentAssignmentsPage() {
                     </div>
 
                     {/* Compact Video Area */}
-                    <div className="relative w-full h-28 sm:h-30 bg-black overflow-hidden flex items-center justify-center">
+                    <div className="relative w-full h-24 sm:h-30 bg-black overflow-hidden flex items-center justify-center">
                       <video
                         ref={(node) => {
                           videoRef.current = node;

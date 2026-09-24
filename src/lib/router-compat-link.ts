@@ -1,6 +1,6 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect } from "react";
 import { Link as RouterLink } from "react-router-dom";
-import { prefetchApi } from "./api-cache";
+import { preloadRoute } from "./route-preloader";
 
 export interface NextLinkProps extends Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "href"> {
   href: string | { pathname?: string; query?: Record<string, any> };
@@ -12,35 +12,6 @@ export interface NextLinkProps extends Omit<React.AnchorHTMLAttributes<HTMLAncho
   onMouseEnter?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
   onTouchStart?: (e: React.TouchEvent<HTMLAnchorElement>) => void;
 }
-
-const ROUTE_API_MAP: Record<string, string> = {
-  "/student/dashboard": "/api/student/dashboard",
-  "/student/classes": "/api/student/classes",
-  "/student/materials": "/api/student/materials",
-  "/student/assignments": "/api/student/assignments",
-  "/student/attendance": "/api/student/attendance",
-  "/student/fees": "/api/student/payments",
-  "/student/performance": "/api/student/performance",
-  "/student/parent-view": "/api/student/parent-view",
-  "/teacher/dashboard": "/api/teacher/dashboard",
-  "/teacher/schedule": "/api/classes",
-  "/teacher/materials": "/api/teacher/materials",
-  "/teacher/assignments": "/api/teacher/assignments",
-  "/teacher/students": "/api/teacher/students",
-  "/teacher/reports": "/api/teacher/reports",
-  "/teacher/attendance": "/api/teacher/attendance",
-  "/admin/dashboard": "/api/admin/dashboard",
-  "/admin/students": "/api/admin/students",
-  "/admin/teachers": "/api/admin/teachers?status=ALL",
-  "/admin/reports": "/api/teacher/reports",
-  "/admin/batches": "/api/batches",
-  "/admin/classes": "/api/classes",
-  "/admin/attendance": "/api/admin/attendance?classLevel=ALL&status=ALL",
-  "/admin/staff-attendance": "/api/admin/staff-attendance",
-  "/admin/finance": "/api/admin/finance",
-  "/admin/analytics": "/api/admin/analytics",
-  "/admin/settings": "/api/admin/settings",
-};
 
 export function Link({
   href,
@@ -60,13 +31,16 @@ export function Link({
 
   const handlePrefetch = useCallback(() => {
     if (prefetch !== false) {
-      const cleanPath = targetTo.split("?")[0];
-      const apiEndpoint = ROUTE_API_MAP[cleanPath];
-      if (apiEndpoint) {
-        prefetchApi(apiEndpoint);
-      }
+      preloadRoute(targetTo);
     }
   }, [targetTo, prefetch]);
+
+  // Eager prefetch if link is mounted
+  useEffect(() => {
+    if (prefetch !== false) {
+      handlePrefetch();
+    }
+  }, [handlePrefetch, prefetch]);
 
   const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
     handlePrefetch();

@@ -119,7 +119,7 @@ export default function AdminBatchesPage() {
   };
 
   return (
-    <main className="w-full max-w-7xl mx-auto p-6 sm:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-150 select-none">
+    <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-150 select-none">
       {/* ── 1. CLEAN CARDLESS HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div className="space-y-1">

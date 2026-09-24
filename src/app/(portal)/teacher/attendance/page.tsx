@@ -54,34 +54,38 @@ export default function TeacherAttendancePage() {
   const assignedStudents = data?.summary?.totalStudentsAssigned || 3;
 
   // Filtered Sessions for Students
-  const filteredSessions = sessions.filter((s: any) => {
-    const liveState = getClassLiveState(s);
-    const isLive = liveState === "LIVE" || s.status === "LIVE";
-    const isCompleted = liveState === "COMPLETED" || s.isConducted === true || (s.presentCount || 0) > 0;
-    const isUpcoming = !isLive && !isCompleted;
+  const filteredSessions = React.useMemo(() => {
+    return sessions.filter((s: any) => {
+      const liveState = getClassLiveState(s);
+      const isLive = liveState === "LIVE" || s.status === "LIVE";
+      const isCompleted = liveState === "COMPLETED" || s.isConducted === true || (s.presentCount || 0) > 0;
+      const isUpcoming = !isLive && !isCompleted;
 
-    const matchesSearch =
-      !searchQuery.trim() ||
-      s.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.topic?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.date?.includes(searchQuery);
+      const matchesSearch =
+        !searchQuery.trim() ||
+        s.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.subject?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.topic?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        s.date?.includes(searchQuery);
 
-    const matchesStatus =
-      statusFilter === "ALL" ||
-      (statusFilter === "CONDUCTED" && (isCompleted || isLive)) ||
-      (statusFilter === "UPCOMING" && isUpcoming);
+      const matchesStatus =
+        statusFilter === "ALL" ||
+        (statusFilter === "CONDUCTED" && (isCompleted || isLive)) ||
+        (statusFilter === "UPCOMING" && isUpcoming);
 
-    const matchesDate = !selectedDate || s.date === selectedDate;
+      const matchesDate = !selectedDate || s.date === selectedDate;
 
-    return matchesSearch && matchesStatus && matchesDate;
-  });
+      return matchesSearch && matchesStatus && matchesDate;
+    });
+  }, [sessions, searchQuery, statusFilter, selectedDate]);
 
   // Group filtered sessions by date
-  const rawDates: string[] = filteredSessions.map((s: any) => String(s.date || "")).filter(Boolean);
-  const distinctDates: string[] = Array.from(new Set(rawDates)).sort(
-    (a: string, b: string) => new Date(b).getTime() - new Date(a).getTime()
-  );
+  const distinctDates = React.useMemo(() => {
+    const rawDates: string[] = filteredSessions.map((s: any) => String(s.date || "")).filter(Boolean);
+    return Array.from(new Set(rawDates)).sort(
+      (a: string, b: string) => new Date(b).getTime() - new Date(a).getTime()
+    );
+  }, [filteredSessions]);
 
   // Handle Staff Check-In / Check-Out
   const handleStaffPunch = async (action: "CHECK_IN" | "CHECK_OUT") => {
@@ -316,10 +320,10 @@ export default function TeacherAttendancePage() {
             </div>
 
             {/* Status Filter Tabs */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 self-start md:self-auto shrink-0">
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 overflow-x-auto no-scrollbar scroll-smooth self-start md:self-auto shrink-0 max-w-full">
               <button
                 onClick={() => setStatusFilter("ALL")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95 ${
                   statusFilter === "ALL"
                     ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
@@ -329,7 +333,7 @@ export default function TeacherAttendancePage() {
               </button>
               <button
                 onClick={() => setStatusFilter("CONDUCTED")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95 ${
                   statusFilter === "CONDUCTED"
                     ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 shadow-xs"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
@@ -339,7 +343,7 @@ export default function TeacherAttendancePage() {
               </button>
               <button
                 onClick={() => setStatusFilter("UPCOMING")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95 ${
                   statusFilter === "UPCOMING"
                     ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs"
                     : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"

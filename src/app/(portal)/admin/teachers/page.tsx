@@ -66,17 +66,23 @@ export default function AdminTeachersPage() {
   const teachers = Array.isArray(data?.teachers) ? data.teachers : [];
   const allTeachers = Array.isArray(allData?.teachers) ? allData.teachers : teachers;
 
-  const pendingCount = allTeachers.filter(
-    (t: any) => t.approvalStatus === "PENDING_APPROVAL" || t.userId?.status === "PENDING_APPROVAL"
-  ).length;
+  const pendingCount = React.useMemo(() => {
+    return allTeachers.filter(
+      (t: any) => t.approvalStatus === "PENDING_APPROVAL" || t.userId?.status === "PENDING_APPROVAL"
+    ).length;
+  }, [allTeachers]);
 
-  const approvedCount = allTeachers.filter(
-    (t: any) => t.approvalStatus === "ACTIVE" || t.userId?.status === "ACTIVE"
-  ).length;
+  const approvedCount = React.useMemo(() => {
+    return allTeachers.filter(
+      (t: any) => t.approvalStatus === "ACTIVE" || t.userId?.status === "ACTIVE"
+    ).length;
+  }, [allTeachers]);
 
-  const rejectedCount = allTeachers.filter(
-    (t: any) => t.approvalStatus === "REJECTED" || t.userId?.status === "REJECTED"
-  ).length;
+  const rejectedCount = React.useMemo(() => {
+    return allTeachers.filter(
+      (t: any) => t.approvalStatus === "REJECTED" || t.userId?.status === "REJECTED"
+    ).length;
+  }, [allTeachers]);
 
   const openEditModal = (t: any) => {
     setEditTeacher(t);
@@ -219,7 +225,7 @@ export default function AdminTeachersPage() {
   };
 
   return (
-    <main className="w-full max-w-7xl mx-auto p-6 sm:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-150 select-none">
+    <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-150 select-none">
       {/* ── 1. CLEAN CARDLESS HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div className="space-y-1">
@@ -237,7 +243,7 @@ export default function AdminTeachersPage() {
         </div>
 
         {/* Status Filter Tabs with Counts */}
-        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 rounded-xl overflow-x-auto self-start sm:self-auto shrink-0">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 rounded-xl overflow-x-auto no-scrollbar scroll-smooth self-start sm:self-auto shrink-0 max-w-full">
           {[
             { id: "ALL", label: `All Staff (${allTeachers.length})` },
             {
@@ -251,7 +257,7 @@ export default function AdminTeachersPage() {
             <button
               key={tab.id}
               onClick={() => setFilterStatus(tab.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shrink-0 active:scale-95 ${
                 filterStatus === tab.id
                   ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs"
                   : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-100"

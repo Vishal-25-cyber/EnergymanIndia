@@ -110,20 +110,22 @@ export default function TeacherClassAttendanceDetailPage() {
   const absentCount = totalStudents - presentCount;
   const attendancePercentage = totalStudents > 0 ? Math.round((presentCount / totalStudents) * 100) : 0;
 
-  const filteredRoster = roster.filter((student) => {
-    const currentStatus = studentStatusMap[student.studentId] || student.status || "ABSENT";
-    if (statusFilter === "PRESENT" && currentStatus !== "PRESENT") return false;
-    if (statusFilter === "ABSENT" && currentStatus !== "ABSENT") return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      return (
-        student.name?.toLowerCase().includes(q) ||
-        student.email?.toLowerCase().includes(q) ||
-        student.phone?.includes(q)
-      );
-    }
-    return true;
-  });
+  const filteredRoster = React.useMemo(() => {
+    return roster.filter((student) => {
+      const currentStatus = studentStatusMap[student.studentId] || student.status || "ABSENT";
+      if (statusFilter === "PRESENT" && currentStatus !== "PRESENT") return false;
+      if (statusFilter === "ABSENT" && currentStatus !== "ABSENT") return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return (
+          student.name?.toLowerCase().includes(q) ||
+          student.email?.toLowerCase().includes(q) ||
+          student.phone?.includes(q)
+        );
+      }
+      return true;
+    });
+  }, [roster, studentStatusMap, statusFilter, searchQuery]);
 
   const handleExportCSV = () => {
     if (!roster.length) return;
@@ -294,10 +296,10 @@ export default function TeacherClassAttendanceDetailPage() {
         </div>
 
         {/* Filter Pills */}
-        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 self-start sm:self-auto">
+        <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 overflow-x-auto no-scrollbar scroll-smooth self-start sm:self-auto shrink-0 max-w-full">
           <button
             onClick={() => setStatusFilter("ALL")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95 ${
               statusFilter === "ALL"
                 ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
@@ -307,7 +309,7 @@ export default function TeacherClassAttendanceDetailPage() {
           </button>
           <button
             onClick={() => setStatusFilter("PRESENT")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95 ${
               statusFilter === "PRESENT"
                 ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-300 shadow-xs"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
@@ -317,7 +319,7 @@ export default function TeacherClassAttendanceDetailPage() {
           </button>
           <button
             onClick={() => setStatusFilter("ABSENT")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 active:scale-95 ${
               statusFilter === "ABSENT"
                 ? "bg-white dark:bg-slate-900 text-rose-700 dark:text-rose-300 shadow-xs"
                 : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"

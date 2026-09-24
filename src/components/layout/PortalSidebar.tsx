@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/components/ui/button";
 import { warmupPortalCache, prefetchApi, invalidateCache, clearAuthAndCaches, useFastFetch } from "@/lib/api-cache";
+import { preloadRoute, preloadAllPortalRoutes } from "@/lib/route-preloader";
 
 interface SidebarLink {
   href: string;
@@ -175,9 +176,10 @@ export function PortalSidebar({ role }: SidebarProps) {
 
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
-  // Pre-warm data into in-memory cache once on mount for instant transitions
+  // Pre-warm data and code chunks for instant transitions
   useEffect(() => {
     warmupPortalCache(role);
+    preloadAllPortalRoutes(role);
   }, [role]);
 
   // Listen to custom toggle/close events for mobile drawer
@@ -212,9 +214,10 @@ export function PortalSidebar({ role }: SidebarProps) {
 
   const handleHoverPrefetch = (item: any) => {
     if (item.href) {
+      preloadRoute(item.href);
       try {
         router.prefetch(item.href);
-      } catch (e) { }
+      } catch (e) {}
     }
     if (item.api) {
       prefetchApi(item.api);
@@ -291,9 +294,10 @@ export function PortalSidebar({ role }: SidebarProps) {
                 if (isMobile) setMobileOpen(false);
               }}
               onMouseEnter={() => handleHoverPrefetch(item)}
+              onTouchStart={() => handleHoverPrefetch(item)}
               onFocus={() => handleHoverPrefetch(item)}
               className={cn(
-                "rounded-xl font-semibold transition-all group relative flex items-center justify-between px-3 py-2.5 text-[13px]",
+                "rounded-xl font-semibold transition-all group relative flex items-center justify-between px-3 py-2.5 min-h-[44px] text-[13px] active:scale-[0.98]",
                 isActive
                   ? "bg-[#002137] text-white dark:bg-[#002842] dark:text-[#dfb74a] shadow-sm border border-[#002137] dark:border-[#b89047]/40"
                   : item.isLocked

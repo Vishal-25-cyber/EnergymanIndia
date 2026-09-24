@@ -1,5 +1,7 @@
 import React, { useEffect, Suspense, lazy } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { NavigationProgress } from "./components/layout/NavigationProgress";
+import { preloadAllPortalRoutes } from "./lib/route-preloader";
 
 // Public Landing Page is loaded directly for fastest First Contentful Paint (FCP / LCP)
 import LandingPage from "./app/page";
@@ -260,17 +262,12 @@ function RouteSEOAndScroll() {
 
 export default function App() {
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      if ("requestIdleCallback" in window) {
-        (window as any).requestIdleCallback(() => preloadPortalChunks());
-      } else {
-        setTimeout(() => preloadPortalChunks(), 50);
-      }
-    }
+    preloadAllPortalRoutes();
   }, []);
 
   return (
     <PortalErrorBoundary>
+      <NavigationProgress />
       <RouteSEOAndScroll />
       <Suspense fallback={<RouteLoadingFallback />}>
         <Routes>

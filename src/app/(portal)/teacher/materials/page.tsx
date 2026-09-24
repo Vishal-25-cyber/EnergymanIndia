@@ -193,7 +193,7 @@ export default function TeacherMaterialsPage() {
     }
   };
 
-  const isSubjectMatch = (matSub: string, filterSub: string) => {
+  const isSubjectMatch = React.useCallback((matSub: string, filterSub: string) => {
     if (!filterSub || filterSub === "ALL") return true;
     const m = (matSub || "").trim().toLowerCase();
     const f = (filterSub || "").trim().toLowerCase();
@@ -203,26 +203,28 @@ export default function TeacherMaterialsPage() {
     if (f === "mathematics") return m.includes("math") || m.includes("algebra") || m.includes("geometry");
     if (f === "english") return m.includes("english") || m.includes("grammar");
     return m.includes(f) || f.includes(m);
-  };
+  }, []);
 
-  const filteredMaterials = materials.filter((m: any) => {
-    const id = m._id?.toString() || m._id || m.title;
-    if (deletedIds.includes(id) || deletedIds.includes(m._id) || deletedIds.includes(m.title)) {
-      return false;
-    }
+  const filteredMaterials = React.useMemo(() => {
+    return materials.filter((m: any) => {
+      const id = m._id?.toString() || m._id || m.title;
+      if (deletedIds.includes(id) || deletedIds.includes(m._id) || deletedIds.includes(m.title)) {
+        return false;
+      }
 
-    const matchesSearch =
-      !search.trim() ||
-      m.title?.toLowerCase().includes(search.toLowerCase()) ||
-      m.subject?.toLowerCase().includes(search.toLowerCase()) ||
-      m.description?.toLowerCase().includes(search.toLowerCase()) ||
-      m.classLevel?.toLowerCase().includes(search.toLowerCase());
+      const matchesSearch =
+        !search.trim() ||
+        m.title?.toLowerCase().includes(search.toLowerCase()) ||
+        m.subject?.toLowerCase().includes(search.toLowerCase()) ||
+        m.description?.toLowerCase().includes(search.toLowerCase()) ||
+        m.classLevel?.toLowerCase().includes(search.toLowerCase());
 
-    const matchesSubject = isSubjectMatch(m.subject, selectedSubject);
-    const matchesClass = selectedClass === "ALL" || m.classLevel === selectedClass;
+      const matchesSubject = isSubjectMatch(m.subject, selectedSubject);
+      const matchesClass = selectedClass === "ALL" || m.classLevel === selectedClass;
 
-    return matchesSearch && matchesSubject && matchesClass;
-  });
+      return matchesSearch && matchesSubject && matchesClass;
+    });
+  }, [materials, deletedIds, search, selectedSubject, selectedClass, isSubjectMatch]);
 
   const getSubjectBadge = (subject?: string) => {
     switch (subject?.toLowerCase()) {
@@ -243,7 +245,7 @@ export default function TeacherMaterialsPage() {
   };
 
   return (
-    <main className="w-full max-w-7xl mx-auto p-6 sm:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-150 select-none">
+    <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-150 select-none">
       {/* ── 1. CLEAN HEADER (NO CARDS) ── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-5 border-b border-slate-200 dark:border-slate-800">
         <div className="space-y-1">
@@ -275,7 +277,7 @@ export default function TeacherMaterialsPage() {
               setSelectedFile(null);
               setIsModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white transition-colors cursor-pointer shadow-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white transition-colors cursor-pointer shadow-sm active:scale-95"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Upload Material</span>
@@ -313,7 +315,7 @@ export default function TeacherMaterialsPage() {
         </div>
 
         {/* Subject Filter Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth pb-1 shrink-0">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
             Subjects:
           </span>
@@ -321,7 +323,7 @@ export default function TeacherMaterialsPage() {
             <button
               key={s}
               onClick={() => setSelectedSubject(s)}
-              className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer shrink-0 active:scale-95 ${
                 selectedSubject === s
                   ? "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-xs"
                   : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
