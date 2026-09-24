@@ -82,8 +82,7 @@ function CircularProgressRing({
 
 export default function StudentDashboardPage() {
   const { data: authData } = useFastFetch("/api/auth/me");
-  const { data } = useFastFetch<any>("/api/student/dashboard", undefined, { pollIntervalMs: 4000 });
-  const { data: paymentData } = useFastFetch("/api/student/payments");
+  const { data, isLoading } = useFastFetch<any>("/api/student/dashboard", undefined, { pollIntervalMs: 30000 });
 
   // Filter & Search State
   const [searchQuery, setSearchQuery] = useState("");
@@ -97,7 +96,7 @@ export default function StudentDashboardPage() {
 
   const authUser = authData?.user;
   const trial = authUser?.trial;
-  const hasPaid = !!trial?.hasPaid || !!paymentData?.history?.length || !!data?.feeStatus?.isPaid;
+  const hasPaid = !!trial?.hasPaid || !!data?.feeStatus?.isPaid || !!data?.feeStatus?.latestPaid;
   const isTrialActive = !hasPaid && !!trial?.isTrialActive;
   const student = data?.student;
 
@@ -114,8 +113,8 @@ export default function StudentDashboardPage() {
   const studentPhone = student?.phone || authUser?.phone || "—";
   const schoolName = student?.schoolName || (authUser?.profile as any)?.schoolName || "SSVS";
 
-  // Tuition Expiry calculation
-  const latestPaid = paymentData?.history?.[0];
+  // Tuition Expiry calculation (from dashboard response directly without extra request)
+  const latestPaid = data?.feeStatus?.latestPaid || data?.feeStatus?.latestPayment;
   const paidDateRaw = latestPaid?.paidDate || latestPaid?.createdAt;
   const baseDate = paidDateRaw ? new Date(paidDateRaw) : new Date();
   const coverageExpiryDate = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
@@ -371,23 +370,37 @@ export default function StudentDashboardPage() {
                   <div className="w-11 h-11 rounded-2xl bg-[#b89047] text-white flex items-center justify-center shadow-xs">
                     <BookOpen className="w-5 h-5" />
                   </div>
-                  <CircularProgressRing
-                    percentage={lessonsPercentage}
-                    strokeColor="#dfb74a"
-                    trackColor="rgba(223, 183, 74, 0.16)"
-                  />
+                  {isLoading && !data ? (
+                    <div className="w-14 h-14 rounded-full border-4 border-amber-200 dark:border-amber-900/50 animate-pulse" />
+                  ) : (
+                    <CircularProgressRing
+                      percentage={lessonsPercentage}
+                      strokeColor="#dfb74a"
+                      trackColor="rgba(223, 183, 74, 0.16)"
+                    />
+                  )}
                 </div>
 
                 <div>
-                  <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
-                    {completedLessons}
-                  </p>
-                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">
-                    Lessons
-                  </p>
-                  <p className="text-xs text-[#002137] dark:text-[#dfb74a] font-semibold mt-0.5">
-                    of {totalLessons} completed
-                  </p>
+                  {isLoading && !data ? (
+                    <div className="space-y-2">
+                      <div className="h-8 w-16 bg-amber-200/60 dark:bg-amber-900/40 rounded-xl animate-pulse" />
+                      <div className="h-4 w-20 bg-amber-200/40 dark:bg-amber-900/30 rounded-lg animate-pulse" />
+                      <div className="h-3 w-32 bg-amber-200/30 dark:bg-amber-900/20 rounded-lg animate-pulse" />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
+                        {completedLessons}
+                      </p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">
+                        Lessons
+                      </p>
+                      <p className="text-xs text-[#002137] dark:text-[#dfb74a] font-semibold mt-0.5">
+                        of {totalLessons} completed
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -397,23 +410,37 @@ export default function StudentDashboardPage() {
                   <div className="w-11 h-11 rounded-2xl bg-[#004b79] text-white flex items-center justify-center shadow-xs">
                     <FileCheck className="w-5 h-5" />
                   </div>
-                  <CircularProgressRing
-                    percentage={assignmentsPercentage}
-                    strokeColor="#004b79"
-                    trackColor="rgba(0, 75, 121, 0.15)"
-                  />
+                  {isLoading && !data ? (
+                    <div className="w-14 h-14 rounded-full border-4 border-blue-200 dark:border-blue-900/50 animate-pulse" />
+                  ) : (
+                    <CircularProgressRing
+                      percentage={assignmentsPercentage}
+                      strokeColor="#004b79"
+                      trackColor="rgba(0, 75, 121, 0.15)"
+                    />
+                  )}
                 </div>
 
                 <div>
-                  <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
-                    {completedAssignments.toString().padStart(2, "0")}
-                  </p>
-                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">
-                    Assignments
-                  </p>
-                  <p className="text-xs text-[#002137] dark:text-[#dfb74a] font-semibold mt-0.5">
-                    of {totalAssignments} completed
-                  </p>
+                  {isLoading && !data ? (
+                    <div className="space-y-2">
+                      <div className="h-8 w-16 bg-blue-200/60 dark:bg-blue-900/40 rounded-xl animate-pulse" />
+                      <div className="h-4 w-24 bg-blue-200/40 dark:bg-blue-900/30 rounded-lg animate-pulse" />
+                      <div className="h-3 w-32 bg-blue-200/30 dark:bg-blue-900/20 rounded-lg animate-pulse" />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
+                        {completedAssignments.toString().padStart(2, "0")}
+                      </p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">
+                        Assignments
+                      </p>
+                      <p className="text-xs text-[#002137] dark:text-[#dfb74a] font-semibold mt-0.5">
+                        of {totalAssignments} completed
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -423,23 +450,37 @@ export default function StudentDashboardPage() {
                   <div className="w-11 h-11 rounded-2xl bg-[#002b48] text-[#dfb74a] flex items-center justify-center shadow-xs">
                     <Award className="w-5 h-5" />
                   </div>
-                  <CircularProgressRing
-                    percentage={testsPercentage}
-                    strokeColor="#00385c"
-                    trackColor="rgba(0, 56, 92, 0.15)"
-                  />
+                  {isLoading && !data ? (
+                    <div className="w-14 h-14 rounded-full border-4 border-blue-200 dark:border-blue-900/50 animate-pulse" />
+                  ) : (
+                    <CircularProgressRing
+                      percentage={testsPercentage}
+                      strokeColor="#00385c"
+                      trackColor="rgba(0, 56, 92, 0.15)"
+                    />
+                  )}
                 </div>
 
                 <div>
-                  <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
-                    {completedTests.toString().padStart(2, "0")}
-                  </p>
-                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">
-                    Tests
-                  </p>
-                  <p className="text-xs text-[#002137] dark:text-[#dfb74a] font-semibold mt-0.5">
-                    of {totalTests} completed
-                  </p>
+                  {isLoading && !data ? (
+                    <div className="space-y-2">
+                      <div className="h-8 w-16 bg-blue-200/60 dark:bg-blue-900/40 rounded-xl animate-pulse" />
+                      <div className="h-4 w-16 bg-blue-200/40 dark:bg-blue-900/30 rounded-lg animate-pulse" />
+                      <div className="h-3 w-32 bg-blue-200/30 dark:bg-blue-900/20 rounded-lg animate-pulse" />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
+                        {completedTests.toString().padStart(2, "0")}
+                      </p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">
+                        Tests
+                      </p>
+                      <p className="text-xs text-[#002137] dark:text-[#dfb74a] font-semibold mt-0.5">
+                        of {totalTests} completed
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -449,27 +490,41 @@ export default function StudentDashboardPage() {
                   <div className="w-11 h-11 rounded-2xl bg-[#002137] text-[#dfb74a] flex items-center justify-center shadow-xs">
                     <CheckCircle2 className="w-5 h-5 text-[#dfb74a]" />
                   </div>
-                  <CircularProgressRing
-                    percentage={data?.student?.attendancePercentage ?? 100}
-                    strokeColor="#b89047"
-                    trackColor="rgba(184, 144, 71, 0.15)"
-                  />
+                  {isLoading && !data ? (
+                    <div className="w-14 h-14 rounded-full border-4 border-[#b89047]/40 dark:border-[#b89047]/30 animate-pulse" />
+                  ) : (
+                    <CircularProgressRing
+                      percentage={data?.student?.attendancePercentage ?? 100}
+                      strokeColor="#b89047"
+                      trackColor="rgba(184, 144, 71, 0.15)"
+                    />
+                  )}
                 </div>
 
                 <div>
-                  <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
-                    {data?.student?.attendancePercentage ?? 100}%
-                  </p>
-                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">
-                    Attendance
-                  </p>
-                  <Link
-                    href="/student/attendance"
-                    className="text-xs text-[#8f6d2b] dark:text-[#dfb74a] font-bold mt-0.5 hover:underline flex items-center gap-1"
-                  >
-                    <span>{data?.student?.totalAttended ?? 0} of {data?.student?.totalSessions ?? 0} attended</span>
-                    <ArrowRight className="w-3 h-3" />
-                  </Link>
+                  {isLoading && !data ? (
+                    <div className="space-y-2">
+                      <div className="h-8 w-20 bg-[#b89047]/30 dark:bg-[#b89047]/20 rounded-xl animate-pulse" />
+                      <div className="h-4 w-24 bg-[#b89047]/20 dark:bg-[#b89047]/15 rounded-lg animate-pulse" />
+                      <div className="h-3 w-32 bg-[#b89047]/15 dark:bg-[#b89047]/10 rounded-lg animate-pulse" />
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
+                        {data?.student?.attendancePercentage ?? 100}%
+                      </p>
+                      <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mt-1">
+                        Attendance
+                      </p>
+                      <Link
+                        href="/student/attendance"
+                        className="text-xs text-[#8f6d2b] dark:text-[#dfb74a] font-bold mt-0.5 hover:underline flex items-center gap-1"
+                      >
+                        <span>{data?.student?.totalAttended ?? 0} of {data?.student?.totalSessions ?? 0} attended</span>
+                        <ArrowRight className="w-3 h-3" />
+                      </Link>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -523,7 +578,25 @@ export default function StudentDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 dark:divide-slate-800/60 text-xs">
-                    {filteredCourses.length === 0 ? (
+                    {isLoading && !data ? (
+                      [1, 2, 3].map((n) => (
+                        <tr key={n}>
+                          <td className="py-3.5 pl-2">
+                            <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                          </td>
+                          <td className="py-3.5 pr-4 space-y-1.5">
+                            <div className="h-3.5 w-48 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                            <div className="h-2.5 w-24 bg-slate-100 dark:bg-slate-800 rounded animate-pulse" />
+                          </td>
+                          <td className="py-3.5 pr-4">
+                            <div className="w-32 sm:w-44 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 animate-pulse" />
+                          </td>
+                          <td className="py-3.5 pr-2 text-right">
+                            <div className="h-4 w-20 bg-slate-100 dark:bg-slate-800 rounded animate-pulse ml-auto" />
+                          </td>
+                        </tr>
+                      ))
+                    ) : filteredCourses.length === 0 ? (
                       <tr>
                         <td colSpan={4} className="py-8 text-center text-slate-400">
                           No courses found matching this criteria.
@@ -737,7 +810,12 @@ export default function StudentDashboardPage() {
                   {selectedDateEvents.length} {selectedDateEvents.length === 1 ? "Activity" : "Activities"}
                 </span>
               </div>
-              {selectedDateEvents.length === 0 ? (
+              {isLoading && !data ? (
+                <div className="space-y-2 pt-1">
+                  <div className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 animate-pulse" />
+                  <div className="h-10 rounded-xl bg-slate-100 dark:bg-slate-800/80 animate-pulse" />
+                </div>
+              ) : selectedDateEvents.length === 0 ? (
                 <p className="text-[11px] text-slate-400">
                   No attendance marked or classes scheduled on this date.
                 </p>
@@ -800,7 +878,12 @@ export default function StudentDashboardPage() {
               )}
             </div>
 
-            {upcomingItems.length === 0 ? (
+            {isLoading && !data ? (
+              <div className="space-y-3 pt-1">
+                <div className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800/60 animate-pulse" />
+                <div className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800/60 animate-pulse" />
+              </div>
+            ) : upcomingItems.length === 0 ? (
               <div className="py-8 text-center text-slate-400 space-y-2">
                 <CalendarIcon className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-700" />
                 <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">

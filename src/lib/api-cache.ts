@@ -31,7 +31,7 @@ function getAuthHeaders(isAuthMe = false): Record<string, string> {
 function getFromStorage(url: string) {
   if (typeof window === "undefined" || !url) return null;
   try {
-    const raw = sessionStorage.getItem(`mantif_cache_${url}`);
+    const raw = sessionStorage.getItem(`mantif_cache_${url}`) || localStorage.getItem(`mantif_cache_${url}`);
     if (raw) {
       const parsed = JSON.parse(raw);
       const ttl = url.includes("/api/auth/me") ? 60000 : 300000; // 60s TTL for auth, 5m for static
@@ -49,7 +49,9 @@ function getFromStorage(url: string) {
 function saveToStorage(url: string, data: any) {
   if (typeof window === "undefined" || !url) return;
   try {
-    sessionStorage.setItem(`mantif_cache_${url}`, JSON.stringify({ data, timestamp: Date.now() }));
+    const serialized = JSON.stringify({ data, timestamp: Date.now() });
+    sessionStorage.setItem(`mantif_cache_${url}`, serialized);
+    localStorage.setItem(`mantif_cache_${url}`, serialized);
   } catch {
     // ignore
   }
@@ -315,14 +317,22 @@ export function invalidateCache(urlPrefix: string = "") {
   if (typeof window !== "undefined") {
     try {
       const prefix = `mantif_cache_${urlPrefix}`;
-      const toRemove: string[] = [];
+      const toRemoveSession: string[] = [];
+      const toRemoveLocal: string[] = [];
       for (let i = 0; i < sessionStorage.length; i++) {
         const key = sessionStorage.key(i);
         if (key && (urlPrefix === "" || urlPrefix === "/api" || urlPrefix === "all" ? key.startsWith("mantif_cache_") : key.startsWith(prefix))) {
-          toRemove.push(key);
+          toRemoveSession.push(key);
         }
       }
-      toRemove.forEach((k) => sessionStorage.removeItem(k));
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (urlPrefix === "" || urlPrefix === "/api" || urlPrefix === "all" ? key.startsWith("mantif_cache_") : key.startsWith(prefix))) {
+          toRemoveLocal.push(key);
+        }
+      }
+      toRemoveSession.forEach((k) => sessionStorage.removeItem(k));
+      toRemoveLocal.forEach((k) => localStorage.removeItem(k));
     } catch {
       // ignore
     }
@@ -344,14 +354,22 @@ export function clearAuthAndCaches() {
       localStorage.removeItem("acuity_user_role");
       sessionStorage.removeItem("acuity_auth_token");
 
-      const toRemove: string[] = [];
+      const toRemoveSession: string[] = [];
+      const toRemoveLocal: string[] = [];
       for (let i = 0; i < sessionStorage.length; i++) {
         const key = sessionStorage.key(i);
         if (key && key.startsWith("mantif_cache_")) {
-          toRemove.push(key);
+          toRemoveSession.push(key);
         }
       }
-      toRemove.forEach((k) => sessionStorage.removeItem(k));
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith("mantif_cache_")) {
+          toRemoveLocal.push(key);
+        }
+      }
+      toRemoveSession.forEach((k) => sessionStorage.removeItem(k));
+      toRemoveLocal.forEach((k) => localStorage.removeItem(k));
     } catch {
       // ignore
     }
