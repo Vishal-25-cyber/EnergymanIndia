@@ -92,26 +92,43 @@ export async function GET(req: NextRequest) {
       `Class ${profile.currentClass?.replace(/Class\s*/i, "").trim()}`,
     ].filter(Boolean);
 
-    // Query published/scheduled/live/completed classes for this student's grade/batch, or ANY class currently LIVE
-    const sessionQuery: any = {
-      $or: [
-        { status: "LIVE" },
-        {
-          status: { $in: ["PUBLISHED", "SCHEDULED", "LIVE", "COMPLETED"] },
-          $or: [
-            { classLevel: { $in: classVariants } },
-            { classLevel: null },
-            { classLevel: { $exists: false } },
-            { classLevel: "" },
-            ...(batchId ? [{ batchId }] : []),
-            { batchId: null },
-            { batchId: { $exists: false } },
-            { date: todayDateStr },
-            { date: kolkataDateStr },
-          ],
-        },
-      ],
-    };
+    const assignedTeachers = Array.isArray(profile.assignedTeacherIds) ? profile.assignedTeacherIds : [];
+
+    const studentAccessConditions: any[] = [
+      { assignedStudentIds: session.userId },
+    ];
+
+    if (assignedTeachers.length > 0) {
+      studentAccessConditions.push({
+        teacherId: { $in: assignedTeachers },
+        classLevel: { $in: classVariants },
+      });
+    } else {
+      studentAccessConditions.push({
+        classLevel: { $in: classVariants },
+        $or: [
+          { assignedStudentIds: { $exists: false } },
+          { assignedStudentIds: { $size: 0 } },
+        ],
+      });
+    }
+
+    const andConditions: any[] = [
+      { $or: studentAccessConditions },
+      { status: { $in: ["PUBLISHED", "SCHEDULED", "LIVE", "COMPLETED"] } },
+    ];
+
+    if (Array.isArray(profile.subjects) && profile.subjects.length > 0) {
+      andConditions.push({
+        $or: [
+          { subject: { $in: profile.subjects } },
+          { subject: { $exists: false } },
+          { subject: null },
+        ],
+      });
+    }
+
+    const sessionQuery: any = { $and: andConditions };
 
     const rawClasses = await LiveSession.find(sessionQuery)
       .populate("teacherId", "name avatarUrl email phone")

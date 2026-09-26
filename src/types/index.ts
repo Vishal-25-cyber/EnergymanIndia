@@ -33,15 +33,20 @@ export interface IUser {
   updatedAt: Date;
 }
 
+export type TutoringCategory = "B2B" | "B2C";
+
 export interface IStudentProfile {
   _id: string;
   userId: string | IUser;
   studentId?: string; // Formatted STD_001
+  studentType?: TutoringCategory; // "B2B" | "B2C"
   schoolName: string;
+  institutionName?: string;
   district?: string;
   board: EducationBoard;
   currentClass: ClassLevel;
   subjects: string[];
+  assignedTeacherIds?: (string | IUser)[];
   batchId: string | IBatch;
   parentName: string;
   parentPhone: string;
@@ -78,10 +83,15 @@ export interface ITeacherProfile {
   _id: string;
   userId: string | IUser;
   staffId?: string; // Formatted STF_001
+  teacherType?: TutoringCategory; // "B2B" | "B2C"
+  institutionName?: string;
   qualification: string;
   specialization: string;
   subjects: string[];
   classesTaught: ClassLevel[];
+  assignedSubjects?: string[];
+  assignedClasses?: ClassLevel[];
+  assignedStudentIds?: (string | IUser)[];
   experienceYears: number;
   district?: string;
   address?: string;
@@ -162,6 +172,7 @@ export interface ILiveSession {
   allowLateJoinManually?: boolean;
   recordingUrl?: string;
   activePoll?: IClassroomPoll;
+  assignedStudentIds?: (string | IUser)[];
   pendingAdmissions?: Array<{ userId: string; name: string; requestedAt: Date }>;
   admittedStudents?:  Array<{ userId: string; admittedAt: Date }>;
   deniedStudents?:    Array<{ userId: string }>;
@@ -222,8 +233,9 @@ export interface IAssignment {
   description: string;
   subject: string;
   classLevel: ClassLevel;
-  batchId: string | IBatch;
+  batchId?: string | IBatch;
   teacherId: string | IUser;
+  assignedStudentIds?: (string | IUser)[];
   type?: TaskCategory;
   durationMinutes?: number;
   proctoringRequired?: boolean;

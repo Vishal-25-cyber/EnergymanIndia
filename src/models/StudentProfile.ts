@@ -7,6 +7,12 @@ const StudentProfileSchema = new Schema<IStudentProfileDocument>(
   {
     userId: { type: Schema.Types.ObjectId, ref: "User", required: true, unique: true, index: true },
     studentId: { type: String, trim: true, index: true },
+    studentType: {
+      type: String,
+      enum: ["B2B", "B2C"],
+      default: "B2C",
+      index: true,
+    },
     schoolName: { type: String, required: true, trim: true },
     district: { type: String, trim: true, default: "" },
     board: {
@@ -28,6 +34,7 @@ const StudentProfileSchema = new Schema<IStudentProfileDocument>(
       index: true,
     },
     subjects: [{ type: String, trim: true }],
+    assignedTeacherIds: [{ type: Schema.Types.ObjectId, ref: "User" }],
     batchId: { type: Schema.Types.ObjectId, ref: "Batch", required: true, index: true },
     parentName: { type: String, required: true, trim: true },
     parentPhone: { type: String, required: true, trim: true },

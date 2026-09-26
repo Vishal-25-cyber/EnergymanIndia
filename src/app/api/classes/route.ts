@@ -81,7 +81,18 @@ export async function GET(req: NextRequest) {
 
     const query: any = {};
 
-    if (session.role === "TEACHER" || session.role === "ADMIN") {
+    if (session.role === "TEACHER") {
+      query.teacherId = session.userId;
+      if (status) {
+        if (status.toUpperCase() === "UPCOMING") {
+          query.status = { $in: ["PUBLISHED", "SCHEDULED"] };
+          query.date = { $gte: todayDateStr };
+        } else {
+          query.status = status.toUpperCase();
+        }
+      }
+      if (batchId) query.batchId = batchId;
+    } else if (session.role === "ADMIN") {
       if (status) {
         if (status.toUpperCase() === "UPCOMING") {
           query.status = { $in: ["PUBLISHED", "SCHEDULED"] };
@@ -98,26 +109,45 @@ export async function GET(req: NextRequest) {
           userId: session.userId,
           currentClass: "Class 10",
           board: "State Board",
-          schoolName: "SSVS",
+          schoolName: "Individual Tutoring",
         });
       }
       const currentClass = studentProfile?.currentClass || "Class 10";
-      const studentBatchId = studentProfile?.batchId;
+      const assignedTeachers = Array.isArray(studentProfile?.assignedTeacherIds) ? studentProfile.assignedTeacherIds : [];
 
-      query.$or = [
-        { status: "LIVE" },
-        {
-          $or: [
-            { classLevel: currentClass },
-            { classLevel: null },
-            { classLevel: { $exists: false } },
-            { batchId: studentBatchId || null },
-            { batchId: null },
-            { batchId: { $exists: false } },
-            { date: todayDateStr },
-          ],
-        },
+      const studentAccessConditions: any[] = [
+        { assignedStudentIds: session.userId },
       ];
+
+      if (assignedTeachers.length > 0) {
+        studentAccessConditions.push({
+          teacherId: { $in: assignedTeachers },
+          classLevel: currentClass,
+        });
+      } else {
+        // Fallback for new unassigned trial students
+        studentAccessConditions.push({
+          classLevel: currentClass,
+          $or: [
+            { assignedStudentIds: { $exists: false } },
+            { assignedStudentIds: { $size: 0 } },
+          ],
+        });
+      }
+
+      const andClauses: any[] = [{ $or: studentAccessConditions }];
+
+      if (Array.isArray(studentProfile?.subjects) && studentProfile.subjects.length > 0) {
+        andClauses.push({
+          $or: [
+            { subject: { $in: studentProfile.subjects } },
+            { subject: { $exists: false } },
+            { subject: null },
+          ],
+        });
+      }
+
+      query.$and = andClauses;
 
       // Students should see live, published, scheduled or completed classes
       if (status) {

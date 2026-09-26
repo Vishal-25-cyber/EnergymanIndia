@@ -348,12 +348,22 @@ export default function HomePage() {
   const [sPw, setSPw] = useState("");
   const [sCPw, setSCPw] = useState("");
 
+  const [sCategory, setSCategory] = useState<"B2C" | "B2B">("B2C");
   const [sSchool, setSSchool] = useState("");
   const [sDistrict, setSDistrict] = useState("");
   const [sBoard, setSBoard] = useState<"CBSE" | "State Board">("CBSE");
   const [sClass, setSClass] = useState("Class 10");
   const [sBatch, setSBatch] = useState("6a9425fa1491b9fc49acfd13");
+  const [sSubjects, setSSubjects] = useState<string[]>(["Mathematics"]);
 
+  const toggleSSubject = (s: string) => {
+    setSSubjects((prev) =>
+      prev.includes(s) ? (prev.length > 1 ? prev.filter((x) => x !== s) : prev) : [...prev, s]
+    );
+  };
+
+  const [tCategory, setTCategory] = useState<"B2C" | "B2B">("B2C");
+  const [tInstitution, setTInstitution] = useState("");
   const [tQual, setTQual] = useState("");
   const [tSpec, setTSpec] = useState("");
   const [tExp, setTExp] = useState("");
@@ -587,8 +597,9 @@ export default function HomePage() {
   };
 
   const v2s = () => {
-    if (!sSchool.trim()) { setErr("Please enter your school name."); return false; }
+    if (sCategory === "B2B" && !sSchool.trim()) { setErr("Please enter your school / institution name."); return false; }
     if (!sDistrict.trim()) { setErr("Please enter your district."); return false; }
+    if (sSubjects.length === 0) { setErr("Please select at least one subject needed."); return false; }
     if (!sBatch && batches.length > 0) {
       setSBatch(batches[0]._id);
     }
@@ -596,10 +607,12 @@ export default function HomePage() {
   };
 
   const v2t = () => {
+    if (tCategory === "B2B" && !tInstitution.trim()) { setErr("Please enter your school / institution name."); return false; }
     if (!tQual.trim()) { setErr("Please enter your qualification."); return false; }
     if (!tSpec.trim()) { setErr("Please enter your specialization."); return false; }
     if (!tDistrict.trim()) { setErr("Please enter your district."); return false; }
     if (tClasses.length === 0) { setErr("Please select at least one class you are willing to teach."); return false; }
+    if (tSubjects.length === 0) { setErr("Please select at least one subject you can teach."); return false; }
     return true;
   };
 
@@ -631,10 +644,12 @@ export default function HomePage() {
       };
       if (signupRole === "STUDENT") {
         Object.assign(body, {
-          schoolName: sSchool,
+          studentType: sCategory,
+          schoolName: sCategory === "B2C" ? (sSchool.trim() || "Individual Tutoring") : sSchool.trim(),
           district: sDistrict.trim(),
           board: sBoard,
           currentClass: sClass,
+          subjects: sSubjects,
           batchId: sBatch,
           parentName: spName,
           parentPhone: spPhone,
@@ -643,6 +658,8 @@ export default function HomePage() {
         });
       } else {
         Object.assign(body, {
+          teacherType: tCategory,
+          institutionName: tCategory === "B2B" ? tInstitution.trim() : "",
           qualification: tQual,
           specialization: tSpec,
           experienceYears: tExp ? Number(tExp) : 0,
@@ -1256,15 +1273,46 @@ export default function HomePage() {
                     {/* Step 2: Student Academic Details */}
                     {step === 2 && signupRole === "STUDENT" && (
                       <div className="space-y-3.5">
+                        {/* Student Stream Switcher: B2C vs B2B */}
+                        <div className="space-y-1">
+                          <label className="block text-xs font-bold text-slate-700">Tutoring Type *</label>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setSCategory("B2C")}
+                              className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                                sCategory === "B2C"
+                                  ? "bg-[#002137] text-white border-[#002137] shadow-xs"
+                                  : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                              }`}
+                            >
+                              Individual Tutoring (B2C)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSCategory("B2B")}
+                              className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                                sCategory === "B2B"
+                                  ? "bg-[#002137] text-white border-[#002137] shadow-xs"
+                                  : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                              }`}
+                            >
+                              School Student (B2B)
+                            </button>
+                          </div>
+                        </div>
+
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           <div className="space-y-1">
-                            <label htmlFor="signup-school" className="block text-xs font-bold text-slate-700">School Name *</label>
+                            <label htmlFor="signup-school" className="block text-xs font-bold text-slate-700">
+                              {sCategory === "B2B" ? "School / Institution Name *" : "School Name (Optional)"}
+                            </label>
                             <input
                               id="signup-school"
                               type="text"
                               value={sSchool}
                               onChange={(e) => setSSchool(e.target.value)}
-                              placeholder="Enter school name"
+                              placeholder={sCategory === "B2B" ? "e.g. SSVS Matriculation" : "e.g. Current School / Home"}
                               className="w-full px-4 py-2.5 sm:py-3 text-sm rounded-xl border border-slate-300 bg-slate-50/50 hover:bg-white focus:bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-3 focus:ring-[#004b79]/15 focus:border-[#004b79] transition-all font-medium"
                             />
                           </div>
@@ -1309,6 +1357,41 @@ export default function HomePage() {
                           </div>
                         </div>
 
+                        {/* Multi-choice Subjects Needed */}
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold text-slate-700">
+                            Select Subjects Needed (Multi-choice) *
+                          </label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {[
+                              "Mathematics",
+                              "Science",
+                              "Physics",
+                              "Chemistry",
+                              "Biology",
+                              "English",
+                              "Social Science",
+                              "Computer Science",
+                            ].map((sub) => {
+                              const isSelected = sSubjects.includes(sub);
+                              return (
+                                <button
+                                  key={sub}
+                                  type="button"
+                                  onClick={() => toggleSSubject(sub)}
+                                  className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                                    isSelected
+                                      ? "bg-[#004b79] text-white border-[#004b79] shadow-2xs"
+                                      : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                                  }`}
+                                >
+                                  {sub}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
                         <div className="space-y-1">
                           <label htmlFor="signup-batch" className="block text-xs font-bold text-slate-700">Batch Timing *</label>
                           <select
@@ -1348,10 +1431,55 @@ export default function HomePage() {
                     {/* Step 2: Teacher Preferences & Profile */}
                     {step === 2 && signupRole === "TEACHER" && (
                       <div className="space-y-3.5">
+                        {/* Teacher Stream Switcher: B2C vs B2B */}
+                        <div className="space-y-1">
+                          <label className="block text-xs font-bold text-slate-700">Faculty Category *</label>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setTCategory("B2C")}
+                              className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                                tCategory === "B2C"
+                                  ? "bg-[#002137] text-white border-[#002137] shadow-xs"
+                                  : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                              }`}
+                            >
+                              Individual Tutor (B2C)
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setTCategory("B2B")}
+                              className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
+                                tCategory === "B2B"
+                                  ? "bg-[#002137] text-white border-[#002137] shadow-xs"
+                                  : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                              }`}
+                            >
+                              Institutional Faculty (B2B)
+                            </button>
+                          </div>
+                        </div>
+
+                        {tCategory === "B2B" && (
+                          <div className="space-y-1">
+                            <label htmlFor="signup-teacher-institution" className="block text-xs font-bold text-slate-700">
+                              School / Institution Name *
+                            </label>
+                            <input
+                              id="signup-teacher-institution"
+                              type="text"
+                              value={tInstitution}
+                              onChange={(e) => setTInstitution(e.target.value)}
+                              placeholder="e.g. SSVS Matriculation Higher Secondary School"
+                              className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-slate-50/50 hover:bg-white focus:bg-white"
+                            />
+                          </div>
+                        )}
+
                         {/* Classes willing to teach */}
                         <div className="space-y-1">
                           <label className="block text-xs font-bold text-slate-700">
-                            Which Classes are you willing to teach? *
+                            Which Classes are you willing to teach? (Multi-choice) *
                           </label>
                           <div className="grid grid-cols-5 gap-1.5">
                             {["Class 6", "Class 7", "Class 8", "Class 9", "Class 10"].map((c) => {
@@ -1367,6 +1495,41 @@ export default function HomePage() {
                                     }`}
                                 >
                                   {c.replace("Class ", "C")}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Subjects willing to teach */}
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold text-slate-700">
+                            Which Subjects can you teach? (Multi-choice) *
+                          </label>
+                          <div className="flex flex-wrap gap-1.5">
+                            {[
+                              "Mathematics",
+                              "Science",
+                              "Physics",
+                              "Chemistry",
+                              "Biology",
+                              "English",
+                              "Social Science",
+                              "Computer Science",
+                            ].map((sub) => {
+                              const isSelected = tSubjects.includes(sub);
+                              return (
+                                <button
+                                  key={sub}
+                                  type="button"
+                                  onClick={() => toggleTSubject(sub)}
+                                  className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                                    isSelected
+                                      ? "bg-[#004b79] text-white border-[#004b79] shadow-2xs"
+                                      : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                                  }`}
+                                >
+                                  {sub}
                                 </button>
                               );
                             })}

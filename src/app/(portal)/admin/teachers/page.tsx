@@ -36,6 +36,18 @@ const ALL_CLASSES = [
   "Class 10",
 ];
 
+const ALL_SUBJECTS = [
+  "Mathematics",
+  "Science",
+  "Physics",
+  "Chemistry",
+  "Biology",
+  "English",
+  "Social Science",
+  "Computer Science",
+  "Tamil / Regional",
+];
+
 export default function AdminTeachersPage() {
   const [filterStatus, setFilterStatus] = useState("ALL");
   const apiUrl = `/api/admin/teachers${filterStatus !== "ALL" ? `?status=${filterStatus}` : ""}`;
@@ -49,6 +61,11 @@ export default function AdminTeachersPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Student allocation candidates
+  const [allocatableStudents, setAllocatableStudents] = useState<any[]>([]);
+  const [loadingStudents, setLoadingStudents] = useState(false);
+  const [studentSearch, setStudentSearch] = useState("");
+
   const [editForm, setEditForm] = useState({
     name: "",
     email: "",
@@ -56,9 +73,15 @@ export default function AdminTeachersPage() {
     qualification: "",
     specialization: "",
     experienceYears: 0,
+    teacherType: "B2C" as "B2C" | "B2B",
+    institutionName: "",
     subjects: [] as string[],
     subjectsInput: "",
     classesTaught: [] as string[],
+    assignedSubjects: [] as string[],
+    assignedClasses: [] as string[],
+    assignedStudentIds: [] as string[],
+    assignedStudents: [] as any[],
     status: "ACTIVE",
     resetPassword: "",
   });
@@ -84,8 +107,32 @@ export default function AdminTeachersPage() {
     ).length;
   }, [allTeachers]);
 
+  const fetchAllocatableStudents = async (type?: string, school?: string) => {
+    setLoadingStudents(true);
+    try {
+      const params = new URLSearchParams();
+      if (type && type !== "ALL") params.append("studentType", type);
+      if (school) params.append("schoolName", school);
+      const res = await fetch(`/api/admin/students/allocatable?${params.toString()}`);
+      const d = await res.json();
+      if (Array.isArray(d.students)) {
+        setAllocatableStudents(d.students);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingStudents(false);
+    }
+  };
+
   const openEditModal = (t: any) => {
     setEditTeacher(t);
+    const teacherType = (t.teacherType || "B2C") as "B2C" | "B2B";
+    const institution = t.institutionName || "";
+    const existingAssignedStudentIds = (t.assignedStudents || t.assignedStudentIds || []).map(
+      (s: any) => (s._id ? s._id.toString() : s.toString())
+    );
+
     setEditForm({
       name: t.userId?.name || "",
       email: t.userId?.email || "",
@@ -93,12 +140,20 @@ export default function AdminTeachersPage() {
       qualification: t.qualification || "",
       specialization: t.specialization || "",
       experienceYears: t.experienceYears || 0,
+      teacherType,
+      institutionName: institution,
       subjects: t.subjects || [],
       subjectsInput: (t.subjects || []).join(", "),
       classesTaught: t.classesTaught || [],
+      assignedSubjects: t.assignedSubjects && t.assignedSubjects.length > 0 ? t.assignedSubjects : t.subjects || ["Mathematics"],
+      assignedClasses: t.assignedClasses && t.assignedClasses.length > 0 ? t.assignedClasses : t.classesTaught || ["Class 10"],
+      assignedStudentIds: existingAssignedStudentIds,
+      assignedStudents: t.assignedStudents || [],
       status: t.approvalStatus || t.userId?.status || "ACTIVE",
       resetPassword: "",
     });
+    setStudentSearch("");
+    fetchAllocatableStudents(teacherType, institution);
   };
 
   const handleUpdateStatus = async (teacherUserId: string, newStatus: string) => {
@@ -154,8 +209,13 @@ export default function AdminTeachersPage() {
           qualification: editForm.qualification,
           specialization: editForm.specialization,
           experienceYears: Number(editForm.experienceYears),
-          subjects: subjectsArray,
-          classesTaught: editForm.classesTaught,
+          subjects: subjectsArray.length > 0 ? subjectsArray : editForm.assignedSubjects,
+          classesTaught: editForm.classesTaught.length > 0 ? editForm.classesTaught : editForm.assignedClasses,
+          teacherType: editForm.teacherType,
+          institutionName: editForm.teacherType === "B2B" ? editForm.institutionName.trim() : "",
+          assignedSubjects: editForm.assignedSubjects,
+          assignedClasses: editForm.assignedClasses,
+          assignedStudentIds: editForm.assignedStudentIds,
           status: editForm.status,
           resetPassword: editForm.resetPassword || undefined,
         }),
@@ -212,15 +272,47 @@ export default function AdminTeachersPage() {
     }
   };
 
-  const toggleClassTaught = (cls: string) => {
+  const toggleAssignedClass = (cls: string) => {
     setEditForm((prev) => {
-      const exists = prev.classesTaught.includes(cls);
+      const exists = prev.assignedClasses.includes(cls);
       return {
         ...prev,
-        classesTaught: exists
-          ? prev.classesTaught.filter((c) => c !== cls)
-          : [...prev.classesTaught, cls],
+        assignedClasses: exists
+          ? (prev.assignedClasses.length > 1 ? prev.assignedClasses.filter((c) => c !== cls) : prev.assignedClasses)
+          : [...prev.assignedClasses, cls],
       };
+    });
+  };
+
+  const toggleAssignedSubject = (sub: string) => {
+    setEditForm((prev) => {
+      const exists = prev.assignedSubjects.includes(sub);
+      return {
+        ...prev,
+        assignedSubjects: exists
+          ? (prev.assignedSubjects.length > 1 ? prev.assignedSubjects.filter((s) => s !== sub) : prev.assignedSubjects)
+          : [...prev.assignedSubjects, sub],
+      };
+    });
+  };
+
+  const toggleStudentAllocation = (st: any) => {
+    const stId = (st.userId || st._id).toString();
+    setEditForm((prev) => {
+      const exists = prev.assignedStudentIds.includes(stId);
+      if (exists) {
+        return {
+          ...prev,
+          assignedStudentIds: prev.assignedStudentIds.filter((id) => id !== stId),
+          assignedStudents: prev.assignedStudents.filter((s: any) => (s.userId || s._id).toString() !== stId),
+        };
+      } else {
+        return {
+          ...prev,
+          assignedStudentIds: [...prev.assignedStudentIds, stId],
+          assignedStudents: [...prev.assignedStudents, st],
+        };
+      }
     });
   };
 
@@ -298,14 +390,17 @@ export default function AdminTeachersPage() {
             teachers.map((t: any, idx: number) => {
               const isPending = t.approvalStatus === "PENDING_APPROVAL" || t.userId?.status === "PENDING_APPROVAL";
               const isApproved = t.approvalStatus === "ACTIVE" || t.userId?.status === "ACTIVE";
+              const assignedCount = t.assignedStudents?.length || t.assignedStudentIds?.length || 0;
+              const displayClasses = (t.assignedClasses && t.assignedClasses.length > 0) ? t.assignedClasses : (t.classesTaught || []);
+              const displaySubjects = (t.assignedSubjects && t.assignedSubjects.length > 0) ? t.assignedSubjects : (t.subjects || []);
 
               return (
                 <div
                   key={t._id}
                   className="py-3.5 grid grid-cols-1 md:grid-cols-12 gap-4 items-center transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-900/30 px-1"
                 >
-                  {/* Col 1: Name & Contact */}
-                  <div className="col-span-3 space-y-0.5">
+                  {/* Col 1: Name & Contact & Category */}
+                  <div className="col-span-3 space-y-1">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <p className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100">
                         {t.userId?.name || "Faculty Specialist"}
@@ -314,6 +409,19 @@ export default function AdminTeachersPage() {
                         {formatStaffId(t, idx)}
                       </span>
                     </div>
+
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {t.teacherType === "B2B" ? (
+                        <span className="font-bold text-[10px] px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                          B2B: {t.institutionName || "School Faculty"}
+                        </span>
+                      ) : (
+                        <span className="font-bold text-[10px] px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                          B2C: Individual Tutor
+                        </span>
+                      )}
+                    </div>
+
                     <p className="text-[11px] text-slate-400 font-mono truncate">
                       {t.userId?.email} • {t.userId?.phone || "—"}
                     </p>
@@ -325,21 +433,24 @@ export default function AdminTeachersPage() {
                       {t.qualification || "M.Sc. / B.Ed. Specialist"}
                     </p>
                     <p className="text-[11px] text-slate-400 font-medium">
-                      {t.experienceYears || 5} Years Experience
+                      {t.experienceYears || 0} Yrs Experience • {t.specialization || "General"}
                     </p>
                   </div>
 
-                  {/* Col 3: Classes & Subjects */}
-                  <div className="col-span-3 space-y-1">
+                  {/* Col 3: Classes & Subjects & Allocated Students */}
+                  <div className="col-span-3 space-y-1.5">
                     <p className="text-xs font-bold text-[#004b79] dark:text-[#dfb74a] truncate">
-                      {t.subjects?.join(", ") || "Mathematics, Science"}
+                      {displaySubjects.join(", ") || "Mathematics"}
                     </p>
-                    <div className="flex flex-wrap gap-1">
-                      {t.classesTaught?.map((c: string) => (
+                    <div className="flex flex-wrap items-center gap-1">
+                      {displayClasses.map((c: string) => (
                         <span key={c} className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-mono text-slate-600 dark:text-slate-400">
                           {c}
                         </span>
                       ))}
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        {assignedCount} Student{assignedCount === 1 ? "" : "s"}
+                      </span>
                     </div>
                   </div>
 
@@ -349,7 +460,7 @@ export default function AdminTeachersPage() {
                       <div className="flex items-center gap-1.5">
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950 dark:text-amber-300 animate-pulse flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          <span>Pending Review</span>
+                          <span>Pending</span>
                         </span>
                         <button
                           type="button"
@@ -382,10 +493,10 @@ export default function AdminTeachersPage() {
                     <button
                       type="button"
                       onClick={() => openEditModal(t)}
-                      className="px-2.5 py-1 rounded-lg text-xs font-bold border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
+                      className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#004b79]/10 hover:bg-[#004b79] text-[#004b79] hover:text-white transition-colors cursor-pointer flex items-center gap-1 shadow-2xs"
                     >
-                      <Edit2 className="w-3 h-3 text-[#004b79] dark:text-[#dfb74a]" />
-                      <span>Edit</span>
+                      <Edit2 className="w-3 h-3" />
+                      <span>Allocate &amp; Edit</span>
                     </button>
 
                     <button
@@ -411,16 +522,71 @@ export default function AdminTeachersPage() {
         </div>
       </div>
 
-      {/* ── Edit Faculty Modal ── */}
+      {/* ── Edit & Allocate Faculty Modal ── */}
       {editTeacher && (
         <Modal
           isOpen={!!editTeacher}
           onClose={() => setEditTeacher(null)}
-          title={`Edit Faculty: ${editTeacher.userId?.name}`}
-          description="Update credentials, qualification, assigned classes, or subjects taught."
-          maxWidth="lg"
+          title={`Allocate & Manage Faculty: ${editTeacher.userId?.name}`}
+          description="Configure B2B / B2C stream, allocate specific students, and assign classes & subjects handled."
+          maxWidth="xl"
         >
           <form onSubmit={handleSaveTeacherEdit} className="space-y-4 pt-1 text-xs">
+            {/* Stream Selector: B2C vs B2B */}
+            <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 space-y-2">
+              <label className="block font-bold text-slate-800 dark:text-slate-200">
+                Tutoring Stream &amp; Classification *
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditForm({ ...editForm, teacherType: "B2C" });
+                    fetchAllocatableStudents("B2C", "");
+                  }}
+                  className={`py-2 px-3 rounded-xl font-bold text-xs border transition-all cursor-pointer text-center ${
+                    editForm.teacherType === "B2C"
+                      ? "bg-sky-600 text-white border-sky-600 shadow-sm"
+                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  B2C — Individual Tutor
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditForm({ ...editForm, teacherType: "B2B" });
+                    fetchAllocatableStudents("B2B", editForm.institutionName);
+                  }}
+                  className={`py-2 px-3 rounded-xl font-bold text-xs border transition-all cursor-pointer text-center ${
+                    editForm.teacherType === "B2B"
+                      ? "bg-purple-600 text-white border-purple-600 shadow-sm"
+                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+                  }`}
+                >
+                  B2B — Institutional Faculty
+                </button>
+              </div>
+
+              {editForm.teacherType === "B2B" && (
+                <div className="pt-2">
+                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">
+                    Institution / School Name *
+                  </label>
+                  <Input
+                    required={editForm.teacherType === "B2B"}
+                    placeholder="e.g. SSVS Matriculation Higher Secondary School"
+                    value={editForm.institutionName}
+                    onChange={(e) => {
+                      setEditForm({ ...editForm, institutionName: e.target.value });
+                      fetchAllocatableStudents("B2B", e.target.value);
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Basic Info */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Teacher Name *</label>
@@ -468,48 +634,22 @@ export default function AdminTeachersPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Qualification Degree</label>
-                <Input
-                  value={editForm.qualification}
-                  onChange={(e) => setEditForm({ ...editForm, qualification: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Years Experience</label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={editForm.experienceYears}
-                  onChange={(e) =>
-                    setEditForm({ ...editForm, experienceYears: Number(e.target.value) })
-                  }
-                />
-              </div>
-            </div>
-
+            {/* Assigned Classes */}
             <div>
-              <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Subjects Taught (Comma Separated)</label>
-              <Input
-                value={editForm.subjectsInput}
-                onChange={(e) => setEditForm({ ...editForm, subjectsInput: e.target.value })}
-              />
-            </div>
-
-            <div>
-              <label className="block font-bold mb-1.5 text-slate-700 dark:text-slate-300">Assigned Class Levels</label>
-              <div className="flex flex-wrap gap-1.5 p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+              <label className="block font-bold mb-1.5 text-slate-700 dark:text-slate-300">
+                Admin Allocated Classes to Handle *
+              </label>
+              <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                 {ALL_CLASSES.map((cls) => {
-                  const selected = editForm.classesTaught.includes(cls);
+                  const selected = editForm.assignedClasses.includes(cls);
                   return (
                     <button
                       key={cls}
                       type="button"
-                      onClick={() => toggleClassTaught(cls)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      onClick={() => toggleAssignedClass(cls)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                         selected
-                          ? "bg-[#004b79] text-white shadow-2xs"
+                          ? "bg-[#002137] text-white shadow-2xs"
                           : "border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                       }`}
                     >
@@ -520,14 +660,130 @@ export default function AdminTeachersPage() {
               </div>
             </div>
 
+            {/* Assigned Subjects */}
             <div>
-              <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Reset Password (Optional)</label>
-              <Input
-                type="password"
-                placeholder="Leave blank to keep existing password"
-                value={editForm.resetPassword}
-                onChange={(e) => setEditForm({ ...editForm, resetPassword: e.target.value })}
-              />
+              <label className="block font-bold mb-1.5 text-slate-700 dark:text-slate-300">
+                Admin Allocated Subjects to Handle *
+              </label>
+              <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+                {ALL_SUBJECTS.map((sub) => {
+                  const selected = editForm.assignedSubjects.includes(sub);
+                  return (
+                    <button
+                      key={sub}
+                      type="button"
+                      onClick={() => toggleAssignedSubject(sub)}
+                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                        selected
+                          ? "bg-[#004b79] text-white shadow-2xs font-bold"
+                          : "border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                      }`}
+                    >
+                      {sub}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── STUDENT ALLOCATION SECTION ── */}
+            <div className="space-y-2 p-3.5 rounded-xl border-2 border-dashed border-[#004b79]/20 bg-blue-50/20 dark:bg-blue-950/10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-extrabold text-xs text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-[#004b79]" />
+                    <span>Allocated Students ({editForm.assignedStudentIds.length})</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    {editForm.teacherType === "B2B"
+                      ? `Select school students from ${editForm.institutionName || "institution"} to allocate to this staff.`
+                      : "Select individual tutoring students to allocate to this private tutor."}
+                  </p>
+                </div>
+
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                  {editForm.assignedStudentIds.length} Assigned
+                </span>
+              </div>
+
+              {/* Search candidate students */}
+              <div className="pt-1">
+                <Input
+                  placeholder="Search students by name, mobile, student ID, or class..."
+                  value={studentSearch}
+                  onChange={(e) => setStudentSearch(e.target.value)}
+                  className="bg-white dark:bg-slate-900 text-xs"
+                />
+              </div>
+
+              {/* Candidate Students List */}
+              <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 divide-y divide-slate-100 dark:divide-slate-800">
+                {loadingStudents ? (
+                  <div className="py-4 text-center text-xs text-slate-500">
+                    Loading allocatable students...
+                  </div>
+                ) : allocatableStudents.length === 0 ? (
+                  <div className="py-4 text-center text-xs text-slate-500">
+                    No eligible students found. Ensure students have registered for this stream.
+                  </div>
+                ) : (
+                  allocatableStudents
+                    .filter((st: any) => {
+                      if (!studentSearch.trim()) return true;
+                      const q = studentSearch.trim().toLowerCase();
+                      return (
+                        st.name.toLowerCase().includes(q) ||
+                        st.phone.includes(q) ||
+                        st.studentId.toLowerCase().includes(q) ||
+                        st.currentClass.toLowerCase().includes(q) ||
+                        st.schoolName.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((st: any) => {
+                      const stId = (st.userId || st._id).toString();
+                      const isAssigned = editForm.assignedStudentIds.includes(stId);
+
+                      return (
+                        <div
+                          key={stId}
+                          onClick={() => toggleStudentAllocation(st)}
+                          className={`p-2 rounded-lg flex items-center justify-between gap-2 cursor-pointer transition-colors ${
+                            isAssigned
+                              ? "bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200"
+                              : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                          }`}
+                        >
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
+                                {st.name}
+                              </span>
+                              <span className="font-mono text-[10px] text-slate-500">
+                                ({st.studentId || "STD"})
+                              </span>
+                              <span className="text-[10px] font-bold px-1.5 rounded bg-slate-200 text-slate-700">
+                                {st.currentClass}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500">
+                              {st.schoolName} • Needs: {st.subjects?.join(", ") || "General"}
+                            </p>
+                          </div>
+
+                          <div
+                            className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 border ${
+                              isAssigned
+                                ? "bg-emerald-600 border-emerald-600 text-white"
+                                : "border-slate-300 bg-white"
+                            }`}
+                          >
+                            {isAssigned && <Check className="w-4 h-4" />}
+                          </div>
+                        </div>
+                      );
+                    })
+                )}
+              </div>
             </div>
 
             <div className="flex justify-end gap-2.5 pt-4 border-t border-slate-200 dark:border-slate-800">
@@ -543,7 +799,7 @@ export default function AdminTeachersPage() {
                 disabled={isSaving}
                 className="px-5 py-2 rounded-xl text-xs font-bold bg-[#004b79] hover:bg-[#003b60] text-white transition-all cursor-pointer shadow-sm disabled:opacity-60"
               >
-                {isSaving ? "Saving..." : "Save Faculty Changes"}
+                {isSaving ? "Saving Allocation..." : "Save Faculty & Allocation"}
               </button>
             </div>
           </form>

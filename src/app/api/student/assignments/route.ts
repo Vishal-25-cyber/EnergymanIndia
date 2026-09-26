@@ -55,20 +55,44 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
 
-    // Query real assignments for the student's class or assigned batch
-    const orConditions: any[] = [{ classLevel: profile.currentClass }];
-    if (profile.batchId) {
-      orConditions.push({ batchId: profile.batchId });
-    }
-
-    const query: any = { $or: orConditions };
-    if (typeFilter && typeFilter !== "ALL") {
-      query.type = typeFilter;
-    }
-
     const studentObjId = mongoose.Types.ObjectId.isValid(session.userId)
       ? new mongoose.Types.ObjectId(session.userId)
       : session.userId;
+
+    // Strict isolation: only query assignments assigned directly to this student or their allocated teachers
+    const assignedTeachers = Array.isArray(profile.assignedTeacherIds) ? profile.assignedTeacherIds : [];
+
+    const assignmentFilterConditions: any[] = [
+      { assignedStudentIds: session.userId },
+      { assignedStudentIds: studentObjId },
+    ];
+
+    if (assignedTeachers.length > 0) {
+      assignmentFilterConditions.push({
+        teacherId: { $in: assignedTeachers },
+        classLevel: profile.currentClass,
+      });
+    } else {
+      // Fallback for new unallocated students: show general batch tasks where assignedStudentIds is empty
+      assignmentFilterConditions.push({
+        classLevel: profile.currentClass,
+        $or: [
+          { assignedStudentIds: { $exists: false } },
+          { assignedStudentIds: { $size: 0 } },
+        ],
+      });
+    }
+
+    const query: any = { $or: assignmentFilterConditions };
+
+    // If student selected specific subjects, filter by their subjects
+    if (Array.isArray(profile.subjects) && profile.subjects.length > 0) {
+      query.subject = { $in: profile.subjects };
+    }
+
+    if (typeFilter && typeFilter !== "ALL") {
+      query.type = typeFilter;
+    }
 
     // Run Assignment.find and AssignmentSubmission.find concurrently
     const [assignments, submissions] = await Promise.all([

@@ -22,12 +22,36 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Student profile not found." }, { status: 404 });
       }
 
+      const assignedTeachers = Array.isArray(studentProfile?.assignedTeacherIds) ? studentProfile.assignedTeacherIds : [];
+
+      const studentConditions: any[] = [
+        { assignedStudentIds: session.userId },
+      ];
+
+      if (assignedTeachers.length > 0) {
+        studentConditions.push({
+          teacherId: { $in: assignedTeachers },
+          classLevel: studentProfile.currentClass,
+        });
+      } else {
+        studentConditions.push({
+          classLevel: studentProfile.currentClass,
+          $or: [
+            { assignedStudentIds: { $exists: false } },
+            { assignedStudentIds: { $size: 0 } },
+          ],
+        });
+      }
+
       query = {
-        batchId: studentProfile.batchId,
-        classLevel: studentProfile.currentClass,
+        $or: studentConditions,
         status: { $in: ["PUBLISHED", "SCHEDULED", "LIVE"] },
         date: { $gte: todayStr },
       };
+
+      if (Array.isArray(studentProfile.subjects) && studentProfile.subjects.length > 0) {
+        query.subject = { $in: studentProfile.subjects };
+      }
     } else if (session.role === "TEACHER") {
       query = {
         teacherId: session.userId,

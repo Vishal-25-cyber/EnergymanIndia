@@ -64,14 +64,42 @@ export async function POST(req: NextRequest) {
     const generatedTitle = title?.trim() || `${classLevel} ${subject} — ${topic}`;
     const normalizedStatus = status.toUpperCase() === "DRAFT" ? "DRAFT" : "PUBLISHED";
 
-    // Deduplication check: check if class already exists
+import TeacherProfile from "@/models/TeacherProfile";
+
+    // Deduplication check: check if this teacher already scheduled this class
     const existingSession = await LiveSession.findOne({
       date,
       startTime,
       classLevel,
       subject,
+      teacherId: session.userId,
       status: { $ne: "CANCELLED" },
     });
+
+    // Query teacher profile to find allocated students (strictly isolated)
+    const teacherProfile = await TeacherProfile.findOne({ userId: session.userId }).lean();
+    let eligibleStudents: any[] = [];
+
+    if (teacherProfile?.assignedStudentIds && teacherProfile.assignedStudentIds.length > 0) {
+      // B2C or explicit student allocation
+      eligibleStudents = await StudentProfile.find({
+        userId: { $in: teacherProfile.assignedStudentIds },
+        ...(classLevel ? { currentClass: classLevel } : {}),
+      });
+    } else if (teacherProfile?.teacherType === "B2B" && teacherProfile?.institutionName) {
+      // B2B school students
+      eligibleStudents = await StudentProfile.find({
+        schoolName: { $regex: new RegExp(teacherProfile.institutionName.trim(), "i") },
+        ...(classLevel ? { currentClass: classLevel } : {}),
+      });
+    } else {
+      eligibleStudents = await StudentProfile.find({
+        batchId,
+        ...(classLevel ? { currentClass: classLevel } : {}),
+      });
+    }
+
+    const assignedStudentUserIds = eligibleStudents.map((st) => st.userId);
 
     if (existingSession) {
       existingSession.topic = topic;
@@ -79,6 +107,7 @@ export async function POST(req: NextRequest) {
       existingSession.description = description || "";
       existingSession.endTime = endTime;
       existingSession.status = normalizedStatus;
+      existingSession.assignedStudentIds = assignedStudentUserIds;
       if (Array.isArray(materials) && materials.length) existingSession.materials = materials;
       await existingSession.save();
 
@@ -97,6 +126,7 @@ export async function POST(req: NextRequest) {
       classLevel,
       batchId,
       teacherId: session.userId,
+      assignedStudentIds: assignedStudentUserIds,
       date,
       startTime,
       endTime,
@@ -110,11 +140,6 @@ export async function POST(req: NextRequest) {
 
     let notifiedCount = 0;
     if (normalizedStatus === "PUBLISHED") {
-      const eligibleStudents = await StudentProfile.find({
-        batchId,
-        ...(classLevel ? { currentClass: classLevel } : {}),
-      });
-
       if (eligibleStudents.length > 0) {
         const notificationDocs = eligibleStudents.map((st) => ({
           userId: st.userId,

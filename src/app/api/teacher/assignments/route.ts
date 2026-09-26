@@ -242,6 +242,30 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Query teacher profile to find allocated students (strictly isolated)
+    const teacherProfile = await TeacherProfile.findOne({ userId: teacherUserId }).lean();
+    let eligibleStudents: any[] = [];
+
+    if (teacherProfile?.assignedStudentIds && teacherProfile.assignedStudentIds.length > 0) {
+      eligibleStudents = await StudentProfile.find({
+        userId: { $in: teacherProfile.assignedStudentIds },
+        ...(classLevel ? { currentClass: classLevel } : {}),
+      });
+    } else if (teacherProfile?.teacherType === "B2B" && teacherProfile?.institutionName) {
+      eligibleStudents = await StudentProfile.find({
+        schoolName: { $regex: new RegExp(teacherProfile.institutionName.trim(), "i") },
+        ...(classLevel ? { currentClass: classLevel } : {}),
+      });
+    } else {
+      const studentQuery: any = { currentClass: classLevel };
+      if (targetBatchId) {
+        studentQuery.batchId = targetBatchId;
+      }
+      eligibleStudents = await StudentProfile.find(studentQuery);
+    }
+
+    const assignedStudentUserIds = eligibleStudents.map((st) => st.userId);
+
     const newAssignment = await Assignment.create({
       title: title.trim(),
       description: resolvedDescription,
@@ -249,6 +273,7 @@ export async function POST(req: NextRequest) {
       classLevel,
       batchId: targetBatchId,
       teacherId: teacherUserId,
+      assignedStudentIds: assignedStudentUserIds,
       type: taskType,
       durationMinutes: taskType === "TEST" ? Number(durationMinutes) || 45 : undefined,
       proctoringRequired: taskType === "TEST" ? (proctoringRequired ?? true) : false,
@@ -261,12 +286,6 @@ export async function POST(req: NextRequest) {
     });
 
     // Notify students
-    const studentQuery: any = { currentClass: classLevel };
-    if (targetBatchId) {
-      studentQuery.batchId = targetBatchId;
-    }
-    const eligibleStudents = await StudentProfile.find(studentQuery);
-
     if (eligibleStudents.length > 0) {
       try {
         const typeLabel = taskType === "TEST" ? "Timed Proctored Test" : taskType === "HOMEWORK" ? "Daily Homework" : "Assignment";

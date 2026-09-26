@@ -28,16 +28,19 @@ export async function POST(req: NextRequest) {
     if (role === "STUDENT") {
       const {
         name, email, phone, password,
+        studentType = "B2C",
         schoolName, district, board, currentClass, batchId,
         parentName, parentPhone, gender, dob,
+        subjects = [],
       } = body;
 
       // Validate required fields
       if (!name || !email || !phone || !password) {
         return NextResponse.json({ error: "Name, email, phone and password are required." }, { status: 400 });
       }
-      if (!schoolName || !board || !currentClass || !batchId) {
-        return NextResponse.json({ error: "School name, board, class and batch are required." }, { status: 400 });
+      const resolvedSchoolName = (schoolName || "").trim() || (studentType === "B2C" ? "Individual Tutoring" : "");
+      if (!resolvedSchoolName || !board || !currentClass || !batchId) {
+        return NextResponse.json({ error: "School/Institution name, board, class and batch are required." }, { status: 400 });
       }
       if (!parentName || !parentPhone) {
         return NextResponse.json({ error: "Parent name and parent phone are required." }, { status: 400 });
@@ -99,11 +102,14 @@ export async function POST(req: NextRequest) {
       const studentCount = await StudentProfile.countDocuments();
       const formattedStudentId = `STD_${String(studentCount + 1).padStart(3, "0")}`;
 
+      const safeSubjects = Array.isArray(subjects) ? subjects : [];
+
       // Save to `studentprofiles` collection
       await StudentProfile.create({
         userId: user._id,
         studentId: formattedStudentId,
-        schoolName: schoolName.trim(),
+        studentType: studentType === "B2B" ? "B2B" : "B2C",
+        schoolName: resolvedSchoolName,
         district: district?.trim() || "",
         board,
         currentClass,
@@ -112,7 +118,8 @@ export async function POST(req: NextRequest) {
         parentPhone: parentPhone.trim(),
         gender: safeGender,
         dob: dob || "",
-        subjects: [],
+        subjects: safeSubjects,
+        assignedTeacherIds: [],
         streakCount: 0,
         totalClassesAttended: 0,
         totalClassesScheduled: 0,
@@ -131,12 +138,17 @@ export async function POST(req: NextRequest) {
     if (role === "TEACHER") {
       const {
         name, email, phone, password,
+        teacherType = "B2C",
+        institutionName = "",
         qualification, specialization, experienceYears, district, address,
         classesTaught, subjects,
       } = body;
 
       if (!name || !email || !phone || !password) {
         return NextResponse.json({ error: "Name, email, phone and password are required." }, { status: 400 });
+      }
+      if (teacherType === "B2B" && !institutionName.trim()) {
+        return NextResponse.json({ error: "Institution / School name is required for Institutional Teachers." }, { status: 400 });
       }
       if (!qualification || !specialization) {
         return NextResponse.json({ error: "Qualification and specialization are required." }, { status: 400 });
@@ -175,10 +187,15 @@ export async function POST(req: NextRequest) {
       await TeacherProfile.create({
         userId: user._id,
         staffId: formattedStaffId,
+        teacherType: teacherType === "B2B" ? "B2B" : "B2C",
+        institutionName: teacherType === "B2B" ? institutionName.trim() : "",
         qualification: qualification.trim(),
         specialization: specialization.trim(),
         subjects: safeSubjects,
         classesTaught: safeClasses,
+        assignedSubjects: safeSubjects,
+        assignedClasses: safeClasses,
+        assignedStudentIds: [],
         experienceYears: parseInt(experienceYears) || 0,
         district: district?.trim() || address?.trim() || "",
         address: address?.trim() || district?.trim() || "",

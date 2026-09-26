@@ -4,6 +4,7 @@ import { getSession } from "@/lib/auth/session";
 import User from "@/models/User";
 import TeacherProfile from "@/models/TeacherProfile";
 import Notification from "@/models/Notification";
+import StudentProfile from "@/models/StudentProfile";
 import { recordAuditLog } from "@/lib/audit";
 import { hashPassword } from "@/lib/auth/passwords";
 import { isValid10DigitPhone, isValidAcuityOrGmail, sanitize10DigitPhone } from "@/lib/validations/phone";
@@ -30,10 +31,59 @@ export async function GET(req: NextRequest) {
 
     const teachers = await TeacherProfile.find(filter)
       .populate("userId", "name email phone status avatarUrl createdAt")
+      .populate("assignedStudentIds", "name email phone")
       .populate("preferredBatchIds")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    return NextResponse.json({ teachers }, {
+    // Enrich assignedStudentIds with details from StudentProfile
+    const allAssignedUserIds = Array.from(
+      new Set(
+        teachers.flatMap((t: any) =>
+          Array.isArray(t.assignedStudentIds)
+            ? t.assignedStudentIds.map((s: any) => s._id || s)
+            : []
+        )
+      )
+    );
+
+    let studentProfileMap: Record<string, any> = {};
+    if (allAssignedUserIds.length > 0) {
+      const studentProfiles = await StudentProfile.find({
+        userId: { $in: allAssignedUserIds },
+      }).select("userId studentId currentClass schoolName subjects studentType").lean();
+
+      studentProfileMap = studentProfiles.reduce((acc: any, p: any) => {
+        const uId = p.userId?.toString();
+        if (uId) acc[uId] = p;
+        return acc;
+      }, {});
+    }
+
+    const enrichedTeachers = teachers.map((t: any) => {
+      const enrichedStudents = (t.assignedStudentIds || []).map((st: any) => {
+        const uId = st._id ? st._id.toString() : st.toString();
+        const profile = studentProfileMap[uId] || {};
+        return {
+          _id: st._id || st,
+          name: st.name || "Student",
+          email: st.email || "",
+          phone: st.phone || "",
+          studentId: profile.studentId || "",
+          currentClass: profile.currentClass || "",
+          schoolName: profile.schoolName || "",
+          subjects: profile.subjects || [],
+          studentType: profile.studentType || "B2C",
+        };
+      });
+
+      return {
+        ...t,
+        assignedStudents: enrichedStudents,
+      };
+    });
+
+    return NextResponse.json({ teachers: enrichedTeachers }, {
       headers: {
         "Cache-Control": "no-store, max-age=0, must-revalidate",
       },
@@ -63,6 +113,11 @@ export async function PATCH(req: NextRequest) {
       status,
       subjects,
       classesTaught,
+      teacherType,
+      institutionName,
+      assignedSubjects,
+      assignedClasses,
+      assignedStudentIds,
       preferredBatchIds,
       resetPassword,
     } = body;
@@ -107,10 +162,34 @@ export async function PATCH(req: NextRequest) {
     if (experienceYears !== undefined) updateProfile.experienceYears = Number(experienceYears);
     if (subjects !== undefined) updateProfile.subjects = subjects;
     if (classesTaught !== undefined) updateProfile.classesTaught = classesTaught;
+    if (teacherType !== undefined) updateProfile.teacherType = teacherType;
+    if (institutionName !== undefined) updateProfile.institutionName = institutionName;
+    if (assignedSubjects !== undefined) updateProfile.assignedSubjects = assignedSubjects;
+    if (assignedClasses !== undefined) updateProfile.assignedClasses = assignedClasses;
+    if (assignedStudentIds !== undefined) updateProfile.assignedStudentIds = assignedStudentIds;
     if (preferredBatchIds !== undefined) updateProfile.preferredBatchIds = preferredBatchIds;
 
     if (Object.keys(updateProfile).length > 0) {
       await TeacherProfile.findOneAndUpdate({ userId: teacherId }, updateProfile);
+    }
+
+    // Bidirectional sync for assignedStudentIds
+    if (Array.isArray(assignedStudentIds)) {
+      // Add teacher to newly assigned students
+      if (assignedStudentIds.length > 0) {
+        await StudentProfile.updateMany(
+          { userId: { $in: assignedStudentIds } },
+          { $addToSet: { assignedTeacherIds: teacherId } }
+        );
+      }
+      // Remove teacher from unassigned students
+      await StudentProfile.updateMany(
+        {
+          userId: { $nin: assignedStudentIds },
+          assignedTeacherIds: teacherId,
+        },
+        { $pull: { assignedTeacherIds: teacherId } }
+      );
     }
 
     if (status) {
@@ -133,10 +212,10 @@ export async function PATCH(req: NextRequest) {
       action: status ? `TEACHER_STATUS_${status}` : "ADMIN_TEACHER_UPDATED",
       entityType: "USER",
       entityId: teacherId,
-      details: { name, email, status, subjects, classesTaught },
+      details: { name, email, status, subjects, classesTaught, teacherType, assignedStudentIds },
     });
 
-    return NextResponse.json({ success: true, message: "Teacher updated successfully." });
+    return NextResponse.json({ success: true, message: "Teacher and student allocations updated successfully." });
   } catch (error: any) {
     console.error("Admin Patch Teacher Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -64,6 +64,7 @@ const LiveSessionSchema = new Schema<ILiveSessionDocument>(
     },
     batchId: { type: Schema.Types.ObjectId, ref: "Batch", required: false, index: true },
     teacherId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    assignedStudentIds: [{ type: Schema.Types.ObjectId, ref: "User" }],
     topic: { type: String, required: true, trim: true },
     description: { type: String, default: "", trim: true },
     date: { type: String, required: true, index: true }, // YYYY-MM-DD

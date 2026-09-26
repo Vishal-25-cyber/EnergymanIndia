@@ -20,8 +20,9 @@ const AssignmentSchema = new Schema<IAssignmentDocument>(
       required: true,
       index: true,
     },
-    batchId: { type: Schema.Types.ObjectId, ref: "Batch", required: true, index: true },
+    batchId: { type: Schema.Types.ObjectId, ref: "Batch", required: false, index: true },
     teacherId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
+    assignedStudentIds: [{ type: Schema.Types.ObjectId, ref: "User" }],
     type: {
       type: String,
       enum: ["ASSIGNMENT", "TEST", "HOMEWORK"],
