@@ -205,14 +205,100 @@ export async function PATCH(req: NextRequest) {
         message,
         type: "SYSTEM",
       });
+
+      // ── AUTO-ALLOCATION: when a B2C teacher is approved, match students by class + subject ──
+      let autoAllocated = 0;
+      if (status === "ACTIVE") {
+        try {
+          const freshProfile = await TeacherProfile.findOne({ userId: teacherId }).lean() as any;
+          if (freshProfile && freshProfile.teacherType === "B2C") {
+            const tClasses: string[] = (
+              freshProfile.assignedClasses?.length > 0
+                ? freshProfile.assignedClasses
+                : freshProfile.classesTaught
+            ) ?? [];
+            const tSubjects: string[] = (
+              freshProfile.assignedSubjects?.length > 0
+                ? freshProfile.assignedSubjects
+                : freshProfile.subjects
+            ) ?? [];
+
+            if (tClasses.length > 0 && tSubjects.length > 0) {
+              const existingIds = (freshProfile.assignedStudentIds ?? []).map((id: any) => id.toString());
+
+              const matchingStudents = await StudentProfile.find({
+                studentType: "B2C",
+                currentClass: { $in: tClasses },
+                subjects: { $in: tSubjects },
+                userId: { $nin: existingIds },
+              }).populate("userId", "name status").lean() as any[];
+
+              const eligible = matchingStudents.filter(
+                (s: any) => s.userId && (s.userId.status === "ACTIVE" || !s.userId.status)
+              );
+
+              if (eligible.length > 0) {
+                const newIds = eligible.map((s: any) => s.userId._id.toString());
+
+                await TeacherProfile.findOneAndUpdate(
+                  { userId: teacherId },
+                  { $addToSet: { assignedStudentIds: { $each: newIds } } }
+                );
+
+                await StudentProfile.updateMany(
+                  { userId: { $in: newIds } },
+                  { $addToSet: { assignedTeacherIds: teacherId } }
+                );
+
+                const teacherUser = await User.findById(teacherId).select("name").lean() as any;
+                const teacherName = teacherUser?.name || "Your Tutor";
+
+                for (const s of eligible) {
+                  const overlap = (s.subjects || []).filter((sub: string) => tSubjects.includes(sub));
+                  try {
+                    await Notification.create({
+                      userId: s.userId._id,
+                      title: "Tutor Assigned!",
+                      message: `You have been matched with ${teacherName} for ${overlap.join(", ")} — ${s.currentClass}. Your personalised sessions begin soon!`,
+                      type: "SYSTEM",
+                    });
+                  } catch (_) {}
+                }
+
+                autoAllocated = eligible.length;
+              }
+            }
+          }
+        } catch (allocErr) {
+          console.error("Auto-allocation error during approval (non-blocking):", allocErr);
+        }
+      }
+
+      await recordAuditLog({
+        actorId: session.userId,
+        action: status ? `TEACHER_STATUS_${status}` : "ADMIN_TEACHER_UPDATED",
+        entityType: "USER",
+        entityId: teacherId,
+        details: { name, email, status, subjects, classesTaught, teacherType, assignedStudentIds, autoAllocated },
+      });
+
+      return NextResponse.json({
+        success: true,
+        message:
+          status === "ACTIVE" && autoAllocated > 0
+            ? `Teacher approved and ${autoAllocated} student${autoAllocated === 1 ? "" : "s"} auto-allocated by class & subject match.`
+            : "Teacher and student allocations updated successfully.",
+        autoAllocated,
+      });
     }
 
+    // Non-status update path (profile edit only)
     await recordAuditLog({
       actorId: session.userId,
-      action: status ? `TEACHER_STATUS_${status}` : "ADMIN_TEACHER_UPDATED",
+      action: "ADMIN_TEACHER_UPDATED",
       entityType: "USER",
       entityId: teacherId,
-      details: { name, email, status, subjects, classesTaught, teacherType, assignedStudentIds },
+      details: { name, email, subjects, classesTaught, teacherType, assignedStudentIds },
     });
 
     return NextResponse.json({ success: true, message: "Teacher and student allocations updated successfully." });

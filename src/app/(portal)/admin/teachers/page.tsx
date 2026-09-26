@@ -19,6 +19,9 @@ import {
   Download,
   Check,
   X,
+  Sparkles,
+  RefreshCw,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +64,11 @@ export default function AdminTeachersPage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // Auto-allocation state
+  const [autoAllocLoading, setAutoAllocLoading] = useState<string | null>(null);
+  const [autoAllocToast, setAutoAllocToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+  const [autoAllocPreview, setAutoAllocPreview] = useState<{ matches: any[]; loaded: boolean }>({ matches: [], loaded: false });
 
   // Student allocation candidates
   const [allocatableStudents, setAllocatableStudents] = useState<any[]>([]);
@@ -154,7 +162,53 @@ export default function AdminTeachersPage() {
       resetPassword: "",
     });
     setStudentSearch("");
+    setAutoAllocPreview({ matches: [], loaded: false });
     fetchAllocatableStudents(teacherType, institution);
+    if (teacherType === "B2C") {
+      const tUserId = t.userId?._id || t._id;
+      if (tUserId) fetchAutoAllocPreview(tUserId.toString());
+    }
+  };
+
+  const handleAutoAllocate = async (teacherUserId: string) => {
+    setAutoAllocLoading(teacherUserId);
+    setAutoAllocToast(null);
+    try {
+      const res = await fetch("/api/admin/teachers/auto-allocate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ teacherUserId }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAutoAllocToast({ msg: data.message || `${data.allocated ?? 0} student(s) auto-allocated.`, type: "success" });
+        invalidateCache(apiUrl);
+        invalidateCache("/api/admin/teachers?status=ALL");
+        refetch();
+      } else {
+        setAutoAllocToast({ msg: data.error || "Auto-allocation failed.", type: "error" });
+      }
+    } catch (err: any) {
+      setAutoAllocToast({ msg: err.message || "Network error.", type: "error" });
+    } finally {
+      setAutoAllocLoading(null);
+      setTimeout(() => setAutoAllocToast(null), 5000);
+    }
+  };
+
+  const fetchAutoAllocPreview = async (teacherUserId: string) => {
+    setAutoAllocPreview({ matches: [], loaded: false });
+    try {
+      const res = await fetch(`/api/admin/teachers/auto-allocate?teacherUserId=${teacherUserId}`);
+      const data = await res.json();
+      if (res.ok) {
+        setAutoAllocPreview({ matches: data.matches || [], loaded: true });
+      } else {
+        setAutoAllocPreview({ matches: [], loaded: true });
+      }
+    } catch {
+      setAutoAllocPreview({ matches: [], loaded: true });
+    }
   };
 
   const handleUpdateStatus = async (teacherUserId: string, newStatus: string) => {
@@ -165,8 +219,13 @@ export default function AdminTeachersPage() {
         body: JSON.stringify({ teacherId: teacherUserId, status: newStatus }),
       });
 
+      const data = await res.json();
       if (res.ok) {
         setSelectedTeacher(null);
+        if (newStatus === "ACTIVE" && data.autoAllocated > 0) {
+          setAutoAllocToast({ msg: `✓ Approved & ${data.autoAllocated} student(s) auto-allocated by class & subject match!`, type: "success" });
+          setTimeout(() => setAutoAllocToast(null), 6000);
+        }
         invalidateCache(apiUrl);
         invalidateCache("/api/admin/teachers?status=ALL");
         invalidateCache("/api/admin/dashboard");
@@ -335,6 +394,24 @@ export default function AdminTeachersPage() {
 
   return (
     <main className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 animate-in fade-in duration-150 select-none">
+
+      {/* ── AUTO-ALLOCATION TOAST BANNER ── */}
+      {autoAllocToast && (
+        <div className={`fixed bottom-4 right-4 z-[999] flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border text-sm font-semibold max-w-sm animate-in slide-in-from-bottom-4 duration-300 ${
+          autoAllocToast.type === "success"
+            ? "bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800"
+            : "bg-rose-50 dark:bg-rose-950 text-rose-800 dark:text-rose-200 border-rose-200 dark:border-rose-800"
+        }`}>
+          {autoAllocToast.type === "success"
+            ? <Sparkles className="w-4 h-4 shrink-0 text-emerald-600" />
+            : <X className="w-4 h-4 shrink-0 text-rose-600" />}
+          <span>{autoAllocToast.msg}</span>
+          <button onClick={() => setAutoAllocToast(null)} className="ml-auto shrink-0 opacity-60 hover:opacity-100 cursor-pointer">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* ── 1. CLEAN CARDLESS HEADER ── */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div className="space-y-1">
@@ -515,6 +592,22 @@ export default function AdminTeachersPage() {
                       <Edit2 className="w-3 h-3" />
                       <span>Allocate &amp; Edit</span>
                     </button>
+
+                    {/* Auto-Allocate button: only for active B2C individual tutors */}
+                    {isApproved && (t.teacherType === "B2C" || !t.teacherType) && (
+                      <button
+                        type="button"
+                        disabled={autoAllocLoading === (t.userId?._id || t._id)?.toString()}
+                        onClick={() => handleAutoAllocate((t.userId?._id || t._id).toString())}
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 hover:bg-violet-100 transition-colors cursor-pointer flex items-center gap-1 shadow-2xs disabled:opacity-50"
+                        title="Auto-allocate students by class & subject match"
+                      >
+                        {autoAllocLoading === (t.userId?._id || t._id)?.toString()
+                          ? <RefreshCw className="w-3 h-3 animate-spin" />
+                          : <Zap className="w-3 h-3" />}
+                        <span>Auto-Match</span>
+                      </button>
+                    )}
 
                     <button
                       type="button"
@@ -764,6 +857,61 @@ export default function AdminTeachersPage() {
                   {editForm.assignedStudentIds.length} Assigned
                 </span>
               </div>
+
+              {/* ── SMART MATCH PREVIEW BANNER (B2C only) ── */}
+              {editForm.teacherType === "B2C" && (
+                <div className="rounded-xl border border-violet-200 dark:border-violet-800 bg-violet-50/60 dark:bg-violet-950/20 p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-violet-600" />
+                      <span className="text-xs font-extrabold text-violet-800 dark:text-violet-200">
+                        Smart Match Preview
+                      </span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300">
+                        {autoAllocPreview.loaded
+                          ? `${autoAllocPreview.matches.length} match${autoAllocPreview.matches.length === 1 ? "" : "es"}`
+                          : "Loading…"}
+                      </span>
+                    </div>
+                    {autoAllocPreview.loaded && autoAllocPreview.matches.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const teacherUserId = (editTeacher?.userId?._id || editTeacher?._id)?.toString();
+                          if (teacherUserId) handleAutoAllocate(teacherUserId);
+                        }}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-violet-600 hover:bg-violet-700 text-white cursor-pointer flex items-center gap-1 transition-colors"
+                      >
+                        <Zap className="w-3 h-3" />
+                        Apply Auto-Match
+                      </button>
+                    )}
+                  </div>
+                  {autoAllocPreview.loaded && autoAllocPreview.matches.length > 0 ? (
+                    <div className="space-y-1 max-h-28 overflow-y-auto pr-1">
+                      {autoAllocPreview.matches.map((m: any) => (
+                        <div key={m.userId} className="flex items-center justify-between gap-2 px-2 py-1 rounded-lg bg-white dark:bg-slate-900 border border-violet-100 dark:border-violet-900">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">{m.name}</span>
+                            <span className="text-[10px] font-mono text-slate-500 shrink-0">{m.currentClass}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-0.5 shrink-0">
+                            {(m.overlappingSubjects || []).slice(0, 3).map((sub: string) => (
+                              <span key={sub} className="px-1 py-0.2 text-[9px] font-bold rounded bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300">{sub}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : autoAllocPreview.loaded ? (
+                    <p className="text-[11px] text-violet-600 dark:text-violet-400">
+                      No new matching B2C students found based on current class &amp; subject settings.
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-slate-400 italic">Fetching smart match candidates…</p>
+                  )}
+                </div>
+              )}
 
               {/* Search candidate students */}
               <div className="pt-1">
