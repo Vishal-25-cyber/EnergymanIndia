@@ -165,8 +165,8 @@ export async function GET(req: NextRequest) {
 
     // Determine the actual teacher name assigned to this batch or school
     const batchDoc = profile?.batchId;
-    const assignedTeachers = Array.isArray(batchDoc?.assignedTeacherIds) ? batchDoc.assignedTeacherIds : [];
-    let defaultTeacherName = assignedTeachers[0]?.name;
+    const batchTeachers = Array.isArray(batchDoc?.assignedTeacherIds) ? batchDoc.assignedTeacherIds : [];
+    let defaultTeacherName = batchTeachers[0]?.name;
     if (!defaultTeacherName) {
       const anyTeacher = await User.findOne({ role: "TEACHER", status: { $ne: "SUSPENDED" } }).select("name email").lean();
       defaultTeacherName = anyTeacher?.name || "Assigned Faculty";

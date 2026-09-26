@@ -3,6 +3,7 @@ import connectToDatabase from "@/lib/db/mongoose";
 import { getSession } from "@/lib/auth/session";
 import LiveSession from "@/models/LiveSession";
 import StudentProfile from "@/models/StudentProfile";
+import TeacherProfile from "@/models/TeacherProfile";
 import Notification from "@/models/Notification";
 import { recordAuditLog } from "@/lib/audit";
 
@@ -63,8 +64,6 @@ export async function POST(req: NextRequest) {
     const uniqueMeetingId = `ACUITY-${cleanSubject || "CLASS"}-${cleanTopic || "SESSION"}-${Date.now()}`;
     const generatedTitle = title?.trim() || `${classLevel} ${subject} — ${topic}`;
     const normalizedStatus = status.toUpperCase() === "DRAFT" ? "DRAFT" : "PUBLISHED";
-
-import TeacherProfile from "@/models/TeacherProfile";
 
     // Deduplication check: check if this teacher already scheduled this class
     const existingSession = await LiveSession.findOne({
