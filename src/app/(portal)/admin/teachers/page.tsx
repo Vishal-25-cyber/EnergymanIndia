@@ -45,7 +45,8 @@ const ALL_SUBJECTS = [
   "English",
   "Social Science",
   "Computer Science",
-  "Tamil / Regional",
+  "Tamil",
+  "Hindi",
 ];
 
 export default function AdminTeachersPage() {
@@ -278,10 +279,18 @@ export default function AdminTeachersPage() {
       return {
         ...prev,
         assignedClasses: exists
-          ? (prev.assignedClasses.length > 1 ? prev.assignedClasses.filter((c) => c !== cls) : prev.assignedClasses)
+          ? prev.assignedClasses.filter((c) => c !== cls)
           : [...prev.assignedClasses, cls],
       };
     });
+  };
+
+  const selectAllAssignedClasses = () => {
+    setEditForm((prev) => ({
+      ...prev,
+      assignedClasses:
+        prev.assignedClasses.length === ALL_CLASSES.length ? [] : [...ALL_CLASSES],
+    }));
   };
 
   const toggleAssignedSubject = (sub: string) => {
@@ -290,10 +299,18 @@ export default function AdminTeachersPage() {
       return {
         ...prev,
         assignedSubjects: exists
-          ? (prev.assignedSubjects.length > 1 ? prev.assignedSubjects.filter((s) => s !== sub) : prev.assignedSubjects)
+          ? prev.assignedSubjects.filter((s) => s !== sub)
           : [...prev.assignedSubjects, sub],
       };
     });
+  };
+
+  const selectAllAssignedSubjects = () => {
+    setEditForm((prev) => ({
+      ...prev,
+      assignedSubjects:
+        prev.assignedSubjects.length === ALL_SUBJECTS.length ? [] : [...ALL_SUBJECTS],
+    }));
   };
 
   const toggleStudentAllocation = (st: any) => {
@@ -636,9 +653,27 @@ export default function AdminTeachersPage() {
 
             {/* Assigned Classes */}
             <div>
-              <label className="block font-bold mb-1.5 text-slate-700 dark:text-slate-300">
-                Admin Allocated Classes to Handle *
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block font-bold text-slate-700 dark:text-slate-300">
+                  Admin Allocated Classes to Handle *
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                    editForm.assignedClasses.length > 0
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400"
+                      : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400"
+                  }`}>
+                    {editForm.assignedClasses.length} selected
+                  </span>
+                  <button
+                    type="button"
+                    onClick={selectAllAssignedClasses}
+                    className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                  >
+                    {editForm.assignedClasses.length === ALL_CLASSES.length ? "Clear All" : "Select All"}
+                  </button>
+                </div>
+              </div>
               <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                 {ALL_CLASSES.map((cls) => {
                   const selected = editForm.assignedClasses.includes(cls);
@@ -647,13 +682,16 @@ export default function AdminTeachersPage() {
                       key={cls}
                       type="button"
                       onClick={() => toggleAssignedClass(cls)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
                         selected
                           ? "bg-[#002137] text-white shadow-2xs"
                           : "border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                       }`}
                     >
-                      {cls}
+                      <span>{cls}</span>
+                      <span className={`w-3.5 h-3.5 rounded text-[9px] flex items-center justify-center font-bold ${
+                        selected ? "bg-[#dfb74a] text-[#002137]" : "border border-slate-300 text-transparent"
+                      }`}>✓</span>
                     </button>
                   );
                 })}
@@ -662,10 +700,28 @@ export default function AdminTeachersPage() {
 
             {/* Assigned Subjects */}
             <div>
-              <label className="block font-bold mb-1.5 text-slate-700 dark:text-slate-300">
-                Admin Allocated Subjects to Handle *
-              </label>
-              <div className="flex flex-wrap gap-1.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block font-bold text-slate-700 dark:text-slate-300">
+                  Admin Allocated Subjects to Handle *
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                    editForm.assignedSubjects.length > 0
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400"
+                      : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400"
+                  }`}>
+                    {editForm.assignedSubjects.length} selected
+                  </span>
+                  <button
+                    type="button"
+                    onClick={selectAllAssignedSubjects}
+                    className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                  >
+                    {editForm.assignedSubjects.length === ALL_SUBJECTS.length ? "Clear All" : "Select All"}
+                  </button>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
                 {ALL_SUBJECTS.map((sub) => {
                   const selected = editForm.assignedSubjects.includes(sub);
                   return (
@@ -673,13 +729,16 @@ export default function AdminTeachersPage() {
                       key={sub}
                       type="button"
                       onClick={() => toggleAssignedSubject(sub)}
-                      className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                      className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer text-left ${
                         selected
                           ? "bg-[#004b79] text-white shadow-2xs font-bold"
                           : "border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
                       }`}
                     >
-                      {sub}
+                      <span className="truncate">{sub}</span>
+                      <span className={`w-3.5 h-3.5 rounded text-[9px] flex items-center justify-center font-bold shrink-0 ml-1 ${
+                        selected ? "bg-[#dfb74a] text-[#002137]" : "border border-slate-300 text-transparent"
+                      }`}>✓</span>
                     </button>
                   );
                 })}

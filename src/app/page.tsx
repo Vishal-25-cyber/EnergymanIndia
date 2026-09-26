@@ -348,6 +348,27 @@ export default function HomePage() {
   const [sPw, setSPw] = useState("");
   const [sCPw, setSCPw] = useState("");
 
+  const ALL_ACADEMIC_SUBJECTS = [
+    "Mathematics",
+    "Science",
+    "Physics",
+    "Chemistry",
+    "Biology",
+    "English",
+    "Social Science",
+    "Computer Science",
+    "Tamil",
+    "Hindi",
+  ];
+
+  const ALL_ACADEMIC_CLASSES = [
+    "Class 6",
+    "Class 7",
+    "Class 8",
+    "Class 9",
+    "Class 10",
+  ];
+
   const [sCategory, setSCategory] = useState<"B2C" | "B2B">("B2C");
   const [sSchool, setSSchool] = useState("");
   const [sDistrict, setSDistrict] = useState("");
@@ -358,8 +379,16 @@ export default function HomePage() {
 
   const toggleSSubject = (s: string) => {
     setSSubjects((prev) =>
-      prev.includes(s) ? (prev.length > 1 ? prev.filter((x) => x !== s) : prev) : [...prev, s]
+      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
     );
+  };
+
+  const selectAllSSubjects = () => {
+    if (sSubjects.length === ALL_ACADEMIC_SUBJECTS.length) {
+      setSSubjects([]);
+    } else {
+      setSSubjects([...ALL_ACADEMIC_SUBJECTS]);
+    }
   };
 
   const [tCategory, setTCategory] = useState<"B2C" | "B2B">("B2C");
@@ -373,14 +402,30 @@ export default function HomePage() {
 
   const toggleTClass = (c: string) => {
     setTClasses((prev) =>
-      prev.includes(c) ? (prev.length > 1 ? prev.filter((x) => x !== c) : prev) : [...prev, c]
+      prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]
     );
+  };
+
+  const selectAllTClasses = () => {
+    if (tClasses.length === ALL_ACADEMIC_CLASSES.length) {
+      setTClasses([]);
+    } else {
+      setTClasses([...ALL_ACADEMIC_CLASSES]);
+    }
   };
 
   const toggleTSubject = (s: string) => {
     setTSubjects((prev) =>
-      prev.includes(s) ? (prev.length > 1 ? prev.filter((x) => x !== s) : prev) : [...prev, s]
+      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
     );
+  };
+
+  const selectAllTSubjects = () => {
+    if (tSubjects.length === ALL_ACADEMIC_SUBJECTS.length) {
+      setTSubjects([]);
+    } else {
+      setTSubjects([...ALL_ACADEMIC_SUBJECTS]);
+    }
   };
 
   const [spName, setSpName] = useState("");
@@ -1358,34 +1403,55 @@ export default function HomePage() {
                         </div>
 
                         {/* Multi-choice Subjects Needed */}
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-bold text-slate-700">
-                            Select Subjects Needed (Multi-choice) *
-                          </label>
-                          <div className="flex flex-wrap gap-1.5">
-                            {[
-                              "Mathematics",
-                              "Science",
-                              "Physics",
-                              "Chemistry",
-                              "Biology",
-                              "English",
-                              "Social Science",
-                              "Computer Science",
-                            ].map((sub) => {
+                        <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-xs font-bold text-slate-800">
+                              Choose Subjects Needed (Multi-choice) *
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                                sSubjects.length > 0
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : "bg-amber-50 text-amber-700 border border-amber-200"
+                              }`}>
+                                {sSubjects.length} selected
+                              </span>
+                              <button
+                                type="button"
+                                onClick={selectAllSSubjects}
+                                className="text-[11px] font-bold text-[#002137] hover:underline cursor-pointer"
+                              >
+                                {sSubjects.length === ALL_ACADEMIC_SUBJECTS.length ? "Clear All" : "Select All"}
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-slate-500">
+                            Select one or multiple subjects you need live tutoring for:
+                          </p>
+                          <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-0.5">
+                            {ALL_ACADEMIC_SUBJECTS.map((sub) => {
                               const isSelected = sSubjects.includes(sub);
                               return (
                                 <button
                                   key={sub}
                                   type="button"
                                   onClick={() => toggleSSubject(sub)}
-                                  className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                                  className={`flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer text-left ${
                                     isSelected
-                                      ? "bg-[#004b79] text-white border-[#004b79] shadow-2xs"
-                                      : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                                      ? "bg-[#002137] text-white border-[#002137] shadow-xs"
+                                      : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                                   }`}
                                 >
-                                  {sub}
+                                  <span className="truncate">{sub}</span>
+                                  <span
+                                    className={`w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold shrink-0 ml-1.5 transition-colors ${
+                                      isSelected
+                                        ? "bg-[#dfb74a] text-[#002137]"
+                                        : "border border-slate-300 bg-slate-50 text-transparent"
+                                    }`}
+                                  >
+                                    ✓
+                                  </span>
                                 </button>
                               );
                             })}
@@ -1477,24 +1543,45 @@ export default function HomePage() {
                         )}
 
                         {/* Classes willing to teach */}
-                        <div className="space-y-1">
-                          <label className="block text-xs font-bold text-slate-700">
-                            Which Classes are you willing to teach? (Multi-choice) *
-                          </label>
+                        <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-xs font-bold text-slate-800">
+                              Classes you can teach (Multi-choice) *
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                                tClasses.length > 0
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : "bg-amber-50 text-amber-700 border border-amber-200"
+                              }`}>
+                                {tClasses.length} selected
+                              </span>
+                              <button
+                                type="button"
+                                onClick={selectAllTClasses}
+                                className="text-[11px] font-bold text-[#002137] hover:underline cursor-pointer"
+                              >
+                                {tClasses.length === ALL_ACADEMIC_CLASSES.length ? "Clear All" : "Select All"}
+                              </button>
+                            </div>
+                          </div>
                           <div className="grid grid-cols-5 gap-1.5">
-                            {["Class 6", "Class 7", "Class 8", "Class 9", "Class 10"].map((c) => {
+                            {ALL_ACADEMIC_CLASSES.map((c) => {
                               const isSelected = tClasses.includes(c);
                               return (
                                 <button
                                   key={c}
                                   type="button"
                                   onClick={() => toggleTClass(c)}
-                                  className={`py-2 px-1 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${isSelected
+                                  className={`py-2 px-1 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center flex flex-col items-center justify-center gap-0.5 ${isSelected
                                     ? "bg-[#002137] text-white border-[#002137] shadow-xs"
-                                    : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                                    : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                                     }`}
                                 >
-                                  {c.replace("Class ", "C")}
+                                  <span>{c.replace("Class ", "C")}</span>
+                                  <span className={`w-3.5 h-3.5 rounded text-[9px] flex items-center justify-center font-bold ${
+                                    isSelected ? "bg-[#dfb74a] text-[#002137]" : "border border-slate-300 text-transparent"
+                                  }`}>✓</span>
                                 </button>
                               );
                             })}
@@ -1502,34 +1589,55 @@ export default function HomePage() {
                         </div>
 
                         {/* Subjects willing to teach */}
-                        <div className="space-y-1.5">
-                          <label className="block text-xs font-bold text-slate-700">
-                            Which Subjects can you teach? (Multi-choice) *
-                          </label>
-                          <div className="flex flex-wrap gap-1.5">
-                            {[
-                              "Mathematics",
-                              "Science",
-                              "Physics",
-                              "Chemistry",
-                              "Biology",
-                              "English",
-                              "Social Science",
-                              "Computer Science",
-                            ].map((sub) => {
+                        <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-3">
+                          <div className="flex items-center justify-between">
+                            <label className="block text-xs font-bold text-slate-800">
+                              Subjects you can teach (Multi-choice) *
+                            </label>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${
+                                tSubjects.length > 0
+                                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                  : "bg-amber-50 text-amber-700 border border-amber-200"
+                              }`}>
+                                {tSubjects.length} selected
+                              </span>
+                              <button
+                                type="button"
+                                onClick={selectAllTSubjects}
+                                className="text-[11px] font-bold text-[#002137] hover:underline cursor-pointer"
+                              >
+                                {tSubjects.length === ALL_ACADEMIC_SUBJECTS.length ? "Clear All" : "Select All"}
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-slate-500">
+                            Select one or multiple subjects you are qualified and ready to handle:
+                          </p>
+                          <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-0.5">
+                            {ALL_ACADEMIC_SUBJECTS.map((sub) => {
                               const isSelected = tSubjects.includes(sub);
                               return (
                                 <button
                                   key={sub}
                                   type="button"
                                   onClick={() => toggleTSubject(sub)}
-                                  className={`px-2.5 py-1.5 text-xs font-bold rounded-xl border transition-all cursor-pointer ${
+                                  className={`flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl border transition-all cursor-pointer text-left ${
                                     isSelected
-                                      ? "bg-[#004b79] text-white border-[#004b79] shadow-2xs"
-                                      : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
+                                      ? "bg-[#002137] text-white border-[#002137] shadow-xs"
+                                      : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50"
                                   }`}
                                 >
-                                  {sub}
+                                  <span className="truncate">{sub}</span>
+                                  <span
+                                    className={`w-4 h-4 rounded flex items-center justify-center text-[10px] font-bold shrink-0 ml-1.5 transition-colors ${
+                                      isSelected
+                                        ? "bg-[#dfb74a] text-[#002137]"
+                                        : "border border-slate-300 bg-slate-50 text-transparent"
+                                    }`}
+                                  >
+                                    ✓
+                                  </span>
                                 </button>
                               );
                             })}
