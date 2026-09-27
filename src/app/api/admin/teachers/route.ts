@@ -227,7 +227,10 @@ export async function PATCH(req: NextRequest) {
               const existingIds = (freshProfile.assignedStudentIds ?? []).map((id: any) => id.toString());
 
               const matchingStudents = await StudentProfile.find({
-                studentType: "B2C",
+                $or: [
+                  { studentType: "B2C" },
+                  { schoolName: { $regex: /individual/i } },
+                ],
                 currentClass: { $in: tClasses },
                 subjects: { $in: tSubjects },
                 userId: { $nin: existingIds },

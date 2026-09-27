@@ -116,12 +116,23 @@ export default function AdminTeachersPage() {
     ).length;
   }, [allTeachers]);
 
-  const fetchAllocatableStudents = async (type?: string, school?: string) => {
+  const fetchAllocatableStudents = async (
+    type?: string,
+    school?: string,
+    teacherClasses?: string[],
+    teacherSubjects?: string[],
+    teacherUserId?: string
+  ) => {
     setLoadingStudents(true);
     try {
       const params = new URLSearchParams();
       if (type && type !== "ALL") params.append("studentType", type);
-      if (school) params.append("schoolName", school);
+      if (school && type !== "B2C") params.append("schoolName", school);
+      if (teacherClasses && teacherClasses.length > 0)
+        params.append("classes", teacherClasses.join(","));
+      if (teacherSubjects && teacherSubjects.length > 0)
+        params.append("subjects", teacherSubjects.join(","));
+      if (teacherUserId) params.append("teacherUserId", teacherUserId);
       const res = await fetch(`/api/admin/students/allocatable?${params.toString()}`);
       const d = await res.json();
       if (Array.isArray(d.students)) {
@@ -163,10 +174,12 @@ export default function AdminTeachersPage() {
     });
     setStudentSearch("");
     setAutoAllocPreview({ matches: [], loaded: false });
-    fetchAllocatableStudents(teacherType, institution);
-    if (teacherType === "B2C") {
-      const tUserId = t.userId?._id || t._id;
-      if (tUserId) fetchAutoAllocPreview(tUserId.toString());
+    const tUserId = t.userId?._id?.toString() || t._id?.toString();
+    const tClasses = (t.assignedClasses?.length > 0 ? t.assignedClasses : t.classesTaught) || [];
+    const tSubjects = (t.assignedSubjects?.length > 0 ? t.assignedSubjects : t.subjects) || [];
+    fetchAllocatableStudents(teacherType, institution, tClasses, tSubjects, tUserId);
+    if (teacherType === "B2C" && tUserId) {
+      fetchAutoAllocPreview(tUserId);
     }
   };
 
