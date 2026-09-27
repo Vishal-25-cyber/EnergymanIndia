@@ -143,6 +143,16 @@ export async function PATCH(req: NextRequest) {
 
     await connectToDatabase();
 
+    const teacherDoc = (await TeacherProfile.findOne({
+      $or: [{ userId: teacherId }, { _id: teacherId }],
+    })) as any;
+
+    if (!teacherDoc) {
+      return NextResponse.json({ error: "Teacher profile not found" }, { status: 404 });
+    }
+
+    const teacherUserId = (teacherDoc.userId?._id || teacherDoc.userId).toString();
+
     const userUpdate: any = {};
     if (name) userUpdate.name = name.trim();
     if (email) userUpdate.email = email.toLowerCase().trim();
@@ -153,7 +163,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     if (Object.keys(userUpdate).length > 0) {
-      await User.findByIdAndUpdate(teacherId, userUpdate);
+      await User.findByIdAndUpdate(teacherUserId, userUpdate);
     }
 
     const updateProfile: any = {};
@@ -167,30 +177,32 @@ export async function PATCH(req: NextRequest) {
     if (institutionName !== undefined) updateProfile.institutionName = institutionName;
     if (assignedSubjects !== undefined) updateProfile.assignedSubjects = assignedSubjects;
     if (assignedClasses !== undefined) updateProfile.assignedClasses = assignedClasses;
-    if (assignedStudentIds !== undefined) updateProfile.assignedStudentIds = assignedStudentIds;
     if (preferredBatchIds !== undefined) updateProfile.preferredBatchIds = preferredBatchIds;
 
-    if (Object.keys(updateProfile).length > 0) {
-      await TeacherProfile.findOneAndUpdate({ userId: teacherId }, updateProfile);
-    }
-
-    // Bidirectional sync for assignedStudentIds
+    // Handle assignedStudentIds explicitly (assign and unassign)
     if (Array.isArray(assignedStudentIds)) {
-      // Add teacher to newly assigned students
-      if (assignedStudentIds.length > 0) {
+      const cleanStudentIds = assignedStudentIds.map((id: any) => id.toString());
+      updateProfile.assignedStudentIds = cleanStudentIds;
+
+      // Bidirectional sync for StudentProfile.assignedTeacherIds
+      if (cleanStudentIds.length > 0) {
         await StudentProfile.updateMany(
-          { userId: { $in: assignedStudentIds } },
-          { $addToSet: { assignedTeacherIds: teacherId } }
+          { userId: { $in: cleanStudentIds } },
+          { $addToSet: { assignedTeacherIds: teacherUserId } }
         );
       }
       // Remove teacher from unassigned students
       await StudentProfile.updateMany(
         {
-          userId: { $nin: assignedStudentIds },
-          assignedTeacherIds: teacherId,
+          userId: { $nin: cleanStudentIds },
+          assignedTeacherIds: teacherUserId,
         },
-        { $pull: { assignedTeacherIds: teacherId } }
+        { $pull: { assignedTeacherIds: teacherUserId } }
       );
+    }
+
+    if (Object.keys(updateProfile).length > 0) {
+      await TeacherProfile.findByIdAndUpdate(teacherDoc._id, updateProfile);
     }
 
     if (status) {
@@ -200,121 +212,28 @@ export async function PATCH(req: NextRequest) {
           ? "Your teacher application has been approved! You can now log in and schedule live classes."
           : `Your teacher account status has been updated to: ${status}.`;
 
-      await Notification.create({
-        userId: teacherId,
-        title: status === "ACTIVE" ? "Account Approved" : "Account Status Update",
-        message,
-        type: "SYSTEM",
-      });
-
-      // ── AUTO-ALLOCATION: when a B2C teacher is approved, match students by class + subject ──
-      let autoAllocated = 0;
-      if (status === "ACTIVE") {
-        try {
-          const freshProfile = await TeacherProfile.findOne({ userId: teacherId }).lean() as any;
-          if (freshProfile && freshProfile.teacherType === "B2C") {
-            const tClasses: string[] = (
-              freshProfile.assignedClasses?.length > 0
-                ? freshProfile.assignedClasses
-                : freshProfile.classesTaught
-            ) ?? [];
-            const tSubjects: string[] = (
-              freshProfile.assignedSubjects?.length > 0
-                ? freshProfile.assignedSubjects
-                : freshProfile.subjects
-            ) ?? [];
-
-            if (tClasses.length > 0 || tSubjects.length > 0) {
-              const existingIds = (freshProfile.assignedStudentIds ?? []).map((id: any) => id.toString());
-
-              const candidateStudents = (await StudentProfile.find(
-                b2cStudentMongoQuery({
-                  userId: { $nin: existingIds },
-                })
-              ).populate("userId", "name status").lean()) as any[];
-
-              const eligible: any[] = [];
-              for (const s of candidateStudents) {
-                if (!s.userId) continue;
-                const userStatus = s.userId.status || "ACTIVE";
-                if (!["ACTIVE", "TRIAL", ""].includes(userStatus)) continue;
-
-                const overlap = getOverlappingSubjects(s.subjects, tSubjects);
-                const classMatch = isClassMatching(s.currentClass, tClasses);
-
-                if (overlap.length > 0 || ((!s.subjects || s.subjects.length === 0) && classMatch)) {
-                  eligible.push({
-                    ...s,
-                    overlappingSubjects: overlap.length > 0 ? overlap : tSubjects.slice(0, 2),
-                  });
-                }
-              }
-
-              if (eligible.length > 0) {
-                const newIds = eligible.map((s: any) => s.userId._id.toString());
-
-                await TeacherProfile.findOneAndUpdate(
-                  { userId: teacherId },
-                  { $addToSet: { assignedStudentIds: { $each: newIds } } }
-                );
-
-                await StudentProfile.updateMany(
-                  { userId: { $in: newIds } },
-                  { $addToSet: { assignedTeacherIds: teacherId } }
-                );
-
-                const teacherUser = await User.findById(teacherId).select("name").lean() as any;
-                const teacherName = teacherUser?.name || "Your Tutor";
-
-                for (const s of eligible) {
-                  const overlap = s.overlappingSubjects || [];
-                  try {
-                    await Notification.create({
-                      userId: s.userId._id,
-                      title: "Tutor Assigned!",
-                      message: `You have been matched with ${teacherName} for ${overlap.join(", ") || "General"} — ${s.currentClass || "Individual Tutoring"}. Your personalised sessions begin soon!`,
-                      type: "SYSTEM",
-                    });
-                  } catch (_) {}
-                }
-
-                autoAllocated = eligible.length;
-              }
-            }
-          }
-        } catch (allocErr) {
-          console.error("Auto-allocation error during approval (non-blocking):", allocErr);
-        }
-      }
-
-      await recordAuditLog({
-        actorId: session.userId,
-        action: status ? `TEACHER_STATUS_${status}` : "ADMIN_TEACHER_UPDATED",
-        entityType: "USER",
-        entityId: teacherId,
-        details: { name, email, status, subjects, classesTaught, teacherType, assignedStudentIds, autoAllocated },
-      });
-
-      return NextResponse.json({
-        success: true,
-        message:
-          status === "ACTIVE" && autoAllocated > 0
-            ? `Teacher approved and ${autoAllocated} student${autoAllocated === 1 ? "" : "s"} auto-allocated by class & subject match.`
-            : "Teacher and student allocations updated successfully.",
-        autoAllocated,
-      });
+      try {
+        await Notification.create({
+          userId: teacherUserId,
+          title: status === "ACTIVE" ? "Account Approved" : "Account Status Update",
+          message,
+          type: "SYSTEM",
+        });
+      } catch (_) {}
     }
 
-    // Non-status update path (profile edit only)
     await recordAuditLog({
       actorId: session.userId,
-      action: "ADMIN_TEACHER_UPDATED",
+      action: status ? `TEACHER_STATUS_${status}` : "ADMIN_TEACHER_UPDATED",
       entityType: "USER",
-      entityId: teacherId,
-      details: { name, email, subjects, classesTaught, teacherType, assignedStudentIds },
+      entityId: teacherUserId,
+      details: { name, email, status, subjects, classesTaught, teacherType, assignedStudentIds },
     });
 
-    return NextResponse.json({ success: true, message: "Teacher and student allocations updated successfully." });
+    return NextResponse.json({
+      success: true,
+      message: "Teacher and student allocations updated successfully.",
+    });
   } catch (error: any) {
     console.error("Admin Patch Teacher Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
