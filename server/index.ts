@@ -161,15 +161,21 @@ import * as AdminAnalytics from "../src/app/api/admin/analytics/route";
 import * as AdminSettings from "../src/app/api/admin/settings/route";
 import * as AdminInquiries from "../src/app/api/admin/inquiries/route";
 
+import * as AdminAllocatableStudents from "../src/app/api/admin/students/allocatable/route";
+import * as AdminTeachersAutoAllocate from "../src/app/api/admin/teachers/auto-allocate/route";
+
 app.get("/api/admin/dashboard", adaptRoute(AdminDashboard.GET));
 app.get("/api/admin/inquiries", adaptRoute(AdminInquiries.GET));
 app.patch("/api/admin/inquiries", adaptRoute(AdminInquiries.PATCH));
 
+app.get("/api/admin/students/allocatable", adaptRoute(AdminAllocatableStudents.GET));
 app.get("/api/admin/students", adaptRoute(AdminStudents.GET));
 app.post("/api/admin/students", adaptRoute(AdminStudents.POST));
 app.patch("/api/admin/students", adaptRoute(AdminStudents.PATCH));
 app.delete("/api/admin/students", adaptRoute(AdminStudents.DELETE));
 
+app.get("/api/admin/teachers/auto-allocate", adaptRoute(AdminTeachersAutoAllocate.GET));
+app.post("/api/admin/teachers/auto-allocate", adaptRoute(AdminTeachersAutoAllocate.POST));
 app.get("/api/admin/teachers", adaptRoute(AdminTeachers.GET));
 app.patch("/api/admin/teachers", adaptRoute(AdminTeachers.PATCH));
 app.delete("/api/admin/teachers", adaptRoute(AdminTeachers.DELETE));

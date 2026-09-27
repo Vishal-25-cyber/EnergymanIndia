@@ -6,24 +6,35 @@ import TeacherProfile from "@/models/TeacherProfile";
 import StudentProfile from "@/models/StudentProfile";
 import Notification from "@/models/Notification";
 import { recordAuditLog } from "@/lib/audit";
+import {
+  b2cStudentMongoQuery,
+  getOverlappingSubjects,
+  isClassMatching,
+} from "@/lib/allocation-matcher";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-/**
- * Builds the MongoDB $or query to match B2C / Individual-tutoring students.
- * Catches:
- *  1. Students with explicit studentType = "B2C"
- *  2. Students who registered with schoolName containing "individual" (legacy fallback)
- */
-function b2cStudentQuery(extraFields: Record<string, any> = {}) {
-  return {
-    $or: [
-      { studentType: "B2C" },
-      { schoolName: { $regex: /individual/i } },
-    ],
-    ...extraFields,
-  };
+function resolveClassesAndSubjects(
+  teacherProfile: any,
+  overrideClasses?: string[],
+  overrideSubjects?: string[]
+): { teacherClasses: string[]; teacherSubjects: string[] } {
+  const teacherClasses: string[] =
+    overrideClasses && overrideClasses.length > 0
+      ? overrideClasses
+      : (teacherProfile.assignedClasses?.length > 0
+          ? teacherProfile.assignedClasses
+          : teacherProfile.classesTaught) ?? [];
+
+  const teacherSubjects: string[] =
+    overrideSubjects && overrideSubjects.length > 0
+      ? overrideSubjects
+      : (teacherProfile.assignedSubjects?.length > 0
+          ? teacherProfile.assignedSubjects
+          : teacherProfile.subjects) ?? [];
+
+  return { teacherClasses, teacherSubjects };
 }
 
 // ── POST: Execute auto-allocation ─────────────────────────────────────────────
@@ -34,7 +45,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const body = await req.json();
-    const { teacherUserId, dryRun = false } = body;
+    const { teacherUserId, dryRun = false, classes: bodyClasses, subjects: bodySubjects } = body;
     if (!teacherUserId) {
       return NextResponse.json({ error: "teacherUserId is required" }, { status: 400 });
     }
@@ -45,7 +56,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Teacher profile not found" }, { status: 404 });
     }
 
-    // Allow B2C teachers OR teachers with no explicit type (treat as individual)
     const tType = teacherProfile.teacherType || "B2C";
     if (tType !== "B2C") {
       return NextResponse.json({
@@ -54,18 +64,13 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    const teacherClasses: string[] = (
-      teacherProfile.assignedClasses?.length > 0
-        ? teacherProfile.assignedClasses
-        : teacherProfile.classesTaught
-    ) ?? [];
-    const teacherSubjects: string[] = (
-      teacherProfile.assignedSubjects?.length > 0
-        ? teacherProfile.assignedSubjects
-        : teacherProfile.subjects
-    ) ?? [];
+    const { teacherClasses, teacherSubjects } = resolveClassesAndSubjects(
+      teacherProfile,
+      Array.isArray(bodyClasses) ? bodyClasses : undefined,
+      Array.isArray(bodySubjects) ? bodySubjects : undefined
+    );
 
-    if (teacherClasses.length === 0 || teacherSubjects.length === 0) {
+    if (teacherClasses.length === 0 && teacherSubjects.length === 0) {
       return NextResponse.json({
         error: "Teacher has no classes or subjects configured. Please assign them first.",
         matches: [],
@@ -74,18 +79,34 @@ export async function POST(req: NextRequest) {
 
     const existingStudentIds = (teacherProfile.assignedStudentIds ?? []).map((id: any) => id.toString());
 
-    // Find all B2C-style students matching at least one class AND one subject, not yet assigned
-    const matchingStudents = await StudentProfile.find(
-      b2cStudentQuery({
-        currentClass: { $in: teacherClasses },
-        subjects: { $in: teacherSubjects },
+    // Fetch all B2C students who are not yet assigned to this teacher
+    const candidateStudents = await StudentProfile.find(
+      b2cStudentMongoQuery({
         userId: { $nin: existingStudentIds },
       })
-    ).populate("userId", "name email phone status").lean() as any[];
+    ).populate("userId", "name email phone status avatarUrl").lean() as any[];
 
-    const eligible = matchingStudents.filter(
-      (s: any) => s.userId && (s.userId.status === "ACTIVE" || !s.userId.status)
-    );
+    // Filter using single subject match & class match
+    const eligible: any[] = [];
+    for (const s of candidateStudents) {
+      if (!s.userId) continue;
+      const userStatus = s.userId.status || "ACTIVE";
+      if (!["ACTIVE", "TRIAL", ""].includes(userStatus)) continue;
+
+      const overlap = getOverlappingSubjects(s.subjects, teacherSubjects);
+      const classMatch = isClassMatching(s.currentClass, teacherClasses);
+
+      // Match if at least a single subject matches OR (student has general/no subjects and class matches)
+      const hasSubjectOverlap = overlap.length > 0;
+      const isGeneralStudentWithClassMatch = (!s.subjects || s.subjects.length === 0) && classMatch;
+
+      if (hasSubjectOverlap || isGeneralStudentWithClassMatch) {
+        eligible.push({
+          ...s,
+          overlappingSubjects: hasSubjectOverlap ? overlap : teacherSubjects.slice(0, 2),
+        });
+      }
+    }
 
     const formatted = eligible.map((s: any) => ({
       userId: s.userId?._id,
@@ -95,7 +116,7 @@ export async function POST(req: NextRequest) {
       studentId: s.studentId,
       currentClass: s.currentClass,
       subjects: s.subjects,
-      overlappingSubjects: (s.subjects || []).filter((sub: string) => teacherSubjects.includes(sub)),
+      overlappingSubjects: s.overlappingSubjects,
     }));
 
     if (dryRun) {
@@ -113,10 +134,14 @@ export async function POST(req: NextRequest) {
 
     const newStudentUserIds = eligible.map((s: any) => s.userId._id.toString());
 
-    // Bidirectional assignment
+    // Bidirectional assignment + sync assignedClasses & assignedSubjects
     await TeacherProfile.findOneAndUpdate(
       { userId: teacherUserId },
-      { $addToSet: { assignedStudentIds: { $each: newStudentUserIds } } }
+      {
+        $addToSet: { assignedStudentIds: { $each: newStudentUserIds } },
+        ...(teacherClasses.length > 0 ? { assignedClasses: teacherClasses } : {}),
+        ...(teacherSubjects.length > 0 ? { assignedSubjects: teacherSubjects } : {}),
+      }
     );
     await StudentProfile.updateMany(
       { userId: { $in: newStudentUserIds } },
@@ -129,11 +154,11 @@ export async function POST(req: NextRequest) {
 
     for (const s of eligible) {
       try {
-        const overlap = (s.subjects || []).filter((sub: string) => teacherSubjects.includes(sub));
+        const overlap = s.overlappingSubjects || [];
         await Notification.create({
           userId: s.userId._id,
           title: "Tutor Assigned!",
-          message: `You have been matched with ${teacherName} for ${overlap.join(", ")} — ${s.currentClass}. Your personalised tutoring sessions will begin soon!`,
+          message: `You have been matched with ${teacherName} for ${overlap.join(", ") || "General"} — ${s.currentClass || "Individual Tutoring"}. Your personalised tutoring sessions will begin soon!`,
           type: "SYSTEM",
         });
       } catch (_) {}
@@ -158,7 +183,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       allocated: eligible.length,
-      message: `${eligible.length} student${eligible.length === 1 ? "" : "s"} auto-allocated based on class and subject match.`,
+      message: `${eligible.length} student${eligible.length === 1 ? "" : "s"} auto-allocated based on single subject and class match.`,
       matches: formatted,
     });
   } catch (error: any) {
@@ -179,6 +204,12 @@ export async function GET(req: NextRequest) {
     if (!teacherUserId) {
       return NextResponse.json({ error: "teacherUserId is required" }, { status: 400 });
     }
+
+    const classesParam = searchParams.get("classes") || "";
+    const subjectsParam = searchParams.get("subjects") || "";
+    const overrideClasses = classesParam ? classesParam.split(",").map((c) => c.trim()).filter(Boolean) : undefined;
+    const overrideSubjects = subjectsParam ? subjectsParam.split(",").map((s) => s.trim()).filter(Boolean) : undefined;
+
     await connectToDatabase();
 
     const teacherProfile = await TeacherProfile.findOne({ userId: teacherUserId }).lean() as any;
@@ -186,47 +217,55 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Teacher profile not found" }, { status: 404 });
     }
 
-    const teacherClasses: string[] = (
-      teacherProfile.assignedClasses?.length > 0
-        ? teacherProfile.assignedClasses
-        : teacherProfile.classesTaught
-    ) ?? [];
-    const teacherSubjects: string[] = (
-      teacherProfile.assignedSubjects?.length > 0
-        ? teacherProfile.assignedSubjects
-        : teacherProfile.subjects
-    ) ?? [];
+    const { teacherClasses, teacherSubjects } = resolveClassesAndSubjects(
+      teacherProfile,
+      overrideClasses,
+      overrideSubjects
+    );
 
     const existingStudentIds = (teacherProfile.assignedStudentIds ?? []).map((id: any) => id.toString());
 
-    // Broadened query: B2C students OR "Individual Tutoring" schoolName
-    const matchingStudents = await StudentProfile.find(
-      b2cStudentQuery({
-        currentClass: { $in: teacherClasses },
-        subjects: { $in: teacherSubjects },
+    // Fetch candidate B2C students not already assigned
+    const candidateStudents = await StudentProfile.find(
+      b2cStudentMongoQuery({
         userId: { $nin: existingStudentIds },
       })
-    ).populate("userId", "name email phone status").lean() as any[];
+    ).populate("userId", "name email phone status avatarUrl").lean() as any[];
 
-    const eligible = matchingStudents.filter(
-      (s: any) => s.userId && (s.userId.status === "ACTIVE" || !s.userId.status)
-    );
+    // Match if single subject matches OR class matches with general subjects
+    const eligible: any[] = [];
+    for (const s of candidateStudents) {
+      if (!s.userId) continue;
+      const userStatus = s.userId.status || "ACTIVE";
+      if (!["ACTIVE", "TRIAL", ""].includes(userStatus)) continue;
+
+      const overlap = getOverlappingSubjects(s.subjects, teacherSubjects);
+      const classMatch = isClassMatching(s.currentClass, teacherClasses);
+
+      // Match if at least a single subject matches OR (student has general/no subjects and class matches)
+      const hasSubjectOverlap = overlap.length > 0;
+      const isGeneralStudentWithClassMatch = (!s.subjects || s.subjects.length === 0) && classMatch;
+
+      if (hasSubjectOverlap || isGeneralStudentWithClassMatch) {
+        eligible.push({
+          userId: s.userId?._id,
+          name: s.userId?.name,
+          email: s.userId?.email,
+          phone: s.userId?.phone,
+          studentId: s.studentId,
+          currentClass: s.currentClass,
+          subjects: s.subjects,
+          overlappingSubjects: hasSubjectOverlap ? overlap : teacherSubjects.slice(0, 2),
+        });
+      }
+    }
 
     return NextResponse.json({
       teacherType: teacherProfile.teacherType || "B2C",
       teacherClasses,
       teacherSubjects,
       matchCount: eligible.length,
-      matches: eligible.map((s: any) => ({
-        userId: s.userId?._id,
-        name: s.userId?.name,
-        email: s.userId?.email,
-        phone: s.userId?.phone,
-        studentId: s.studentId,
-        currentClass: s.currentClass,
-        subjects: s.subjects,
-        overlappingSubjects: (s.subjects || []).filter((sub: string) => teacherSubjects.includes(sub)),
-      })),
+      matches: eligible,
     });
   } catch (error: any) {
     console.error("Auto-allocate preview error:", error);

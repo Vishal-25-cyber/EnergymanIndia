@@ -8,6 +8,7 @@ import StudentProfile from "@/models/StudentProfile";
 import { recordAuditLog } from "@/lib/audit";
 import { hashPassword } from "@/lib/auth/passwords";
 import { isValid10DigitPhone, isValidAcuityOrGmail, sanitize10DigitPhone } from "@/lib/validations/phone";
+import { b2cStudentMongoQuery, getOverlappingSubjects, isClassMatching } from "@/lib/allocation-matcher";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -223,22 +224,31 @@ export async function PATCH(req: NextRequest) {
                 : freshProfile.subjects
             ) ?? [];
 
-            if (tClasses.length > 0 && tSubjects.length > 0) {
+            if (tClasses.length > 0 || tSubjects.length > 0) {
               const existingIds = (freshProfile.assignedStudentIds ?? []).map((id: any) => id.toString());
 
-              const matchingStudents = await StudentProfile.find({
-                $or: [
-                  { studentType: "B2C" },
-                  { schoolName: { $regex: /individual/i } },
-                ],
-                currentClass: { $in: tClasses },
-                subjects: { $in: tSubjects },
-                userId: { $nin: existingIds },
-              }).populate("userId", "name status").lean() as any[];
+              const candidateStudents = (await StudentProfile.find(
+                b2cStudentMongoQuery({
+                  userId: { $nin: existingIds },
+                })
+              ).populate("userId", "name status").lean()) as any[];
 
-              const eligible = matchingStudents.filter(
-                (s: any) => s.userId && (s.userId.status === "ACTIVE" || !s.userId.status)
-              );
+              const eligible: any[] = [];
+              for (const s of candidateStudents) {
+                if (!s.userId) continue;
+                const userStatus = s.userId.status || "ACTIVE";
+                if (!["ACTIVE", "TRIAL", ""].includes(userStatus)) continue;
+
+                const overlap = getOverlappingSubjects(s.subjects, tSubjects);
+                const classMatch = isClassMatching(s.currentClass, tClasses);
+
+                if (overlap.length > 0 || ((!s.subjects || s.subjects.length === 0) && classMatch)) {
+                  eligible.push({
+                    ...s,
+                    overlappingSubjects: overlap.length > 0 ? overlap : tSubjects.slice(0, 2),
+                  });
+                }
+              }
 
               if (eligible.length > 0) {
                 const newIds = eligible.map((s: any) => s.userId._id.toString());
@@ -257,12 +267,12 @@ export async function PATCH(req: NextRequest) {
                 const teacherName = teacherUser?.name || "Your Tutor";
 
                 for (const s of eligible) {
-                  const overlap = (s.subjects || []).filter((sub: string) => tSubjects.includes(sub));
+                  const overlap = s.overlappingSubjects || [];
                   try {
                     await Notification.create({
                       userId: s.userId._id,
                       title: "Tutor Assigned!",
-                      message: `You have been matched with ${teacherName} for ${overlap.join(", ")} — ${s.currentClass}. Your personalised sessions begin soon!`,
+                      message: `You have been matched with ${teacherName} for ${overlap.join(", ") || "General"} — ${s.currentClass || "Individual Tutoring"}. Your personalised sessions begin soon!`,
                       type: "SYSTEM",
                     });
                   } catch (_) {}

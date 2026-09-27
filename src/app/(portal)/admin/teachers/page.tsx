@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   UserCheck,
   CheckCircle2,
@@ -179,25 +179,47 @@ export default function AdminTeachersPage() {
     const tSubjects = (t.assignedSubjects?.length > 0 ? t.assignedSubjects : t.subjects) || [];
     fetchAllocatableStudents(teacherType, institution, tClasses, tSubjects, tUserId);
     if (teacherType === "B2C" && tUserId) {
-      fetchAutoAllocPreview(tUserId);
+      fetchAutoAllocPreview(tUserId, tClasses, tSubjects);
     }
   };
 
-  const handleAutoAllocate = async (teacherUserId: string) => {
+  const handleAutoAllocate = async (
+    teacherUserId: string,
+    overrideClasses?: string[],
+    overrideSubjects?: string[]
+  ) => {
     setAutoAllocLoading(teacherUserId);
     setAutoAllocToast(null);
     try {
+      const body: any = { teacherUserId };
+      if (overrideClasses && overrideClasses.length > 0) body.classes = overrideClasses;
+      if (overrideSubjects && overrideSubjects.length > 0) body.subjects = overrideSubjects;
+
       const res = await fetch("/api/admin/teachers/auto-allocate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ teacherUserId }),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (res.ok) {
-        setAutoAllocToast({ msg: data.message || `${data.allocated ?? 0} student(s) auto-allocated.`, type: "success" });
+        setAutoAllocToast({
+          msg: data.message || `${data.allocated ?? 0} student(s) auto-allocated.`,
+          type: "success",
+        });
+        if (Array.isArray(data.matches) && data.matches.length > 0) {
+          const newIds = data.matches.map((m: any) => (m.userId || m._id).toString());
+          setEditForm((prev) => ({
+            ...prev,
+            assignedStudentIds: Array.from(new Set([...prev.assignedStudentIds, ...newIds])),
+          }));
+        }
         invalidateCache(apiUrl);
         invalidateCache("/api/admin/teachers?status=ALL");
         refetch();
+        if (editTeacher) {
+          fetchAutoAllocPreview(teacherUserId, overrideClasses, overrideSubjects);
+          fetchAllocatableStudents("B2C", "", overrideClasses, overrideSubjects, teacherUserId);
+        }
       } else {
         setAutoAllocToast({ msg: data.error || "Auto-allocation failed.", type: "error" });
       }
@@ -209,10 +231,18 @@ export default function AdminTeachersPage() {
     }
   };
 
-  const fetchAutoAllocPreview = async (teacherUserId: string) => {
+  const fetchAutoAllocPreview = async (
+    teacherUserId: string,
+    classes?: string[],
+    subjects?: string[]
+  ) => {
     setAutoAllocPreview({ matches: [], loaded: false });
     try {
-      const res = await fetch(`/api/admin/teachers/auto-allocate?teacherUserId=${teacherUserId}`);
+      const params = new URLSearchParams();
+      params.append("teacherUserId", teacherUserId);
+      if (classes && classes.length > 0) params.append("classes", classes.join(","));
+      if (subjects && subjects.length > 0) params.append("subjects", subjects.join(","));
+      const res = await fetch(`/api/admin/teachers/auto-allocate?${params.toString()}`);
       const data = await res.json();
       if (res.ok) {
         setAutoAllocPreview({ matches: data.matches || [], loaded: true });
@@ -223,6 +253,26 @@ export default function AdminTeachersPage() {
       setAutoAllocPreview({ matches: [], loaded: true });
     }
   };
+
+  // Synchronize allocatable students and smart match preview whenever assigned classes/subjects change in modal
+  useEffect(() => {
+    if (!editTeacher || editForm.teacherType !== "B2C") return;
+    const tUserId = editTeacher.userId?._id?.toString() || editTeacher._id?.toString();
+    if (!tUserId) return;
+
+    const timer = setTimeout(() => {
+      fetchAutoAllocPreview(tUserId, editForm.assignedClasses, editForm.assignedSubjects);
+      fetchAllocatableStudents(
+        "B2C",
+        "",
+        editForm.assignedClasses,
+        editForm.assignedSubjects,
+        tUserId
+      );
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [editForm.assignedClasses, editForm.assignedSubjects, editTeacher]);
 
   const handleUpdateStatus = async (teacherUserId: string, newStatus: string) => {
     try {
@@ -891,7 +941,7 @@ export default function AdminTeachersPage() {
                         type="button"
                         onClick={() => {
                           const teacherUserId = (editTeacher?.userId?._id || editTeacher?._id)?.toString();
-                          if (teacherUserId) handleAutoAllocate(teacherUserId);
+                          if (teacherUserId) handleAutoAllocate(teacherUserId, editForm.assignedClasses, editForm.assignedSubjects);
                         }}
                         className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-violet-600 hover:bg-violet-700 text-white cursor-pointer flex items-center gap-1 transition-colors"
                       >
@@ -929,7 +979,7 @@ export default function AdminTeachersPage() {
               {/* Search candidate students */}
               <div className="pt-1">
                 <Input
-                  placeholder="Search students by name, mobile, student ID, or class..."
+                  placeholder="Search students by name, mobile, student ID, class, or subject..."
                   value={studentSearch}
                   onChange={(e) => setStudentSearch(e.target.value)}
                   className="bg-white dark:bg-slate-900 text-xs"
@@ -952,11 +1002,12 @@ export default function AdminTeachersPage() {
                       if (!studentSearch.trim()) return true;
                       const q = studentSearch.trim().toLowerCase();
                       return (
-                        st.name.toLowerCase().includes(q) ||
-                        st.phone.includes(q) ||
-                        st.studentId.toLowerCase().includes(q) ||
-                        st.currentClass.toLowerCase().includes(q) ||
-                        st.schoolName.toLowerCase().includes(q)
+                        st.name?.toLowerCase().includes(q) ||
+                        st.phone?.includes(q) ||
+                        st.studentId?.toLowerCase().includes(q) ||
+                        st.currentClass?.toLowerCase().includes(q) ||
+                        st.schoolName?.toLowerCase().includes(q) ||
+                        (st.subjects && st.subjects.some((s: string) => s.toLowerCase().includes(q)))
                       );
                     })
                     .map((st: any) => {
@@ -974,16 +1025,22 @@ export default function AdminTeachersPage() {
                           }`}
                         >
                           <div className="space-y-0.5">
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
                                 {st.name}
                               </span>
                               <span className="font-mono text-[10px] text-slate-500">
                                 ({st.studentId || "STD"})
                               </span>
-                              <span className="text-[10px] font-bold px-1.5 rounded bg-slate-200 text-slate-700">
+                              <span className="text-[10px] font-bold px-1.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                                 {st.currentClass}
                               </span>
+                              {st.overlappingSubjects && st.overlappingSubjects.length > 0 && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 flex items-center gap-0.5">
+                                  <Sparkles className="w-2.5 h-2.5 text-violet-600" />
+                                  {st.overlappingSubjects.join(", ")}
+                                </span>
+                              )}
                             </div>
                             <p className="text-[11px] text-slate-500">
                               {st.schoolName} • Needs: {st.subjects?.join(", ") || "General"}
