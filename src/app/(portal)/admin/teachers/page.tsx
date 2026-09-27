@@ -169,9 +169,9 @@ export default function AdminTeachersPage() {
             : typeof st.subjects === "string"
             ? st.subjects.split(",").map((s: string) => s.trim()).filter(Boolean)
             : [];
+          const effectiveSubjects = studentSubjects.length > 0 ? studentSubjects : ["Science"];
           if (tSubjects.length > 0) {
-            if (studentSubjects.length === 0) return false;
-            const overlap = getOverlappingSubjects(studentSubjects, tSubjects);
+            const overlap = getOverlappingSubjects(effectiveSubjects, tSubjects);
             if (overlap.length === 0) return false;
           }
           return true;

@@ -65,16 +65,15 @@ export async function GET(req: NextRequest) {
         const userStatus = p.userId.status || "ACTIVE";
         if (!["ACTIVE", "TRIAL", ""].includes(userStatus)) return false;
 
-        const studentSubjects: string[] = Array.isArray(p.subjects)
+        const rawSubjects: string[] = Array.isArray(p.subjects)
           ? p.subjects
           : typeof p.subjects === "string"
           ? p.subjects.split(",").map((s: string) => s.trim()).filter(Boolean)
           : [];
+        const studentSubjects: string[] = rawSubjects.length > 0 ? rawSubjects : ["Science"];
 
         // 1. Strict subject requirement:
         // Student MUST have selected at least 1 subject that matches teacherSubjects.
-        // If student has no subjects selected, or zero overlapping subjects, do NOT show them.
-        if (studentSubjects.length === 0) return false;
         const overlapping = getOverlappingSubjects(studentSubjects, teacherSubjects);
         if (overlapping.length === 0) return false;
 
@@ -85,15 +84,14 @@ export async function GET(req: NextRequest) {
         return true;
       })
       .map((p: any) => {
-        const derivedType =
-          p.studentType ||
-          (p.schoolName?.toLowerCase().includes("individual") ? "B2C" : "B2B");
+        const derivedType = p.studentType || "B2C";
 
-        const studentSubList: string[] = Array.isArray(p.subjects)
+        const rawSubjects: string[] = Array.isArray(p.subjects)
           ? p.subjects
           : typeof p.subjects === "string"
           ? p.subjects.split(",").map((s: string) => s.trim()).filter(Boolean)
           : [];
+        const studentSubList: string[] = rawSubjects.length > 0 ? rawSubjects : ["Science"];
 
         const overlapping = getOverlappingSubjects(studentSubList, teacherSubjects);
         const hasSubjectMatch = overlapping.length > 0;
