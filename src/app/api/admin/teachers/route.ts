@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import mongoose from "mongoose";
 import connectToDatabase from "@/lib/db/mongoose";
 import { getSession } from "@/lib/auth/session";
 import User from "@/models/User";
@@ -182,22 +183,37 @@ export async function PATCH(req: NextRequest) {
     // Handle assignedStudentIds explicitly (assign and unassign)
     if (Array.isArray(assignedStudentIds)) {
       const cleanStudentIds = assignedStudentIds.map((id: any) => id.toString());
-      updateProfile.assignedStudentIds = cleanStudentIds;
+      const studentObjIds = cleanStudentIds
+        .filter((id: string) => mongoose.Types.ObjectId.isValid(id))
+        .map((id: string) => new mongoose.Types.ObjectId(id));
+      const teacherObjId = mongoose.Types.ObjectId.isValid(teacherUserId)
+        ? new mongoose.Types.ObjectId(teacherUserId)
+        : teacherUserId;
+
+      updateProfile.assignedStudentIds = studentObjIds.length > 0 ? studentObjIds : cleanStudentIds;
 
       // Bidirectional sync for StudentProfile.assignedTeacherIds
       if (cleanStudentIds.length > 0) {
         await StudentProfile.updateMany(
-          { userId: { $in: cleanStudentIds } },
-          { $addToSet: { assignedTeacherIds: teacherUserId } }
+          {
+            $or: [
+              { userId: { $in: cleanStudentIds } },
+              { userId: { $in: studentObjIds } },
+            ],
+          },
+          { $addToSet: { assignedTeacherIds: teacherObjId } }
         );
       }
       // Remove teacher from unassigned students
       await StudentProfile.updateMany(
         {
-          userId: { $nin: cleanStudentIds },
-          assignedTeacherIds: teacherUserId,
+          userId: { $nin: [...cleanStudentIds, ...studentObjIds] },
         },
-        { $pull: { assignedTeacherIds: teacherUserId } }
+        {
+          $pull: {
+            assignedTeacherIds: { $in: [teacherUserId, teacherObjId] } as any,
+          },
+        }
       );
     }
 

@@ -54,18 +54,48 @@ export async function GET(req: NextRequest) {
       .sort({ createdAt: -1 })
       .lean()) as any[];
 
+    // If teacher has NO subjects or NO classes selected at all, return empty list!
+    if (teacherSubjects.length === 0 || teacherClasses.length === 0) {
+      return NextResponse.json({ students: [], total: 0 });
+    }
+
     let formatted = profiles
       .filter((p: any) => {
         if (!p.userId) return false;
         const userStatus = p.userId.status || "ACTIVE";
-        return ["ACTIVE", "TRIAL", ""].includes(userStatus);
+        if (!["ACTIVE", "TRIAL", ""].includes(userStatus)) return false;
+
+        const studentSubjects: string[] = Array.isArray(p.subjects)
+          ? p.subjects
+          : typeof p.subjects === "string"
+          ? p.subjects.split(",").map((s: string) => s.trim()).filter(Boolean)
+          : [];
+
+        // 1. Strict subject requirement:
+        // Student MUST have selected at least 1 subject that matches teacherSubjects.
+        // If student has no subjects selected, or zero overlapping subjects, do NOT show them.
+        if (studentSubjects.length === 0) return false;
+        const overlapping = getOverlappingSubjects(studentSubjects, teacherSubjects);
+        if (overlapping.length === 0) return false;
+
+        // 2. Strict class requirement:
+        // Student's class MUST match teacherClasses.
+        if (!isClassMatching(p.currentClass, teacherClasses)) return false;
+
+        return true;
       })
       .map((p: any) => {
         const derivedType =
           p.studentType ||
           (p.schoolName?.toLowerCase().includes("individual") ? "B2C" : "B2B");
 
-        const overlapping = getOverlappingSubjects(p.subjects, teacherSubjects);
+        const studentSubList: string[] = Array.isArray(p.subjects)
+          ? p.subjects
+          : typeof p.subjects === "string"
+          ? p.subjects.split(",").map((s: string) => s.trim()).filter(Boolean)
+          : [];
+
+        const overlapping = getOverlappingSubjects(studentSubList, teacherSubjects);
         const hasSubjectMatch = overlapping.length > 0;
         const hasClassMatch = isClassMatching(p.currentClass, teacherClasses);
 
@@ -88,7 +118,7 @@ export async function GET(req: NextRequest) {
           schoolName: p.schoolName || "",
           currentClass: p.currentClass || "Class 10",
           board: p.board || "CBSE",
-          subjects: Array.isArray(p.subjects) ? p.subjects : [],
+          subjects: studentSubList,
           overlappingSubjects: overlapping,
           hasSubjectMatch,
           hasClassMatch,

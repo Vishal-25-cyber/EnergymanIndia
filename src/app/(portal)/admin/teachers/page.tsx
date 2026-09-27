@@ -28,6 +28,7 @@ import { Input } from "@/components/ui/input";
 import { useFastFetch, invalidateCache } from "@/lib/api-cache";
 import { sanitize10DigitPhone, isValid10DigitPhone, isValidAcuityOrGmail } from "@/lib/validations/phone";
 import { formatStaffId } from "@/lib/id-generator";
+import { getOverlappingSubjects } from "@/lib/allocation-matcher";
 
 const ALL_CLASSES = [
   "Class 6",
@@ -155,7 +156,31 @@ export default function AdminTeachersPage() {
     const teacherType = (t.teacherType || "B2C") as "B2C" | "B2B";
     const institution = t.institutionName || "";
     const rawList = (t.assignedStudents && t.assignedStudents.length > 0) ? t.assignedStudents : (t.assignedStudentIds || []);
-    const existingAssignedStudentIds = rawList.map(getStudentId).filter(Boolean);
+
+    const tSubjects = (t.assignedSubjects && t.assignedSubjects.length > 0) ? t.assignedSubjects : (t.subjects || ["Mathematics"]);
+    const tClasses = (t.assignedClasses && t.assignedClasses.length > 0) ? t.assignedClasses : (t.classesTaught || ["Class 10"]);
+
+    // If teacher already has assigned students, retain only those whose selected subjects match teacher's subjects
+    const validAssignedStudents = (t.assignedStudents && t.assignedStudents.length > 0)
+      ? t.assignedStudents.filter((st: any) => {
+          if (!st) return false;
+          const studentSubjects = Array.isArray(st.subjects)
+            ? st.subjects
+            : typeof st.subjects === "string"
+            ? st.subjects.split(",").map((s: string) => s.trim()).filter(Boolean)
+            : [];
+          if (tSubjects.length > 0) {
+            if (studentSubjects.length === 0) return false;
+            const overlap = getOverlappingSubjects(studentSubjects, tSubjects);
+            if (overlap.length === 0) return false;
+          }
+          return true;
+        })
+      : [];
+
+    const existingAssignedStudentIds = (t.assignedStudents && t.assignedStudents.length > 0)
+      ? validAssignedStudents.map(getStudentId).filter(Boolean)
+      : rawList.map(getStudentId).filter(Boolean);
 
     setEditForm({
       name: t.userId?.name || "",
@@ -169,17 +194,15 @@ export default function AdminTeachersPage() {
       subjects: t.subjects || [],
       subjectsInput: (t.subjects || []).join(", "),
       classesTaught: t.classesTaught || [],
-      assignedSubjects: t.assignedSubjects && t.assignedSubjects.length > 0 ? t.assignedSubjects : t.subjects || ["Mathematics"],
-      assignedClasses: t.assignedClasses && t.assignedClasses.length > 0 ? t.assignedClasses : t.classesTaught || ["Class 10"],
+      assignedSubjects: tSubjects,
+      assignedClasses: tClasses,
       assignedStudentIds: existingAssignedStudentIds,
-      assignedStudents: t.assignedStudents || [],
+      assignedStudents: validAssignedStudents,
       status: t.approvalStatus || t.userId?.status || "ACTIVE",
       resetPassword: "",
     });
     setStudentSearch("");
     const tUserId = (t.userId?._id || t.userId || t._id)?.toString();
-    const tClasses = (t.assignedClasses?.length > 0 ? t.assignedClasses : t.classesTaught) || [];
-    const tSubjects = (t.assignedSubjects?.length > 0 ? t.assignedSubjects : t.subjects) || [];
     fetchAllocatableStudents(teacherType, institution, tClasses, tSubjects, tUserId);
   };
 
@@ -827,14 +850,19 @@ export default function AdminTeachersPage() {
               </div>
 
               {/* Candidate Students List */}
-              <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1 divide-y divide-slate-100 dark:divide-slate-800">
+              <div className="max-h-56 overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100 dark:divide-slate-800">
                 {loadingStudents ? (
-                  <div className="py-4 text-center text-xs text-slate-500">
+                  <div className="py-6 text-center text-xs text-slate-500">
                     Loading allocatable students...
                   </div>
                 ) : allocatableStudents.length === 0 ? (
-                  <div className="py-4 text-center text-xs text-slate-500">
-                    No eligible students found. Ensure students have registered for this stream.
+                  <div className="py-6 text-center space-y-1">
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      No students found matching the selected subject(s) &amp; class(es).
+                    </p>
+                    <p className="text-[11px] text-slate-400 dark:text-slate-500">
+                      Only students who have selected {editForm.assignedSubjects.length > 0 ? editForm.assignedSubjects.join(", ") : "subjects"} will appear here.
+                    </p>
                   </div>
                 ) : (
                   allocatableStudents
@@ -853,18 +881,23 @@ export default function AdminTeachersPage() {
                     .map((st: any) => {
                       const stId = getStudentId(st);
                       const isAssigned = editForm.assignedStudentIds.includes(stId);
+                      const studentSubjectsList: string[] = Array.isArray(st.subjects)
+                        ? st.subjects
+                        : typeof st.subjects === "string"
+                        ? st.subjects.split(",").map((s: string) => s.trim()).filter(Boolean)
+                        : [];
 
                       return (
                         <div
                           key={stId}
                           onClick={() => toggleStudentAllocation(st)}
-                          className={`p-2 rounded-lg flex items-center justify-between gap-2 cursor-pointer transition-colors ${
+                          className={`p-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-all border ${
                             isAssigned
-                              ? "bg-emerald-50/80 dark:bg-emerald-950/40 border border-emerald-200"
-                              : "hover:bg-slate-100 dark:hover:bg-slate-800"
+                              ? "bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-500 shadow-2xs"
+                              : "hover:bg-slate-100 dark:hover:bg-slate-800/80 border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
                           }`}
                         >
-                          <div className="space-y-0.5">
+                          <div className="space-y-1 flex-1 min-w-0">
                             <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-bold text-xs text-slate-900 dark:text-slate-100">
                                 {st.name}
@@ -872,29 +905,55 @@ export default function AdminTeachersPage() {
                               <span className="font-mono text-[10px] text-slate-500">
                                 ({st.studentId || "STD"})
                               </span>
-                              <span className="text-[10px] font-bold px-1.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                                 {st.currentClass}
                               </span>
                               {st.overlappingSubjects && st.overlappingSubjects.length > 0 && (
-                                <span className="text-[9px] font-bold px-1.5 py-0.2 rounded-full bg-violet-100 dark:bg-violet-900 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 flex items-center gap-0.5">
-                                  <Sparkles className="w-2.5 h-2.5 text-violet-600" />
-                                  {st.overlappingSubjects.join(", ")}
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 flex items-center gap-1">
+                                  <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400 stroke-[2.5]" />
+                                  <span>Matches: {st.overlappingSubjects.join(", ")}</span>
                                 </span>
                               )}
                             </div>
-                            <p className="text-[11px] text-slate-500">
-                              {st.schoolName} • Needs: {st.subjects?.join(", ") || "General"}
-                            </p>
+
+                            {/* Prominent display of what subject(s) student selected */}
+                            <div className="flex items-center gap-1.5 flex-wrap text-[11px] pt-0.5">
+                              <span className="font-semibold text-slate-600 dark:text-slate-400">
+                                Student Selected Subjects:
+                              </span>
+                              {studentSubjectsList.length > 0 ? (
+                                studentSubjectsList.map((sub: string, sIdx: number) => {
+                                  const isOverlap = st.overlappingSubjects?.some(
+                                    (o: string) => o.toLowerCase() === sub.toLowerCase()
+                                  );
+                                  return (
+                                    <span
+                                      key={sIdx}
+                                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md border flex items-center gap-1 ${
+                                        isOverlap
+                                          ? "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-700"
+                                          : "bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700"
+                                      }`}
+                                    >
+                                      {isOverlap && <Check className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400 stroke-[3]" />}
+                                      <span>{sub}</span>
+                                    </span>
+                                  );
+                                })
+                              ) : (
+                                <span className="italic text-rose-500 font-medium">None selected</span>
+                              )}
+                            </div>
                           </div>
 
                           <div
-                            className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 border ${
+                            className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-all ${
                               isAssigned
-                                ? "bg-emerald-600 border-emerald-600 text-white"
-                                : "border-slate-300 bg-white"
+                                ? "bg-emerald-600 border-emerald-600 text-white shadow-2xs"
+                                : "border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 text-transparent"
                             }`}
                           >
-                            {isAssigned && <Check className="w-4 h-4" />}
+                            <Check className="w-4 h-4 stroke-[3]" />
                           </div>
                         </div>
                       );
