@@ -95,19 +95,19 @@ export default function AdminTeachersPage() {
 
   const pendingCount = React.useMemo(() => {
     return allTeachers.filter(
-      (t: any) => t.approvalStatus === "PENDING_APPROVAL" || t.userId?.status === "PENDING_APPROVAL"
+      (t: any) => t && (t.approvalStatus === "PENDING_APPROVAL" || t.userId?.status === "PENDING_APPROVAL")
     ).length;
   }, [allTeachers]);
 
   const approvedCount = React.useMemo(() => {
     return allTeachers.filter(
-      (t: any) => t.approvalStatus === "ACTIVE" || t.userId?.status === "ACTIVE"
+      (t: any) => t && (t.approvalStatus === "ACTIVE" || t.userId?.status === "ACTIVE")
     ).length;
   }, [allTeachers]);
 
   const rejectedCount = React.useMemo(() => {
     return allTeachers.filter(
-      (t: any) => t.approvalStatus === "REJECTED" || t.userId?.status === "REJECTED"
+      (t: any) => t && (t.approvalStatus === "REJECTED" || t.userId?.status === "REJECTED")
     ).length;
   }, [allTeachers]);
 
@@ -477,16 +477,31 @@ export default function AdminTeachersPage() {
             </div>
           ) : (
             teachers.map((t: any, idx: number) => {
+              if (!t) return null;
+              const tUserId = (t.userId?._id || t.userId || t._id)?.toString();
               const isPending = t.approvalStatus === "PENDING_APPROVAL" || t.userId?.status === "PENDING_APPROVAL";
+              const isApproved = t.approvalStatus === "ACTIVE" || t.userId?.status === "ACTIVE";
               const assignedCount = Array.isArray(t.assignedStudents)
                 ? t.assignedStudents.length
-                : (t.assignedStudentIds?.length || 0);
-              const displayClasses = (t.assignedClasses && t.assignedClasses.length > 0) ? t.assignedClasses : (t.classesTaught || []);
-              const displaySubjects = (t.assignedSubjects && t.assignedSubjects.length > 0) ? t.assignedSubjects : (t.subjects || []);
+                : (Array.isArray(t.assignedStudentIds) ? t.assignedStudentIds.length : 0);
+              const displayClasses: string[] = Array.isArray(t.assignedClasses) && t.assignedClasses.length > 0
+                ? t.assignedClasses
+                : Array.isArray(t.classesTaught)
+                ? t.classesTaught
+                : typeof t.classesTaught === "string"
+                ? [t.classesTaught]
+                : [];
+              const displaySubjects: string[] = Array.isArray(t.assignedSubjects) && t.assignedSubjects.length > 0
+                ? t.assignedSubjects
+                : Array.isArray(t.subjects)
+                ? t.subjects
+                : typeof t.subjects === "string"
+                ? [t.subjects]
+                : [];
 
               return (
                 <div
-                  key={t._id}
+                  key={t._id?.toString() || `teacher-${idx}`}
                   className="py-3.5 grid grid-cols-1 md:grid-cols-12 gap-4 items-center transition-colors hover:bg-slate-50/50 dark:hover:bg-slate-900/30 px-1"
                 >
                   {/* Col 1: Name & Contact & Category */}
@@ -513,7 +528,7 @@ export default function AdminTeachersPage() {
                     </div>
 
                     <p className="text-[11px] text-slate-400 font-mono truncate">
-                      {t.userId?.email} • {t.userId?.phone || "—"}
+                      {t.userId?.email || "—"} • {t.userId?.phone || "—"}
                     </p>
                   </div>
 
@@ -530,14 +545,17 @@ export default function AdminTeachersPage() {
                   {/* Col 3: Classes & Subjects & Allocated Students */}
                   <div className="col-span-3 space-y-1.5">
                     <p className="text-xs font-bold text-[#004b79] dark:text-[#dfb74a] truncate">
-                      {displaySubjects.join(", ") || "Mathematics"}
+                      {displaySubjects.map((s: any) => (typeof s === "string" ? s : s?.name || String(s))).join(", ") || "Mathematics"}
                     </p>
                     <div className="flex flex-wrap items-center gap-1">
-                      {displayClasses.map((c: string) => (
-                        <span key={c} className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-mono text-slate-600 dark:text-slate-400">
-                          {c}
-                        </span>
-                      ))}
+                      {displayClasses.map((c: any, cIdx: number) => {
+                        const cName = typeof c === "string" ? c : c?.name || c?.title || String(c);
+                        return (
+                          <span key={`${cName}-${cIdx}`} className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-mono text-slate-600 dark:text-slate-400">
+                            {cName}
+                          </span>
+                        );
+                      })}
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                         {assignedCount} Student{assignedCount === 1 ? "" : "s"}
                       </span>
@@ -554,7 +572,7 @@ export default function AdminTeachersPage() {
                         </span>
                         <button
                           type="button"
-                          onClick={() => handleUpdateStatus(t.userId._id, "ACTIVE")}
+                          onClick={() => handleUpdateStatus(tUserId, "ACTIVE")}
                           className="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white transition-colors cursor-pointer shadow-2xs flex items-center gap-1"
                         >
                           <Check className="w-3 h-3" />
@@ -562,7 +580,7 @@ export default function AdminTeachersPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleUpdateStatus(t.userId._id, "REJECTED")}
+                          onClick={() => handleUpdateStatus(tUserId, "REJECTED")}
                           className="px-2 py-1 rounded-lg text-xs font-bold bg-rose-50 dark:bg-rose-950/40 text-rose-600 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 transition-colors cursor-pointer"
                         >
                           Reject
@@ -618,7 +636,7 @@ export default function AdminTeachersPage() {
         <Modal
           isOpen={!!editTeacher}
           onClose={() => setEditTeacher(null)}
-          title={`Allocate & Manage Faculty: ${editTeacher.userId?.name}`}
+          title={`Allocate & Manage Faculty: ${editTeacher.userId?.name || "Faculty Specialist"}`}
           description="Configure B2B / B2C stream, allocate specific students, and assign classes & subjects handled."
           maxWidth="xl"
         >
@@ -988,7 +1006,7 @@ export default function AdminTeachersPage() {
         <Modal
           isOpen={!!selectedTeacher}
           onClose={() => setSelectedTeacher(null)}
-          title={`Faculty Documents: ${selectedTeacher.userId?.name}`}
+          title={`Faculty Documents: ${selectedTeacher.userId?.name || "Faculty Specialist"}`}
           description="Inspect uploaded certificates, identity proofs, and credentials."
           maxWidth="md"
         >
@@ -1051,7 +1069,7 @@ export default function AdminTeachersPage() {
               <AlertTriangle className="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
               <div className="space-y-1">
                 <p className="font-bold text-sm">
-                  Delete &quot;{deleteTeacher.userId?.name}&quot; from Database?
+                  Delete &quot;{deleteTeacher.userId?.name || "Faculty Specialist"}&quot; from Database?
                 </p>
                 <p className="text-xs text-rose-700 dark:text-rose-400">
                   This will permanently delete this faculty staff account, assigned classes, study materials uploaded, and teaching presence logs from the database.

@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
       new Set(
         teachers.flatMap((t: any) =>
           Array.isArray(t.assignedStudentIds)
-            ? t.assignedStudentIds.map((s: any) => s._id || s)
+            ? t.assignedStudentIds.filter(Boolean).map((s: any) => s._id || s)
             : []
         )
       )
@@ -67,6 +67,7 @@ export async function GET(req: NextRequest) {
       const tClasses = (t.assignedClasses?.length > 0 ? t.assignedClasses : t.classesTaught) || [];
 
       const enrichedStudents = (t.assignedStudentIds || [])
+        .filter(Boolean)
         .map((st: any) => {
           const uId = st._id ? st._id.toString() : st.toString();
           const profile = studentProfileMap[uId] || {};

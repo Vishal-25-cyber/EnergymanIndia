@@ -129,8 +129,30 @@ class PortalErrorBoundary extends React.Component<
     console.error("Portal Runtime Caught Error:", error, errorInfo);
   }
 
+  handleReload = () => {
+    try {
+      sessionStorage.clear();
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith("mantif_cache_")) {
+          localStorage.removeItem(key);
+        }
+      });
+    } catch {
+      // ignore
+    }
+    this.setState({ hasError: false });
+    window.location.reload();
+  };
+
   render() {
     if (this.state.hasError) {
+      const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
+      const dashboardUrl = currentPath.startsWith("/admin")
+        ? "/admin/dashboard"
+        : currentPath.startsWith("/teacher")
+        ? "/teacher/dashboard"
+        : "/student/dashboard";
+
       return (
         <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
           <div className="max-w-md w-full p-8 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl text-center space-y-4">
@@ -144,16 +166,13 @@ class PortalErrorBoundary extends React.Component<
             <div className="flex items-center justify-center gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => {
-                  this.setState({ hasError: false });
-                  window.location.reload();
-                }}
+                onClick={this.handleReload}
                 className="px-4 py-2 rounded-xl bg-[#004b79] text-white text-xs font-bold hover:bg-[#003b60] transition-colors cursor-pointer"
               >
                 Reload Page
               </button>
               <a
-                href="/student/dashboard"
+                href={dashboardUrl}
                 onClick={() => this.setState({ hasError: false })}
                 className="px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               >
