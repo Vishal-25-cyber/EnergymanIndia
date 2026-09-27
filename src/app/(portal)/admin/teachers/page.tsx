@@ -478,8 +478,9 @@ export default function AdminTeachersPage() {
           ) : (
             teachers.map((t: any, idx: number) => {
               const isPending = t.approvalStatus === "PENDING_APPROVAL" || t.userId?.status === "PENDING_APPROVAL";
-              const isApproved = t.approvalStatus === "ACTIVE" || t.userId?.status === "ACTIVE";
-              const assignedCount = t.assignedStudents?.length || t.assignedStudentIds?.length || 0;
+              const assignedCount = Array.isArray(t.assignedStudents)
+                ? t.assignedStudents.length
+                : (t.assignedStudentIds?.length || 0);
               const displayClasses = (t.assignedClasses && t.assignedClasses.length > 0) ? t.assignedClasses : (t.classesTaught || []);
               const displaySubjects = (t.assignedSubjects && t.assignedSubjects.length > 0) ? t.assignedSubjects : (t.subjects || []);
 

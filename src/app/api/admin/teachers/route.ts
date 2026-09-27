@@ -63,25 +63,43 @@ export async function GET(req: NextRequest) {
     }
 
     const enrichedTeachers = teachers.map((t: any) => {
-      const enrichedStudents = (t.assignedStudentIds || []).map((st: any) => {
-        const uId = st._id ? st._id.toString() : st.toString();
-        const profile = studentProfileMap[uId] || {};
-        return {
-          _id: st._id || st,
-          name: st.name || "Student",
-          email: st.email || "",
-          phone: st.phone || "",
-          studentId: profile.studentId || "",
-          currentClass: profile.currentClass || "",
-          schoolName: profile.schoolName || "",
-          subjects: profile.subjects || [],
-          studentType: profile.studentType || "B2C",
-        };
-      });
+      const tSubjects = (t.assignedSubjects?.length > 0 ? t.assignedSubjects : t.subjects) || [];
+      const tClasses = (t.assignedClasses?.length > 0 ? t.assignedClasses : t.classesTaught) || [];
+
+      const enrichedStudents = (t.assignedStudentIds || [])
+        .map((st: any) => {
+          const uId = st._id ? st._id.toString() : st.toString();
+          const profile = studentProfileMap[uId] || {};
+          const rawSubs = Array.isArray(profile.subjects) ? profile.subjects : [];
+          const studentSubs = rawSubs.length > 0 ? rawSubs : ["Science"];
+          return {
+            _id: st._id || st,
+            userId: uId,
+            name: st.name || "Student",
+            email: st.email || "",
+            phone: st.phone || "",
+            studentId: profile.studentId || "",
+            currentClass: profile.currentClass || "",
+            schoolName: profile.schoolName || "",
+            subjects: studentSubs,
+            studentType: profile.studentType || "B2C",
+          };
+        })
+        .filter((st: any) => {
+          if (tSubjects.length > 0) {
+            const overlap = getOverlappingSubjects(st.subjects, tSubjects);
+            if (overlap.length === 0) return false;
+          }
+          if (tClasses.length > 0 && !isClassMatching(st.currentClass, tClasses)) {
+            return false;
+          }
+          return true;
+        });
 
       return {
         ...t,
         assignedStudents: enrichedStudents,
+        assignedStudentIds: enrichedStudents.map((s: any) => s._id),
       };
     });
 
