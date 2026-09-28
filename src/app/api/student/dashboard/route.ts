@@ -13,7 +13,11 @@ import Notification from "@/models/Notification";
 import Payment from "@/models/Payment";
 import SystemSettings from "@/models/SystemSettings";
 import { getSubjectsForClassAndBoard } from "@/lib/curriculum";
-import { buildStudentClassAccessQuery, buildStudentSubjectFilter } from "@/lib/class-stream";
+import {
+  buildStudentClassAccessQuery,
+  buildStudentSubjectFilter,
+  getAssignedTeacherIdsForStudent,
+} from "@/lib/class-stream";
 
 export const dynamic = "force-dynamic";
 
@@ -123,14 +127,24 @@ export async function GET(req?: any) {
       ],
     };
 
-    const studentAccessQuery = buildStudentClassAccessQuery(studentProfile, session.userId);
-    const studentSubFilter = buildStudentSubjectFilter(studentProfile?.subjects);
-    const baseDashboardClassFilter: any = {
-      $and: [
-        studentAccessQuery,
-        ...(studentSubFilter ? [studentSubFilter] : []),
-      ],
-    };
+    const assignedTeachers = await getAssignedTeacherIdsForStudent(studentProfile, session.userId);
+    const studentAccessQuery = buildStudentClassAccessQuery(studentProfile, session.userId, assignedTeachers);
+    const andClauses: any[] = [studentAccessQuery];
+
+    if (Array.isArray(studentProfile?.subjects) && studentProfile.subjects.length > 0) {
+      const studentSubFilter = buildStudentSubjectFilter(studentProfile.subjects);
+      if (studentSubFilter) {
+        andClauses.push({
+          $or: [
+            { assignedStudentIds: session.userId },
+            ...(assignedTeachers.length > 0 ? [{ teacherId: { $in: assignedTeachers } }] : []),
+            studentSubFilter,
+          ],
+        });
+      }
+    }
+
+    const baseDashboardClassFilter: any = { $and: andClauses };
 
     // Fetch REAL created live sessions, attendance, assignments, and payments directly from DB
     const [

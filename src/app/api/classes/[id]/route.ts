@@ -52,30 +52,30 @@ export async function GET(
           studentProfile.studentType === "B2B" &&
           Boolean(studentProfile.schoolName && !/individual/i.test(studentProfile.schoolName));
 
-        // Cross-stream lockout
-        if (isInstitutional && liveClass.streamType === "B2C") {
-          return NextResponse.json({ error: "Forbidden: This is an individual tutoring session." }, { status: 403 });
-        }
-        if (!isInstitutional && liveClass.streamType === "B2B") {
-          return NextResponse.json({ error: "Forbidden: This is an institutional class." }, { status: 403 });
-        }
-        if (
-          isInstitutional &&
-          liveClass.institutionName &&
-          !new RegExp(liveClass.institutionName.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i").test(
-            studentProfile.schoolName
-          )
-        ) {
-          return NextResponse.json({ error: "Forbidden: You do not belong to this institution." }, { status: 403 });
-        }
+        const teacherUserId = (liveClass.teacherId?._id || liveClass.teacherId)?.toString();
+        const isAssignedToThisTeacher = (studentProfile.assignedTeacherIds || []).some(
+          (t: any) => (t?._id || t).toString() === teacherUserId
+        );
+        const isAssignedStudent =
+          Array.isArray(liveClass.assignedStudentIds) &&
+          liveClass.assignedStudentIds.some((sId: any) => (sId?._id || sId).toString() === session.userId);
 
-        // Student allocation lockout
-        if (Array.isArray(liveClass.assignedStudentIds) && liveClass.assignedStudentIds.length > 0) {
-          const isAssigned = liveClass.assignedStudentIds.some(
-            (sId: any) => (sId?._id || sId).toString() === session.userId
-          );
-          if (!isAssigned) {
-            return NextResponse.json({ error: "Forbidden: You are not assigned to this class." }, { status: 403 });
+        // Cross-stream and unassigned lockout
+        if (!isAssignedToThisTeacher && !isAssignedStudent) {
+          if (isInstitutional && liveClass.streamType === "B2C") {
+            return NextResponse.json({ error: "Forbidden: This is an individual tutoring session." }, { status: 403 });
+          }
+          if (!isInstitutional && liveClass.streamType === "B2B") {
+            return NextResponse.json({ error: "Forbidden: This is an institutional class." }, { status: 403 });
+          }
+          if (
+            isInstitutional &&
+            liveClass.institutionName &&
+            !new RegExp(liveClass.institutionName.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i").test(
+              studentProfile.schoolName
+            )
+          ) {
+            return NextResponse.json({ error: "Forbidden: You do not belong to this institution." }, { status: 403 });
           }
         }
 

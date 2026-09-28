@@ -7,7 +7,11 @@ import User from "@/models/User";
 import Batch from "@/models/Batch";
 import { getStudentFeeAccessStatus } from "@/lib/fee-guard";
 import { sortClassesByPriority } from "@/lib/class-timing";
-import { buildStudentClassAccessQuery, buildStudentSubjectFilter } from "@/lib/class-stream";
+import {
+  buildStudentClassAccessQuery,
+  buildStudentSubjectFilter,
+  getAssignedTeacherIdsForStudent,
+} from "@/lib/class-stream";
 
 export const dynamic = "force-dynamic";
 
@@ -103,16 +107,25 @@ export async function GET(req: NextRequest) {
       { $set: { streamType: "B2C" } }
     ).catch(() => {});
 
-    const accessQuery = buildStudentClassAccessQuery(profile, session.userId);
-    const subjectFilter = buildStudentSubjectFilter(profile?.subjects);
+    const assignedTeachers = await getAssignedTeacherIdsForStudent(profile, session.userId);
+    const accessQuery = buildStudentClassAccessQuery(profile, session.userId, assignedTeachers);
 
     const andConditions: any[] = [
       accessQuery,
       { status: { $in: ["PUBLISHED", "SCHEDULED", "LIVE", "COMPLETED"] } },
     ];
 
-    if (subjectFilter) {
-      andConditions.push(subjectFilter);
+    if (Array.isArray(profile.subjects) && profile.subjects.length > 0) {
+      const subjectFilter = buildStudentSubjectFilter(profile.subjects);
+      if (subjectFilter) {
+        andConditions.push({
+          $or: [
+            { assignedStudentIds: session.userId },
+            ...(assignedTeachers.length > 0 ? [{ teacherId: { $in: assignedTeachers } }] : []),
+            subjectFilter,
+          ],
+        });
+      }
     }
 
     const sessionQuery: any = { $and: andConditions };

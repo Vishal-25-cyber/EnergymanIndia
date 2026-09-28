@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import TeacherProfile from "@/models/TeacherProfile";
 import StudentProfile from "@/models/StudentProfile";
 import { getSubjectRegex, getClassRegex, isClassMatching } from "@/lib/allocation-matcher";
@@ -10,15 +11,40 @@ export interface ResolvedStreamResult {
 }
 
 /**
+ * Resolves all teacher user IDs that are assigned to a given student
+ * by checking both directions (StudentProfile.assignedTeacherIds and TeacherProfile.assignedStudentIds).
+ */
+export async function getAssignedTeacherIdsForStudent(
+  studentProfile: any,
+  sessionUserId: string
+): Promise<string[]> {
+  const directTeacherIds = Array.isArray(studentProfile?.assignedTeacherIds)
+    ? studentProfile.assignedTeacherIds.map((t: any) => (t?._id || t).toString()).filter(Boolean)
+    : [];
+
+  const studentObjId = mongoose.Types.ObjectId.isValid(sessionUserId)
+    ? new mongoose.Types.ObjectId(sessionUserId)
+    : sessionUserId;
+
+  const teachersWithThisStudent = await TeacherProfile.find({
+    assignedStudentIds: { $in: [sessionUserId, studentObjId] },
+  })
+    .select("userId")
+    .lean();
+
+  const allTeacherIds = Array.from(
+    new Set([
+      ...directTeacherIds,
+      ...teachersWithThisStudent.map((t: any) => (t.userId?._id || t.userId || t._id).toString()).filter(Boolean),
+    ])
+  );
+
+  return allTeacherIds;
+}
+
+/**
  * Resolves the stream type (B2C vs B2B) and the exact list of eligible students
  * when a teacher schedules or creates a live class.
- *
- * Rules:
- * - If teacher is B2C (Individual Tutor), class is assigned ONLY to individual students
- *   allocated to this teacher for this classLevel & subject.
- * - If teacher is B2B (Institutional Faculty), class is assigned ONLY to students belonging
- *   to that specific institution/school for this classLevel & subject.
- * - Under no circumstance will a B2C class be assigned or notified to B2B students, or vice-versa.
  */
 export async function resolveClassStreamAndStudents({
   teacherUserId,
@@ -47,18 +73,15 @@ export async function resolveClassStreamAndStudents({
 
     // Query institutional students belonging to this school
     const schoolStudents = await StudentProfile.find({
-      studentType: "B2B",
       schoolName: { $regex: instRegex },
     }).lean();
 
     const subjectRegex = getSubjectRegex(subject);
 
     const eligible = schoolStudents.filter((st: any) => {
-      // Must match class level
       if (classLevel && !isClassMatching(st.currentClass, [classLevel])) {
         return false;
       }
-      // Must match subject if student has specific enrolled subjects
       if (Array.isArray(st.subjects) && st.subjects.length > 0) {
         const matchesSubject = st.subjects.some((s: string) => subjectRegex.test(s));
         if (!matchesSubject) return false;
@@ -77,15 +100,17 @@ export async function resolveClassStreamAndStudents({
   }
 
   // Teacher is B2C (Individual Tutoring Faculty)
-  // Gather all individual student IDs allocated to this teacher
+  // Gather all student IDs explicitly allocated to this teacher
   const directAllocated = (teacherProfile?.assignedStudentIds || [])
     .filter(Boolean)
     .map((id: any) => (id._id || id).toString());
 
-  // Also query any students who have this teacher in their assignedTeacherIds
+  const teacherObjId = mongoose.Types.ObjectId.isValid(teacherUserId)
+    ? new mongoose.Types.ObjectId(teacherUserId)
+    : teacherUserId;
+
   const reverseAllocated = await StudentProfile.find({
-    assignedTeacherIds: teacherUserId,
-    studentType: { $ne: "B2B" },
+    assignedTeacherIds: { $in: [teacherUserId, teacherObjId] },
   })
     .select("userId")
     .lean();
@@ -100,33 +125,23 @@ export async function resolveClassStreamAndStudents({
   let eligible: any[] = [];
 
   if (allAllocatedIds.length > 0) {
+    // Fetch all allocated students
     const studentDocs = await StudentProfile.find({
       userId: { $in: allAllocatedIds },
-      studentType: { $ne: "B2B" }, // Strictly isolate from institutional
     }).lean();
 
-    const subjectRegex = getSubjectRegex(subject);
-
     eligible = studentDocs.filter((st: any) => {
-      // Must match class level
+      // Must match class level if provided
       if (classLevel && !isClassMatching(st.currentClass, [classLevel])) {
         return false;
-      }
-      // Must match subject if student has subjects
-      if (Array.isArray(st.subjects) && st.subjects.length > 0) {
-        const matchesSubject = st.subjects.some((s: string) => subjectRegex.test(s));
-        if (!matchesSubject) return false;
       }
       return true;
     });
   }
 
-  // If teacher has batchId fallback for B2C batch
+  // Fallback to batch students only if teacher has zero allocated students
   if (eligible.length === 0 && batchId) {
-    const batchStudents = await StudentProfile.find({
-      batchId,
-      studentType: { $ne: "B2B" },
-    }).lean();
+    const batchStudents = await StudentProfile.find({ batchId }).lean();
     eligible = batchStudents.filter((st: any) => {
       if (classLevel && !isClassMatching(st.currentClass, [classLevel])) return false;
       return true;
@@ -145,22 +160,47 @@ export async function resolveClassStreamAndStudents({
 
 /**
  * Builds the MongoDB query condition for live classes that a student is authorized to view.
- * Ensures zero leakage between B2C (individual) and B2B (institutional) streams.
  */
 export function buildStudentClassAccessQuery(
   studentProfile: any,
-  sessionUserId: string
+  sessionUserId: string,
+  assignedTeacherUserIds: string[] = []
 ): Record<string, any> {
-  const isInstitutional =
-    studentProfile?.studentType === "B2B" &&
-    Boolean(studentProfile?.schoolName && !/individual/i.test(studentProfile.schoolName));
-
   const currentClass = studentProfile?.currentClass || "Class 10";
   const classVariants = [
     currentClass,
     currentClass.replace(/Class\s*/i, "").trim(),
     `Class ${currentClass.replace(/Class\s*/i, "").trim()}`,
   ].filter(Boolean);
+
+  const directTeachers = Array.isArray(studentProfile?.assignedTeacherIds)
+    ? studentProfile.assignedTeacherIds.map((t: any) => (t?._id || t).toString()).filter(Boolean)
+    : [];
+
+  const allTeachers = Array.from(new Set([...directTeachers, ...assignedTeacherUserIds]));
+
+  const orConditions: any[] = [
+    // 1. Explicitly assigned to this student
+    { assignedStudentIds: sessionUserId },
+  ];
+
+  // 2. Created by any teacher assigned to this student (matching classLevel)
+  if (allTeachers.length > 0) {
+    orConditions.push({
+      teacherId: { $in: allTeachers },
+      classLevel: { $in: classVariants },
+      $or: [
+        { assignedStudentIds: { $exists: false } },
+        { assignedStudentIds: { $size: 0 } },
+        { assignedStudentIds: sessionUserId },
+      ],
+    });
+  }
+
+  // 3. Institutional classes for their school
+  const isInstitutional =
+    studentProfile?.studentType === "B2B" &&
+    Boolean(studentProfile?.schoolName && !/individual/i.test(studentProfile.schoolName));
 
   if (isInstitutional) {
     const instName = studentProfile.schoolName.trim();
@@ -169,7 +209,7 @@ export function buildStudentClassAccessQuery(
       "i"
     );
 
-    return {
+    orConditions.push({
       streamType: "B2B",
       institutionName: { $regex: instRegex },
       classLevel: { $in: classVariants },
@@ -178,45 +218,24 @@ export function buildStudentClassAccessQuery(
         { assignedStudentIds: { $size: 0 } },
         { assignedStudentIds: sessionUserId },
       ],
-    };
-  }
-
-  // B2C / Individual student
-  const assignedTeachers = Array.isArray(studentProfile?.assignedTeacherIds)
-    ? studentProfile.assignedTeacherIds.filter(Boolean)
-    : [];
-
-  const studentAccessConditions: any[] = [
-    { assignedStudentIds: sessionUserId },
-  ];
-
-  if (assignedTeachers.length > 0) {
-    studentAccessConditions.push({
-      teacherId: { $in: assignedTeachers },
-      classLevel: { $in: classVariants },
-      $or: [
-        { assignedStudentIds: { $exists: false } },
-        { assignedStudentIds: { $size: 0 } },
-        { assignedStudentIds: sessionUserId },
-      ],
     });
   } else {
-    // Unassigned trial student: can only see unassigned B2C classes for their classLevel
-    studentAccessConditions.push({
-      classLevel: { $in: classVariants },
-      $or: [
-        { assignedStudentIds: { $exists: false } },
-        { assignedStudentIds: { $size: 0 } },
-        { assignedStudentIds: sessionUserId },
-      ],
-    });
+    // 4. B2C trial/unassigned general classes for their batch or classLevel (only if unassigned)
+    if (allTeachers.length === 0) {
+      orConditions.push({
+        streamType: { $ne: "B2B" },
+        institutionName: { $in: ["", null, undefined] },
+        classLevel: { $in: classVariants },
+        $or: [
+          { assignedStudentIds: { $exists: false } },
+          { assignedStudentIds: { $size: 0 } },
+          { assignedStudentIds: sessionUserId },
+        ],
+      });
+    }
   }
 
-  return {
-    streamType: { $ne: "B2B" },
-    institutionName: { $in: ["", null, undefined] },
-    $or: studentAccessConditions,
-  };
+  return { $or: orConditions };
 }
 
 /**

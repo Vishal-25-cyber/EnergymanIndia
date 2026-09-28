@@ -3,7 +3,11 @@ import connectToDatabase from "@/lib/db/mongoose";
 import { getSession } from "@/lib/auth/session";
 import LiveSession from "@/models/LiveSession";
 import StudentProfile from "@/models/StudentProfile";
-import { buildStudentClassAccessQuery, buildStudentSubjectFilter } from "@/lib/class-stream";
+import {
+  buildStudentClassAccessQuery,
+  buildStudentSubjectFilter,
+  getAssignedTeacherIdsForStudent,
+} from "@/lib/class-stream";
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,15 +27,25 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Student profile not found." }, { status: 404 });
       }
 
-      const accessQuery = buildStudentClassAccessQuery(studentProfile, session.userId);
-      const subjectFilter = buildStudentSubjectFilter(studentProfile.subjects);
+      const assignedTeachers = await getAssignedTeacherIdsForStudent(studentProfile, session.userId);
+      const accessQuery = buildStudentClassAccessQuery(studentProfile, session.userId, assignedTeachers);
 
       const andClauses: any[] = [
         accessQuery,
         { status: { $in: ["PUBLISHED", "SCHEDULED", "LIVE"] }, date: { $gte: todayStr } },
       ];
-      if (subjectFilter) {
-        andClauses.push(subjectFilter);
+
+      if (Array.isArray(studentProfile.subjects) && studentProfile.subjects.length > 0) {
+        const subjectFilter = buildStudentSubjectFilter(studentProfile.subjects);
+        if (subjectFilter) {
+          andClauses.push({
+            $or: [
+              { assignedStudentIds: session.userId },
+              ...(assignedTeachers.length > 0 ? [{ teacherId: { $in: assignedTeachers } }] : []),
+              subjectFilter,
+            ],
+          });
+        }
       }
 
       query.$and = andClauses;

@@ -11,6 +11,7 @@ import {
   resolveClassStreamAndStudents,
   buildStudentClassAccessQuery,
   buildStudentSubjectFilter,
+  getAssignedTeacherIdsForStudent,
 } from "@/lib/class-stream";
 
 // In-memory cache for ultra-fast schedule & timetable responses
@@ -127,12 +128,22 @@ export async function GET(req: NextRequest) {
         { $set: { streamType: "B2C" } }
       ).catch(() => {});
 
-      const accessQuery = buildStudentClassAccessQuery(studentProfile, session.userId);
-      const subjectFilter = buildStudentSubjectFilter(studentProfile?.subjects);
+      const assignedTeachers = await getAssignedTeacherIdsForStudent(studentProfile, session.userId);
+      const accessQuery = buildStudentClassAccessQuery(studentProfile, session.userId, assignedTeachers);
 
       const andClauses: any[] = [accessQuery];
-      if (subjectFilter) {
-        andClauses.push(subjectFilter);
+
+      if (Array.isArray(studentProfile?.subjects) && studentProfile.subjects.length > 0) {
+        const subjectFilter = buildStudentSubjectFilter(studentProfile.subjects);
+        if (subjectFilter) {
+          andClauses.push({
+            $or: [
+              { assignedStudentIds: session.userId },
+              ...(assignedTeachers.length > 0 ? [{ teacherId: { $in: assignedTeachers } }] : []),
+              subjectFilter,
+            ],
+          });
+        }
       }
       query.$and = andClauses;
 

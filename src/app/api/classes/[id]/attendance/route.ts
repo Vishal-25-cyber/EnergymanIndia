@@ -49,25 +49,70 @@ export async function GET(
       }
     });
 
-    // 2. Get all students enrolled in this batch, grade level, or who attended this class
-    const batchId =
-      typeof liveClass.batchId === "object"
-        ? (liveClass.batchId as any)?._id
-        : liveClass.batchId;
+    // 2. Get students assigned to this class and teacher
+    const teacherUserId = (liveClass.teacherId?._id || liveClass.teacherId)?.toString();
+    const TeacherProfile = (await import("@/models/TeacherProfile")).default;
+    const teacherProfile = await TeacherProfile.findOne({
+      $or: [{ userId: teacherUserId }, { _id: teacherUserId }],
+    }).lean();
 
-    const queryFilters: any[] = [];
-    if (batchId) queryFilters.push({ batchId });
-    if (liveClass.classLevel) queryFilters.push({ currentClass: liveClass.classLevel });
-    if (attendedUserIds.length > 0) queryFilters.push({ userId: { $in: attendedUserIds } });
+    const classAssignedIds = (liveClass.assignedStudentIds || [])
+      .map((id: any) => (id?._id || id).toString())
+      .filter(Boolean);
 
-    let studentProfiles = await StudentProfile.find(
-      queryFilters.length > 0 ? { $or: queryFilters } : {}
-    )
-      .populate("userId", "name email phone avatarUrl status")
-      .lean();
+    const teacherAssignedIds = (teacherProfile?.assignedStudentIds || [])
+      .map((id: any) => (id?._id || id).toString())
+      .filter(Boolean);
 
-    if (studentProfiles.length === 0) {
-      studentProfiles = await StudentProfile.find({})
+    const studentWithTeacher = teacherUserId
+      ? await StudentProfile.find({ assignedTeacherIds: teacherUserId }).select("userId").lean()
+      : [];
+
+    const explicitlyAssignedUserIds = Array.from(
+      new Set([
+        ...classAssignedIds,
+        ...teacherAssignedIds,
+        ...studentWithTeacher.map((s: any) => s.userId?.toString()).filter(Boolean),
+      ])
+    );
+
+    let studentProfiles: any[] = [];
+
+    if (explicitlyAssignedUserIds.length > 0) {
+      // Sync class assignedStudentIds if missing so future queries are instant
+      if (classAssignedIds.length === 0) {
+        LiveSession.findByIdAndUpdate(liveClass._id, {
+          assignedStudentIds: explicitlyAssignedUserIds,
+        }).catch(() => {});
+      }
+
+      // Show ONLY assigned students (and any student who actually attended)
+      const allowedUserIds = Array.from(new Set([...explicitlyAssignedUserIds, ...attendedUserIds]));
+      studentProfiles = await StudentProfile.find({
+        userId: { $in: allowedUserIds },
+        ...(liveClass.classLevel ? { currentClass: liveClass.classLevel } : {}),
+      })
+        .populate("userId", "name email phone avatarUrl status")
+        .lean();
+    } else if (teacherProfile?.teacherType === "B2B" && teacherProfile?.institutionName) {
+      // Institutional teacher: only students belonging to this institution
+      studentProfiles = await StudentProfile.find({
+        schoolName: { $regex: new RegExp(`^${teacherProfile.institutionName.trim()}$`, "i") },
+        ...(liveClass.classLevel ? { currentClass: liveClass.classLevel } : {}),
+        ...(batchId ? { batchId } : {}),
+      })
+        .populate("userId", "name email phone avatarUrl status")
+        .lean();
+    } else {
+      // Fallback for general unassigned classes
+      const queryFilters: any[] = [];
+      if (batchId) queryFilters.push({ batchId });
+      if (liveClass.classLevel) queryFilters.push({ currentClass: liveClass.classLevel });
+      if (attendedUserIds.length > 0) queryFilters.push({ userId: { $in: attendedUserIds } });
+
+      studentProfiles = await StudentProfile.find(
+        queryFilters.length > 0 ? { $or: queryFilters } : {}
+      )
         .populate("userId", "name email phone avatarUrl status")
         .lean();
     }
