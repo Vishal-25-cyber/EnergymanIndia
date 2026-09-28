@@ -13,6 +13,7 @@ import Notification from "@/models/Notification";
 import Payment from "@/models/Payment";
 import SystemSettings from "@/models/SystemSettings";
 import { getSubjectsForClassAndBoard } from "@/lib/curriculum";
+import { buildStudentClassAccessQuery, buildStudentSubjectFilter } from "@/lib/class-stream";
 
 export const dynamic = "force-dynamic";
 
@@ -122,6 +123,15 @@ export async function GET(req?: any) {
       ],
     };
 
+    const studentAccessQuery = buildStudentClassAccessQuery(studentProfile, session.userId);
+    const studentSubFilter = buildStudentSubjectFilter(studentProfile?.subjects);
+    const baseDashboardClassFilter: any = {
+      $and: [
+        studentAccessQuery,
+        ...(studentSubFilter ? [studentSubFilter] : []),
+      ],
+    };
+
     // Fetch REAL created live sessions, attendance, assignments, and payments directly from DB
     const [
       dbTodayClasses,
@@ -135,23 +145,10 @@ export async function GET(req?: any) {
       paymentsList,
     ] = await Promise.all([
       LiveSession.find({
+        ...baseDashboardClassFilter,
         $or: [
           { status: "LIVE" },
-          {
-            $and: [
-              {
-                $or: [
-                  { classLevel: currentClass },
-                  { classLevel: null },
-                  { classLevel: { $exists: false } },
-                  { batchId: batchId || null },
-                  { batchId: null },
-                  { batchId: { $exists: false } },
-                ],
-              },
-              { date: todayDateStr, status: { $in: ["PUBLISHED", "SCHEDULED", "LIVE"] } },
-            ],
-          },
+          { date: todayDateStr, status: { $in: ["PUBLISHED", "SCHEDULED", "LIVE"] } },
         ],
       })
         .populate("teacherId", "name avatarUrl email")
@@ -160,23 +157,10 @@ export async function GET(req?: any) {
         .lean(),
 
       LiveSession.find({
+        ...baseDashboardClassFilter,
         $or: [
           { status: "LIVE" },
-          {
-            $and: [
-              {
-                $or: [
-                  { classLevel: currentClass },
-                  { classLevel: null },
-                  { classLevel: { $exists: false } },
-                  { batchId: batchId || null },
-                  { batchId: null },
-                  { batchId: { $exists: false } },
-                ],
-              },
-              { status: { $in: ["PUBLISHED", "SCHEDULED", "LIVE"] }, date: { $gte: todayDateStr } },
-            ],
-          },
+          { status: { $in: ["PUBLISHED", "SCHEDULED", "LIVE"] }, date: { $gte: todayDateStr } },
         ],
       })
         .populate("teacherId", "name avatarUrl")
@@ -186,7 +170,7 @@ export async function GET(req?: any) {
         .lean(),
 
       LiveSession.find({
-        ...liveSessionFilter,
+        ...baseDashboardClassFilter,
         status: { $in: ["COMPLETED", "LIVE"] },
       }).lean(),
 

@@ -6,6 +6,7 @@ import LiveSession from "@/models/LiveSession";
 import StudentProfile from "@/models/StudentProfile";
 import { recordAuditLog } from "@/lib/audit";
 import { invalidateClassesCache } from "@/app/api/classes/route";
+import { resolveClassStreamAndStudents } from "@/lib/class-stream";
 
 export async function GET(
   req: NextRequest,
@@ -47,6 +48,37 @@ export async function GET(
     if (session && session.role === "STUDENT") {
       const studentProfile = await StudentProfile.findOne({ userId: session.userId });
       if (studentProfile) {
+        const isInstitutional =
+          studentProfile.studentType === "B2B" &&
+          Boolean(studentProfile.schoolName && !/individual/i.test(studentProfile.schoolName));
+
+        // Cross-stream lockout
+        if (isInstitutional && liveClass.streamType === "B2C") {
+          return NextResponse.json({ error: "Forbidden: This is an individual tutoring session." }, { status: 403 });
+        }
+        if (!isInstitutional && liveClass.streamType === "B2B") {
+          return NextResponse.json({ error: "Forbidden: This is an institutional class." }, { status: 403 });
+        }
+        if (
+          isInstitutional &&
+          liveClass.institutionName &&
+          !new RegExp(liveClass.institutionName.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i").test(
+            studentProfile.schoolName
+          )
+        ) {
+          return NextResponse.json({ error: "Forbidden: You do not belong to this institution." }, { status: 403 });
+        }
+
+        // Student allocation lockout
+        if (Array.isArray(liveClass.assignedStudentIds) && liveClass.assignedStudentIds.length > 0) {
+          const isAssigned = liveClass.assignedStudentIds.some(
+            (sId: any) => (sId?._id || sId).toString() === session.userId
+          );
+          if (!isAssigned) {
+            return NextResponse.json({ error: "Forbidden: You are not assigned to this class." }, { status: 403 });
+          }
+        }
+
         const studentBatchId = studentProfile.batchId?.toString();
         const classBatchId =
           typeof liveClass.batchId === "object"
@@ -54,7 +86,6 @@ export async function GET(
             : liveClass.batchId?.toString();
 
         if (classBatchId && studentBatchId && studentBatchId !== classBatchId) {
-          // If student was admitted to this class, allow them
           const isAdmitted = (liveClass.admittedStudents || []).some(
             (a: any) => String(a.userId) === String(session.userId)
           );
@@ -135,6 +166,20 @@ export async function PUT(
     if (materials !== undefined) liveClass.materials = materials;
     if (gracePeriodMinutes !== undefined) liveClass.gracePeriodMinutes = Number(gracePeriodMinutes);
     if (attendanceThresholdPercent !== undefined) liveClass.attendanceThresholdPercent = Number(attendanceThresholdPercent);
+
+    if (subject !== undefined || classLevel !== undefined) {
+      const { streamType, institutionName, assignedStudentIds } = await resolveClassStreamAndStudents({
+        teacherUserId: liveClass.teacherId.toString(),
+        classLevel: liveClass.classLevel,
+        subject: liveClass.subject,
+        batchId: liveClass.batchId?.toString(),
+      });
+      liveClass.streamType = streamType;
+      liveClass.institutionName = institutionName;
+      if (assignedStudentIds.length > 0) {
+        liveClass.assignedStudentIds = assignedStudentIds;
+      }
+    }
 
     await liveClass.save();
 

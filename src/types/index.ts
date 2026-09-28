@@ -154,6 +154,8 @@ export interface ILiveSession {
   title: string;
   subject: string;
   classLevel: ClassLevel;
+  streamType?: "B2C" | "B2B";
+  institutionName?: string;
   batchId: string | IBatch;
   teacherId: string | IUser;
   topic: string;

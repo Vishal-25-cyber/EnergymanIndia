@@ -62,6 +62,13 @@ const LiveSessionSchema = new Schema<ILiveSessionDocument>(
       default: "Class 10",
       index: true,
     },
+    streamType: {
+      type: String,
+      enum: ["B2C", "B2B"],
+      default: "B2C",
+      index: true,
+    },
+    institutionName: { type: String, default: "", trim: true, index: true },
     batchId: { type: Schema.Types.ObjectId, ref: "Batch", required: false, index: true },
     teacherId: { type: Schema.Types.ObjectId, ref: "User", required: true, index: true },
     assignedStudentIds: [{ type: Schema.Types.ObjectId, ref: "User" }],

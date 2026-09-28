@@ -7,6 +7,11 @@ import Batch from "@/models/Batch";
 import Notification from "@/models/Notification";
 import { recordAuditLog } from "@/lib/audit";
 import { sortClassesByPriority } from "@/lib/class-timing";
+import {
+  resolveClassStreamAndStudents,
+  buildStudentClassAccessQuery,
+  buildStudentSubjectFilter,
+} from "@/lib/class-stream";
 
 // In-memory cache for ultra-fast schedule & timetable responses
 interface ClassesCacheEntry {
@@ -112,41 +117,23 @@ export async function GET(req: NextRequest) {
           schoolName: "Individual Tutoring",
         });
       }
-      const currentClass = studentProfile?.currentClass || "Class 10";
-      const assignedTeachers = Array.isArray(studentProfile?.assignedTeacherIds) ? studentProfile.assignedTeacherIds : [];
+      // Auto-stamp streamType on legacy sessions without blocking GET
+      LiveSession.updateMany(
+        { streamType: { $exists: false }, institutionName: { $exists: true, $ne: "" } },
+        { $set: { streamType: "B2B" } }
+      ).catch(() => {});
+      LiveSession.updateMany(
+        { streamType: { $exists: false }, $or: [{ institutionName: "" }, { institutionName: { $exists: false } }] },
+        { $set: { streamType: "B2C" } }
+      ).catch(() => {});
 
-      const studentAccessConditions: any[] = [
-        { assignedStudentIds: session.userId },
-      ];
+      const accessQuery = buildStudentClassAccessQuery(studentProfile, session.userId);
+      const subjectFilter = buildStudentSubjectFilter(studentProfile?.subjects);
 
-      if (assignedTeachers.length > 0) {
-        studentAccessConditions.push({
-          teacherId: { $in: assignedTeachers },
-          classLevel: currentClass,
-        });
-      } else {
-        // Fallback for new unassigned trial students
-        studentAccessConditions.push({
-          classLevel: currentClass,
-          $or: [
-            { assignedStudentIds: { $exists: false } },
-            { assignedStudentIds: { $size: 0 } },
-          ],
-        });
+      const andClauses: any[] = [accessQuery];
+      if (subjectFilter) {
+        andClauses.push(subjectFilter);
       }
-
-      const andClauses: any[] = [{ $or: studentAccessConditions }];
-
-      if (Array.isArray(studentProfile?.subjects) && studentProfile.subjects.length > 0) {
-        andClauses.push({
-          $or: [
-            { subject: { $in: studentProfile.subjects } },
-            { subject: { $exists: false } },
-            { subject: null },
-          ],
-        });
-      }
-
       query.$and = andClauses;
 
       // Students should see live, published, scheduled or completed classes
@@ -278,6 +265,15 @@ export async function POST(req: NextRequest) {
       resolvedBatchId = fallbackBatch?._id;
     }
 
+    // Resolve class stream type (B2C vs B2B) and strictly isolated students
+    const { streamType, institutionName, assignedStudentIds, eligibleStudents } =
+      await resolveClassStreamAndStudents({
+        teacherUserId,
+        classLevel,
+        subject,
+        batchId: resolvedBatchId?.toString(),
+      });
+
     // Deduplication check: prevent creating duplicate session if an identical class exists
     const existingSession = await LiveSession.findOne({
       date,
@@ -294,6 +290,9 @@ export async function POST(req: NextRequest) {
       existingSession.startTime = resolvedStartTime;
       existingSession.endTime = resolvedEndTime;
       existingSession.status = isLiveNow ? "LIVE" : (status || existingSession.status);
+      existingSession.streamType = streamType;
+      existingSession.institutionName = institutionName;
+      existingSession.assignedStudentIds = assignedStudentIds;
       if (materials && Array.isArray(materials)) existingSession.materials = materials;
       if (resolvedBatchId) existingSession.batchId = resolvedBatchId;
       if (isLiveNow && !existingSession.actualStartTime) existingSession.actualStartTime = new Date();
@@ -334,8 +333,11 @@ export async function POST(req: NextRequest) {
       topic: topic.trim(),
       description: description.trim(),
       classLevel,
+      streamType,
+      institutionName,
       batchId: resolvedBatchId,
       teacherId: teacherUserId,
+      assignedStudentIds,
       date,
       startTime: resolvedStartTime,
       endTime: resolvedEndTime,
@@ -348,17 +350,10 @@ export async function POST(req: NextRequest) {
       actualStartTime: isLiveNow ? new Date() : undefined,
     });
 
-    // Notify enrolled students in this batch
+    // Notify ONLY strictly eligible students in this stream/subject
     try {
-      const eligibleStudents = await StudentProfile.find({
-        $or: [
-          { batchId: resolvedBatchId },
-          { currentClass: classLevel },
-        ],
-      });
-
       if (eligibleStudents.length > 0) {
-        const notifications = eligibleStudents.map((student) => ({
+        const notifications = eligibleStudents.map((student: any) => ({
           userId: student.userId,
           title: isLiveNow ? `Class is Live: ${subject}` : `New Class Scheduled: ${subject}`,
           message: `${resolvedTitle} on ${date} from ${startTime} to ${endTime}.`,

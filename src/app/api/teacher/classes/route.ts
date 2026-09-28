@@ -6,6 +6,7 @@ import StudentProfile from "@/models/StudentProfile";
 import TeacherProfile from "@/models/TeacherProfile";
 import Notification from "@/models/Notification";
 import { recordAuditLog } from "@/lib/audit";
+import { resolveClassStreamAndStudents } from "@/lib/class-stream";
 
 export async function GET(req: NextRequest) {
   try {
@@ -75,30 +76,14 @@ export async function POST(req: NextRequest) {
       status: { $ne: "CANCELLED" },
     });
 
-    // Query teacher profile to find allocated students (strictly isolated)
-    const teacherProfile = await TeacherProfile.findOne({ userId: session.userId }).lean();
-    let eligibleStudents: any[] = [];
-
-    if (teacherProfile?.assignedStudentIds && teacherProfile.assignedStudentIds.length > 0) {
-      // B2C or explicit student allocation
-      eligibleStudents = await StudentProfile.find({
-        userId: { $in: teacherProfile.assignedStudentIds },
-        ...(classLevel ? { currentClass: classLevel } : {}),
-      });
-    } else if (teacherProfile?.teacherType === "B2B" && teacherProfile?.institutionName) {
-      // B2B school students
-      eligibleStudents = await StudentProfile.find({
-        schoolName: { $regex: new RegExp(teacherProfile.institutionName.trim(), "i") },
-        ...(classLevel ? { currentClass: classLevel } : {}),
-      });
-    } else {
-      eligibleStudents = await StudentProfile.find({
+    // Resolve class stream type (B2C vs B2B) and strictly isolated students
+    const { streamType, institutionName, assignedStudentIds, eligibleStudents } =
+      await resolveClassStreamAndStudents({
+        teacherUserId: session.userId,
+        classLevel,
+        subject,
         batchId,
-        ...(classLevel ? { currentClass: classLevel } : {}),
       });
-    }
-
-    const assignedStudentUserIds = eligibleStudents.map((st) => st.userId);
 
     if (existingSession) {
       existingSession.topic = topic;
@@ -106,7 +91,9 @@ export async function POST(req: NextRequest) {
       existingSession.description = description || "";
       existingSession.endTime = endTime;
       existingSession.status = normalizedStatus;
-      existingSession.assignedStudentIds = assignedStudentUserIds;
+      existingSession.streamType = streamType;
+      existingSession.institutionName = institutionName;
+      existingSession.assignedStudentIds = assignedStudentIds;
       if (Array.isArray(materials) && materials.length) existingSession.materials = materials;
       await existingSession.save();
 
@@ -123,9 +110,11 @@ export async function POST(req: NextRequest) {
       topic,
       description: description || "",
       classLevel,
+      streamType,
+      institutionName,
       batchId,
       teacherId: session.userId,
-      assignedStudentIds: assignedStudentUserIds,
+      assignedStudentIds,
       date,
       startTime,
       endTime,

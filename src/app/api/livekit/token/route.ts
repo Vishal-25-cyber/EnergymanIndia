@@ -57,6 +57,26 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Student profile not found." }, { status: 404 });
       }
 
+      const isInstitutional =
+        studentProfile.studentType === "B2B" &&
+        Boolean(studentProfile.schoolName && !/individual/i.test(studentProfile.schoolName));
+
+      if (isInstitutional && liveSession.streamType === "B2C") {
+        return NextResponse.json({ error: "Forbidden: This is a private tutoring session." }, { status: 403 });
+      }
+      if (!isInstitutional && liveSession.streamType === "B2B") {
+        return NextResponse.json({ error: "Forbidden: This is an institutional class." }, { status: 403 });
+      }
+      if (
+        isInstitutional &&
+        liveSession.institutionName &&
+        !new RegExp(liveSession.institutionName.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i").test(
+          studentProfile.schoolName
+        )
+      ) {
+        return NextResponse.json({ error: "Forbidden: You do not belong to this institution." }, { status: 403 });
+      }
+
       // If class has completed, students cannot connect
       if (liveSession.status === "COMPLETED") {
         return NextResponse.json(

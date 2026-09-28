@@ -7,6 +7,7 @@ import Notification from "@/models/Notification";
 import StaffAttendance from "@/models/StaffAttendance";
 import { liveClassCreateSchema } from "@/lib/validations/auth";
 import { recordAuditLog } from "@/lib/audit";
+import { resolveClassStreamAndStudents } from "@/lib/class-stream";
 
 export async function GET(req: NextRequest) {
   try {
@@ -48,12 +49,23 @@ export async function POST(req: NextRequest) {
 
     const roomId = `acuity-${data.classLevel.toLowerCase().replace(" ", "-")}-${Date.now()}`;
 
+    const { streamType, institutionName, assignedStudentIds, eligibleStudents } =
+      await resolveClassStreamAndStudents({
+        teacherUserId: session.userId,
+        classLevel: data.classLevel,
+        subject: data.subject,
+        batchId: data.batchId,
+      });
+
     const newSession = await LiveSession.create({
       title: data.title,
       subject: data.subject,
       classLevel: data.classLevel,
+      streamType,
+      institutionName,
       batchId: data.batchId,
       teacherId: session.userId,
+      assignedStudentIds,
       topic: data.topic,
       date: data.date,
       startTime: data.startTime,
@@ -63,12 +75,7 @@ export async function POST(req: NextRequest) {
       status: "SCHEDULED",
     });
 
-    // Notify all eligible students in that class & batch
-    const eligibleStudents = await StudentProfile.find({
-      currentClass: data.classLevel,
-      batchId: data.batchId,
-    });
-
+    // Notify only strictly eligible students in that class stream & subject
     if (eligibleStudents.length > 0) {
       const notificationDocs = eligibleStudents.map((st) => ({
         userId: st.userId,

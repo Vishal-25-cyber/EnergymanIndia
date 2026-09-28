@@ -7,6 +7,7 @@ import User from "@/models/User";
 import Batch from "@/models/Batch";
 import { getStudentFeeAccessStatus } from "@/lib/fee-guard";
 import { sortClassesByPriority } from "@/lib/class-timing";
+import { buildStudentClassAccessQuery, buildStudentSubjectFilter } from "@/lib/class-stream";
 
 export const dynamic = "force-dynamic";
 
@@ -92,40 +93,26 @@ export async function GET(req: NextRequest) {
       `Class ${profile.currentClass?.replace(/Class\s*/i, "").trim()}`,
     ].filter(Boolean);
 
-    const assignedTeachers = Array.isArray(profile.assignedTeacherIds) ? profile.assignedTeacherIds : [];
+    // Auto-stamp streamType on legacy sessions without blocking GET
+    LiveSession.updateMany(
+      { streamType: { $exists: false }, institutionName: { $exists: true, $ne: "" } },
+      { $set: { streamType: "B2B" } }
+    ).catch(() => {});
+    LiveSession.updateMany(
+      { streamType: { $exists: false }, $or: [{ institutionName: "" }, { institutionName: { $exists: false } }] },
+      { $set: { streamType: "B2C" } }
+    ).catch(() => {});
 
-    const studentAccessConditions: any[] = [
-      { assignedStudentIds: session.userId },
-    ];
-
-    if (assignedTeachers.length > 0) {
-      studentAccessConditions.push({
-        teacherId: { $in: assignedTeachers },
-        classLevel: { $in: classVariants },
-      });
-    } else {
-      studentAccessConditions.push({
-        classLevel: { $in: classVariants },
-        $or: [
-          { assignedStudentIds: { $exists: false } },
-          { assignedStudentIds: { $size: 0 } },
-        ],
-      });
-    }
+    const accessQuery = buildStudentClassAccessQuery(profile, session.userId);
+    const subjectFilter = buildStudentSubjectFilter(profile?.subjects);
 
     const andConditions: any[] = [
-      { $or: studentAccessConditions },
+      accessQuery,
       { status: { $in: ["PUBLISHED", "SCHEDULED", "LIVE", "COMPLETED"] } },
     ];
 
-    if (Array.isArray(profile.subjects) && profile.subjects.length > 0) {
-      andConditions.push({
-        $or: [
-          { subject: { $in: profile.subjects } },
-          { subject: { $exists: false } },
-          { subject: null },
-        ],
-      });
+    if (subjectFilter) {
+      andConditions.push(subjectFilter);
     }
 
     const sessionQuery: any = { $and: andConditions };

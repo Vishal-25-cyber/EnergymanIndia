@@ -3,6 +3,7 @@ import connectToDatabase from "@/lib/db/mongoose";
 import { getSession } from "@/lib/auth/session";
 import LiveSession from "@/models/LiveSession";
 import StudentProfile from "@/models/StudentProfile";
+import { buildStudentClassAccessQuery, buildStudentSubjectFilter } from "@/lib/class-stream";
 
 export async function GET(req: NextRequest) {
   try {
@@ -22,36 +23,18 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Student profile not found." }, { status: 404 });
       }
 
-      const assignedTeachers = Array.isArray(studentProfile?.assignedTeacherIds) ? studentProfile.assignedTeacherIds : [];
+      const accessQuery = buildStudentClassAccessQuery(studentProfile, session.userId);
+      const subjectFilter = buildStudentSubjectFilter(studentProfile.subjects);
 
-      const studentConditions: any[] = [
-        { assignedStudentIds: session.userId },
+      const andClauses: any[] = [
+        accessQuery,
+        { status: { $in: ["PUBLISHED", "SCHEDULED", "LIVE"] }, date: { $gte: todayStr } },
       ];
-
-      if (assignedTeachers.length > 0) {
-        studentConditions.push({
-          teacherId: { $in: assignedTeachers },
-          classLevel: studentProfile.currentClass,
-        });
-      } else {
-        studentConditions.push({
-          classLevel: studentProfile.currentClass,
-          $or: [
-            { assignedStudentIds: { $exists: false } },
-            { assignedStudentIds: { $size: 0 } },
-          ],
-        });
+      if (subjectFilter) {
+        andClauses.push(subjectFilter);
       }
 
-      query = {
-        $or: studentConditions,
-        status: { $in: ["PUBLISHED", "SCHEDULED", "LIVE"] },
-        date: { $gte: todayStr },
-      };
-
-      if (Array.isArray(studentProfile.subjects) && studentProfile.subjects.length > 0) {
-        query.subject = { $in: studentProfile.subjects };
-      }
+      query.$and = andClauses;
     } else if (session.role === "TEACHER") {
       query = {
         teacherId: session.userId,
