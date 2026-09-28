@@ -56,14 +56,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Teacher profile not found" }, { status: 404 });
     }
 
-    const tType = teacherProfile.teacherType || "B2C";
-    if (tType !== "B2C") {
-      return NextResponse.json({
-        error: "Auto-allocation is only for B2C Individual Tutors. B2B teachers are matched by institution.",
-        matches: [],
-      }, { status: 400 });
-    }
-
     const { teacherClasses, teacherSubjects } = resolveClassesAndSubjects(
       teacherProfile,
       Array.isArray(bodyClasses) ? bodyClasses : undefined,
@@ -79,12 +71,18 @@ export async function POST(req: NextRequest) {
 
     const existingStudentIds = (teacherProfile.assignedStudentIds ?? []).map((id: any) => id.toString());
 
-    // Fetch all B2C students who are not yet assigned to this teacher
-    const candidateStudents = await StudentProfile.find(
-      b2cStudentMongoQuery({
-        userId: { $nin: existingStudentIds },
-      })
-    ).populate("userId", "name email phone status avatarUrl").lean() as any[];
+    // Fetch students from the teacher's institution who are not yet assigned to this teacher
+    const studentQuery: any = {
+      userId: { $nin: existingStudentIds },
+    };
+    if (teacherProfile.institutionName && teacherProfile.institutionName.trim()) {
+      const escaped = teacherProfile.institutionName.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+      studentQuery.schoolName = { $regex: new RegExp(escaped, "i") };
+    }
+
+    const candidateStudents = await StudentProfile.find(studentQuery)
+      .populate("userId", "name email phone status avatarUrl")
+      .lean() as any[];
 
     // Filter using single subject match & class match
     const eligible: any[] = [];
@@ -157,8 +155,8 @@ export async function POST(req: NextRequest) {
         const overlap = s.overlappingSubjects || [];
         await Notification.create({
           userId: s.userId._id,
-          title: "Tutor Assigned!",
-          message: `You have been matched with ${teacherName} for ${overlap.join(", ") || "General"} — ${s.currentClass || "Individual Tutoring"}. Your personalised tutoring sessions will begin soon!`,
+          title: "Faculty Assigned!",
+          message: `You have been matched with ${teacherName} for ${overlap.join(", ") || "General"} — ${s.currentClass || "Academic Classes"}. Your live sessions will begin soon!`,
           type: "SYSTEM",
         });
       } catch (_) {}

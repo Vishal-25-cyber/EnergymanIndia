@@ -10,7 +10,7 @@ const StudentProfileSchema = new Schema<IStudentProfileDocument>(
     studentType: {
       type: String,
       enum: ["B2B", "B2C"],
-      default: "B2C",
+      default: "B2B",
       index: true,
     },
     schoolName: { type: String, required: true, trim: true },

@@ -369,7 +369,7 @@ export default function HomePage() {
     "Class 10",
   ];
 
-  const [sCategory, setSCategory] = useState<"B2C" | "B2B">("B2C");
+  const [sCategory, setSCategory] = useState<"B2C" | "B2B">("B2B");
   const [sSchool, setSSchool] = useState("");
   const [sDistrict, setSDistrict] = useState("");
   const [sBoard, setSBoard] = useState<"CBSE" | "State Board">("CBSE");
@@ -391,7 +391,7 @@ export default function HomePage() {
     }
   };
 
-  const [tCategory, setTCategory] = useState<"B2C" | "B2B">("B2C");
+  const [tCategory, setTCategory] = useState<"B2C" | "B2B">("B2B");
   const [tInstitution, setTInstitution] = useState("");
   const [tQual, setTQual] = useState("");
   const [tSpec, setTSpec] = useState("");
@@ -642,7 +642,7 @@ export default function HomePage() {
   };
 
   const v2s = () => {
-    if (sCategory === "B2B" && !sSchool.trim()) { setErr("Please enter your school / institution name."); return false; }
+    if (!sSchool.trim()) { setErr("Please enter your school / institution name."); return false; }
     if (!sDistrict.trim()) { setErr("Please enter your district."); return false; }
     if (sSubjects.length === 0) { setErr("Please select at least one subject needed."); return false; }
     if (!sBatch && batches.length > 0) {
@@ -652,7 +652,7 @@ export default function HomePage() {
   };
 
   const v2t = () => {
-    if (tCategory === "B2B" && !tInstitution.trim()) { setErr("Please enter your school / institution name."); return false; }
+    if (!tInstitution.trim()) { setErr("Please enter your school / institution name."); return false; }
     if (!tQual.trim()) { setErr("Please enter your qualification."); return false; }
     if (!tSpec.trim()) { setErr("Please enter your specialization."); return false; }
     if (!tDistrict.trim()) { setErr("Please enter your district."); return false; }
@@ -689,8 +689,8 @@ export default function HomePage() {
       };
       if (signupRole === "STUDENT") {
         Object.assign(body, {
-          studentType: sCategory,
-          schoolName: sCategory === "B2C" ? (sSchool.trim() || "Individual Tutoring") : sSchool.trim(),
+          studentType: "B2B",
+          schoolName: sSchool.trim(),
           district: sDistrict.trim(),
           board: sBoard,
           currentClass: sClass,
@@ -703,8 +703,8 @@ export default function HomePage() {
         });
       } else {
         Object.assign(body, {
-          teacherType: tCategory,
-          institutionName: tCategory === "B2B" ? tInstitution.trim() : "",
+          teacherType: "B2B",
+          institutionName: tInstitution.trim(),
           qualification: tQual,
           specialization: tSpec,
           experienceYears: tExp ? Number(tExp) : 0,
@@ -1318,46 +1318,17 @@ export default function HomePage() {
                     {/* Step 2: Student Academic Details */}
                     {step === 2 && signupRole === "STUDENT" && (
                       <div className="space-y-3.5">
-                        {/* Student Stream Switcher: B2C vs B2B */}
-                        <div className="space-y-1">
-                          <label className="block text-xs font-bold text-slate-700">Tutoring Type *</label>
-                          <div className="grid grid-cols-2 gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => setSCategory("B2C")}
-                              className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
-                                sCategory === "B2C"
-                                  ? "bg-[#002137] text-white border-[#002137] shadow-xs"
-                                  : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
-                              }`}
-                            >
-                              Individual Tutoring (B2C)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setSCategory("B2B")}
-                              className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
-                                sCategory === "B2B"
-                                  ? "bg-[#002137] text-white border-[#002137] shadow-xs"
-                                  : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
-                              }`}
-                            >
-                              School Student (B2B)
-                            </button>
-                          </div>
-                        </div>
-
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           <div className="space-y-1">
                             <label htmlFor="signup-school" className="block text-xs font-bold text-slate-700">
-                              {sCategory === "B2B" ? "School / Institution Name *" : "School Name (Optional)"}
+                              School / Institution Name *
                             </label>
                             <input
                               id="signup-school"
                               type="text"
                               value={sSchool}
                               onChange={(e) => setSSchool(e.target.value)}
-                              placeholder={sCategory === "B2B" ? "e.g. SSVS Matriculation" : "e.g. Current School / Home"}
+                              placeholder="e.g. SSVS Matriculation Higher Secondary School"
                               className="w-full px-4 py-2.5 sm:py-3 text-sm rounded-xl border border-slate-300 bg-slate-50/50 hover:bg-white focus:bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-3 focus:ring-[#004b79]/15 focus:border-[#004b79] transition-all font-medium"
                             />
                           </div>
@@ -1497,50 +1468,19 @@ export default function HomePage() {
                     {/* Step 2: Teacher Preferences & Profile */}
                     {step === 2 && signupRole === "TEACHER" && (
                       <div className="space-y-3.5">
-                        {/* Teacher Stream Switcher: B2C vs B2B */}
                         <div className="space-y-1">
-                          <label className="block text-xs font-bold text-slate-700">Faculty Category *</label>
-                          <div className="grid grid-cols-2 gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => setTCategory("B2C")}
-                              className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
-                                tCategory === "B2C"
-                                  ? "bg-[#002137] text-white border-[#002137] shadow-xs"
-                                  : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
-                              }`}
-                            >
-                              Individual Tutor (B2C)
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setTCategory("B2B")}
-                              className={`py-2 px-2 text-xs font-bold rounded-xl border transition-all cursor-pointer text-center ${
-                                tCategory === "B2B"
-                                  ? "bg-[#002137] text-white border-[#002137] shadow-xs"
-                                  : "bg-white text-slate-700 border-slate-200 hover:border-slate-300"
-                              }`}
-                            >
-                              Institutional Faculty (B2B)
-                            </button>
-                          </div>
+                          <label htmlFor="signup-teacher-institution" className="block text-xs font-bold text-slate-700">
+                            School / Institution Name *
+                          </label>
+                          <input
+                            id="signup-teacher-institution"
+                            type="text"
+                            value={tInstitution}
+                            onChange={(e) => setTInstitution(e.target.value)}
+                            placeholder="e.g. SSVS Matriculation Higher Secondary School"
+                            className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-slate-50/50 hover:bg-white focus:bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-3 focus:ring-[#004b79]/15 focus:border-[#004b79] transition-all font-medium"
+                          />
                         </div>
-
-                        {tCategory === "B2B" && (
-                          <div className="space-y-1">
-                            <label htmlFor="signup-teacher-institution" className="block text-xs font-bold text-slate-700">
-                              School / Institution Name *
-                            </label>
-                            <input
-                              id="signup-teacher-institution"
-                              type="text"
-                              value={tInstitution}
-                              onChange={(e) => setTInstitution(e.target.value)}
-                              placeholder="e.g. SSVS Matriculation Higher Secondary School"
-                              className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 bg-slate-50/50 hover:bg-white focus:bg-white"
-                            />
-                          </div>
-                        )}
 
                         {/* Classes willing to teach */}
                         <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50/70 p-3">

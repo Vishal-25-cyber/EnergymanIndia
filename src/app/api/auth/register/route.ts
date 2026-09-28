@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     if (role === "STUDENT") {
       const {
         name, email, phone, password,
-        studentType = "B2C",
+        studentType = "B2B",
         schoolName, district, board, currentClass, batchId,
         parentName, parentPhone, gender, dob,
         subjects = [],
@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       if (!name || !email || !phone || !password) {
         return NextResponse.json({ error: "Name, email, phone and password are required." }, { status: 400 });
       }
-      const resolvedSchoolName = (schoolName || "").trim() || (studentType === "B2C" ? "Individual Tutoring" : "");
+      const resolvedSchoolName = (schoolName || "").trim();
       if (!resolvedSchoolName || !board || !currentClass || !batchId) {
         return NextResponse.json({ error: "School/Institution name, board, class and batch are required." }, { status: 400 });
       }
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
       await StudentProfile.create({
         userId: user._id,
         studentId: formattedStudentId,
-        studentType: studentType === "B2B" ? "B2B" : "B2C",
+        studentType: "B2B",
         schoolName: resolvedSchoolName,
         district: district?.trim() || "",
         board,
@@ -138,7 +138,6 @@ export async function POST(req: NextRequest) {
     if (role === "TEACHER") {
       const {
         name, email, phone, password,
-        teacherType = "B2C",
         institutionName = "",
         qualification, specialization, experienceYears, district, address,
         classesTaught, subjects,
@@ -147,8 +146,8 @@ export async function POST(req: NextRequest) {
       if (!name || !email || !phone || !password) {
         return NextResponse.json({ error: "Name, email, phone and password are required." }, { status: 400 });
       }
-      if (teacherType === "B2B" && !institutionName.trim()) {
-        return NextResponse.json({ error: "Institution / School name is required for Institutional Teachers." }, { status: 400 });
+      if (!institutionName.trim()) {
+        return NextResponse.json({ error: "School / Institution name is required." }, { status: 400 });
       }
       if (!qualification || !specialization) {
         return NextResponse.json({ error: "Qualification and specialization are required." }, { status: 400 });
@@ -187,8 +186,8 @@ export async function POST(req: NextRequest) {
       await TeacherProfile.create({
         userId: user._id,
         staffId: formattedStaffId,
-        teacherType: teacherType === "B2B" ? "B2B" : "B2C",
-        institutionName: teacherType === "B2B" ? institutionName.trim() : "",
+        teacherType: "B2B",
+        institutionName: institutionName.trim(),
         qualification: qualification.trim(),
         specialization: specialization.trim(),
         subjects: safeSubjects,

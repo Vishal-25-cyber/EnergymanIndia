@@ -606,7 +606,7 @@ export async function getDistinctSchoolsList() {
   profiles.forEach((p: any) => {
     if (!p.userId) return;
     const rawSchool = (p.schoolName || "").trim();
-    if (!rawSchool) return;
+    if (!rawSchool || /individual/i.test(rawSchool)) return;
     const existing = schoolMap.get(rawSchool);
     if (existing) {
       existing.studentCount += 1;

@@ -69,6 +69,21 @@ export default function AdminTeachersPage() {
   const [allocatableStudents, setAllocatableStudents] = useState<any[]>([]);
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [studentSearch, setStudentSearch] = useState("");
+  const [availableSchools, setAvailableSchools] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/teacher/reports/school")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data.schools)) {
+          const names = data.schools
+            .map((s: any) => s.schoolName?.trim())
+            .filter((n: string) => n && !/individual/i.test(n));
+          setAvailableSchools(Array.from(new Set(names)).sort());
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const [editForm, setEditForm] = useState({
     name: "",
@@ -77,7 +92,7 @@ export default function AdminTeachersPage() {
     qualification: "",
     specialization: "",
     experienceYears: 0,
-    teacherType: "B2C" as "B2C" | "B2B",
+    teacherType: "B2B" as "B2C" | "B2B",
     institutionName: "",
     subjects: [] as string[],
     subjectsInput: "",
@@ -121,8 +136,8 @@ export default function AdminTeachersPage() {
     setLoadingStudents(true);
     try {
       const params = new URLSearchParams();
-      if (type && type !== "ALL") params.append("studentType", type);
-      if (school && type !== "B2C") params.append("schoolName", school);
+      params.append("studentType", "B2B");
+      if (school) params.append("schoolName", school);
       if (teacherClasses && teacherClasses.length > 0)
         params.append("classes", teacherClasses.join(","));
       if (teacherSubjects && teacherSubjects.length > 0)
@@ -153,7 +168,6 @@ export default function AdminTeachersPage() {
 
   const openEditModal = (t: any) => {
     setEditTeacher(t);
-    const teacherType = (t.teacherType || "B2C") as "B2C" | "B2B";
     const institution = t.institutionName || "";
     const rawList = (t.assignedStudents && t.assignedStudents.length > 0) ? t.assignedStudents : (t.assignedStudentIds || []);
 
@@ -189,7 +203,7 @@ export default function AdminTeachersPage() {
       qualification: t.qualification || "",
       specialization: t.specialization || "",
       experienceYears: t.experienceYears || 0,
-      teacherType,
+      teacherType: "B2B",
       institutionName: institution,
       subjects: t.subjects || [],
       subjectsInput: (t.subjects || []).join(", "),
@@ -203,19 +217,19 @@ export default function AdminTeachersPage() {
     });
     setStudentSearch("");
     const tUserId = (t.userId?._id || t.userId || t._id)?.toString();
-    fetchAllocatableStudents(teacherType, institution, tClasses, tSubjects, tUserId);
+    fetchAllocatableStudents("B2B", institution, tClasses, tSubjects, tUserId);
   };
 
-  // Synchronize allocatable students whenever assigned classes/subjects change in modal
+  // Synchronize allocatable students whenever assigned classes/subjects or institution change in modal
   useEffect(() => {
-    if (!editTeacher || editForm.teacherType !== "B2C") return;
+    if (!editTeacher) return;
     const tUserId = (editTeacher.userId?._id || editTeacher.userId || editTeacher._id)?.toString();
     if (!tUserId) return;
 
     const timer = setTimeout(() => {
       fetchAllocatableStudents(
-        "B2C",
-        "",
+        "B2B",
+        editForm.institutionName,
         editForm.assignedClasses,
         editForm.assignedSubjects,
         tUserId
@@ -223,7 +237,7 @@ export default function AdminTeachersPage() {
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [editForm.assignedClasses, editForm.assignedSubjects, editTeacher]);
+  }, [editForm.assignedClasses, editForm.assignedSubjects, editForm.institutionName, editTeacher]);
 
   const handleUpdateStatus = async (teacherUserId: string, newStatus: string) => {
     try {
@@ -280,8 +294,8 @@ export default function AdminTeachersPage() {
           experienceYears: Number(editForm.experienceYears),
           subjects: subjectsArray.length > 0 ? subjectsArray : editForm.assignedSubjects,
           classesTaught: editForm.classesTaught.length > 0 ? editForm.classesTaught : editForm.assignedClasses,
-          teacherType: editForm.teacherType,
-          institutionName: editForm.teacherType === "B2B" ? editForm.institutionName.trim() : "",
+          teacherType: "B2B",
+          institutionName: editForm.institutionName.trim(),
           assignedSubjects: editForm.assignedSubjects,
           assignedClasses: editForm.assignedClasses,
           assignedStudentIds: editForm.assignedStudentIds,
@@ -516,15 +530,9 @@ export default function AdminTeachersPage() {
                     </div>
 
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      {t.teacherType === "B2B" ? (
-                        <span className="font-bold text-[10px] px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
-                          B2B: {t.institutionName || "School Faculty"}
-                        </span>
-                      ) : (
-                        <span className="font-bold text-[10px] px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
-                          B2C: Individual Tutor
-                        </span>
-                      )}
+                      <span className="font-bold text-[10px] px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                        {t.institutionName ? `Institution: ${t.institutionName}` : "Institutional Faculty"}
+                      </span>
                     </div>
 
                     <p className="text-[11px] text-slate-400 font-mono truncate">
@@ -637,62 +645,77 @@ export default function AdminTeachersPage() {
           isOpen={!!editTeacher}
           onClose={() => setEditTeacher(null)}
           title={`Allocate & Manage Faculty: ${editTeacher.userId?.name || "Faculty Specialist"}`}
-          description="Configure B2B / B2C stream, allocate specific students, and assign classes & subjects handled."
+          description="Pick the institution, allocate the particular group of students, and assign classes & subjects handled."
           maxWidth="xl"
         >
           <form onSubmit={handleSaveTeacherEdit} className="space-y-4 pt-1 text-xs">
-            {/* Stream Selector: B2C vs B2B */}
-            <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 space-y-2">
-              <label className="block font-bold text-slate-800 dark:text-slate-200">
-                Tutoring Stream &amp; Classification *
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditForm({ ...editForm, teacherType: "B2C" });
-                    fetchAllocatableStudents("B2C", "");
-                  }}
-                  className={`py-2 px-3 rounded-xl font-bold text-xs border transition-all cursor-pointer text-center ${
-                    editForm.teacherType === "B2C"
-                      ? "bg-sky-600 text-white border-sky-600 shadow-sm"
-                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
-                  }`}
-                >
-                  B2C — Individual Tutor
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditForm({ ...editForm, teacherType: "B2B" });
-                    fetchAllocatableStudents("B2B", editForm.institutionName);
-                  }}
-                  className={`py-2 px-3 rounded-xl font-bold text-xs border transition-all cursor-pointer text-center ${
-                    editForm.teacherType === "B2B"
-                      ? "bg-purple-600 text-white border-purple-600 shadow-sm"
-                      : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
-                  }`}
-                >
-                  B2B — Institutional Faculty
-                </button>
+            {/* Institution / School Picker */}
+            <div className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <label className="block font-bold text-slate-800 dark:text-slate-200">
+                  Institution / School *
+                </label>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300">
+                  Institutional Faculty
+                </span>
               </div>
+              <p className="text-[11px] text-slate-500">
+                Select an institution from the list or enter the institution name to collect and allocate its student group.
+              </p>
 
-              {editForm.teacherType === "B2B" && (
-                <div className="pt-2">
-                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">
-                    Institution / School Name *
+              {availableSchools.length > 0 && (
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    Choose from Registered Institutions:
                   </label>
-                  <Input
-                    required={editForm.teacherType === "B2B"}
-                    placeholder="e.g. SSVS Matriculation Higher Secondary School"
-                    value={editForm.institutionName}
+                  <select
+                    value={availableSchools.find((s) => s.toLowerCase() === editForm.institutionName.toLowerCase()) || ""}
                     onChange={(e) => {
-                      setEditForm({ ...editForm, institutionName: e.target.value });
-                      fetchAllocatableStudents("B2B", e.target.value);
+                      const val = e.target.value;
+                      if (val) {
+                        setEditForm({ ...editForm, institutionName: val, teacherType: "B2B" });
+                        fetchAllocatableStudents(
+                          "B2B",
+                          val,
+                          editForm.assignedClasses,
+                          editForm.assignedSubjects,
+                          (editTeacher.userId?._id || editTeacher.userId || editTeacher._id)?.toString()
+                        );
+                      }
                     }}
-                  />
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
+                  >
+                    <option value="">-- Choose registered institution ({availableSchools.length}) --</option>
+                    {availableSchools.map((s) => (
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               )}
+
+              <div>
+                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                  {availableSchools.length > 0 ? "Or Enter / Edit Institution Name:" : "Institution / School Name *"}
+                </label>
+                <Input
+                  required
+                  placeholder="e.g. SSVS Matriculation Higher Secondary School"
+                  value={editForm.institutionName}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setEditForm({ ...editForm, institutionName: val, teacherType: "B2B" });
+                    fetchAllocatableStudents(
+                      "B2B",
+                      val,
+                      editForm.assignedClasses,
+                      editForm.assignedSubjects,
+                      (editTeacher.userId?._id || editTeacher.userId || editTeacher._id)?.toString()
+                    );
+                  }}
+                />
+              </div>
             </div>
 
             {/* Basic Info */}
@@ -846,15 +869,42 @@ export default function AdminTeachersPage() {
                     <span>Allocated Students ({editForm.assignedStudentIds.length})</span>
                   </h3>
                   <p className="text-[11px] text-slate-500">
-                    {editForm.teacherType === "B2B"
-                      ? `Select school students from ${editForm.institutionName || "institution"} to allocate to this staff.`
-                      : "Select individual tutoring students to allocate to this private tutor."}
+                    Select students from {editForm.institutionName || "the chosen institution"} to allocate to this staff member.
                   </p>
                 </div>
 
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
-                  {editForm.assignedStudentIds.length} Assigned
-                </span>
+                <div className="flex items-center gap-2">
+                  {allocatableStudents.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const allIds = allocatableStudents.map(getStudentId).filter(Boolean);
+                        const allSelected = allIds.every((id) => editForm.assignedStudentIds.includes(id));
+                        if (allSelected) {
+                          setEditForm({
+                            ...editForm,
+                            assignedStudentIds: editForm.assignedStudentIds.filter((id) => !allIds.includes(id)),
+                          });
+                        } else {
+                          const combined = Array.from(new Set([...editForm.assignedStudentIds, ...allIds]));
+                          setEditForm({
+                            ...editForm,
+                            assignedStudentIds: combined,
+                          });
+                        }
+                      }}
+                      className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-[#004b79]/30 text-[#004b79] dark:text-sky-300 hover:bg-[#004b79]/10 transition-colors cursor-pointer"
+                    >
+                      {allocatableStudents.length > 0 &&
+                      allocatableStudents.every((st) => editForm.assignedStudentIds.includes(getStudentId(st)))
+                        ? "Deselect All"
+                        : "Select All Students"}
+                    </button>
+                  )}
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                    {editForm.assignedStudentIds.length} Assigned
+                  </span>
+                </div>
               </div>
 
 

@@ -60,17 +60,11 @@ export async function GET(
           Array.isArray(liveClass.assignedStudentIds) &&
           liveClass.assignedStudentIds.some((sId: any) => (sId?._id || sId).toString() === session.userId);
 
-        // Cross-stream and unassigned lockout
+        // Institution and assignment lockout
         if (!isAssignedToThisTeacher && !isAssignedStudent) {
-          if (isInstitutional && liveClass.streamType === "B2C") {
-            return NextResponse.json({ error: "Forbidden: This is an individual tutoring session." }, { status: 403 });
-          }
-          if (!isInstitutional && liveClass.streamType === "B2B") {
-            return NextResponse.json({ error: "Forbidden: This is an institutional class." }, { status: 403 });
-          }
           if (
-            isInstitutional &&
             liveClass.institutionName &&
+            studentProfile.schoolName &&
             !new RegExp(liveClass.institutionName.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i").test(
               studentProfile.schoolName
             )

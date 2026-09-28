@@ -65,7 +65,7 @@ const LiveSessionSchema = new Schema<ILiveSessionDocument>(
     streamType: {
       type: String,
       enum: ["B2C", "B2B"],
-      default: "B2C",
+      default: "B2B",
       index: true,
     },
     institutionName: { type: String, default: "", trim: true, index: true },

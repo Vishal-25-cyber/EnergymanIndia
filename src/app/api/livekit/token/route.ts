@@ -66,15 +66,9 @@ export async function POST(req: NextRequest) {
       );
 
       if (!isAssignedToTeacher && !isExplicitlyAssigned) {
-        if (isInstitutional && liveSession.streamType === "B2C") {
-          return NextResponse.json({ error: "Forbidden: This is a private tutoring session." }, { status: 403 });
-        }
-        if (!isInstitutional && liveSession.streamType === "B2B") {
-          return NextResponse.json({ error: "Forbidden: This is an institutional class." }, { status: 403 });
-        }
         if (
-          isInstitutional &&
           liveSession.institutionName &&
+          studentProfile.schoolName &&
           !new RegExp(liveSession.institutionName.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&"), "i").test(
             studentProfile.schoolName
           )

@@ -99,12 +99,8 @@ export async function GET(req: NextRequest) {
 
     // Auto-stamp streamType on legacy sessions without blocking GET
     LiveSession.updateMany(
-      { streamType: { $exists: false }, institutionName: { $exists: true, $ne: "" } },
+      { streamType: { $exists: false } },
       { $set: { streamType: "B2B" } }
-    ).catch(() => {});
-    LiveSession.updateMany(
-      { streamType: { $exists: false }, $or: [{ institutionName: "" }, { institutionName: { $exists: false } }] },
-      { $set: { streamType: "B2C" } }
     ).catch(() => {});
 
     const assignedTeachers = await getAssignedTeacherIdsForStudent(profile, session.userId);

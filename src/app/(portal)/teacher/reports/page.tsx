@@ -229,7 +229,7 @@ export default function TeacherStudentReportsPage() {
               }`}
             >
               <User className="w-3.5 h-3.5" />
-              <span className={reportMode === "INDIVIDUAL" ? "text-white font-bold" : ""}>Individual Student</span>
+              <span className={reportMode === "INDIVIDUAL" ? "text-white font-bold" : ""}>Student Report</span>
             </button>
           </div>
 

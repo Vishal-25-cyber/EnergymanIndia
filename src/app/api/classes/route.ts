@@ -115,17 +115,14 @@ export async function GET(req: NextRequest) {
           userId: session.userId,
           currentClass: "Class 10",
           board: "State Board",
-          schoolName: "Individual Tutoring",
+          schoolName: "Institutional Student",
+          studentType: "B2B",
         });
       }
       // Auto-stamp streamType on legacy sessions without blocking GET
       LiveSession.updateMany(
-        { streamType: { $exists: false }, institutionName: { $exists: true, $ne: "" } },
+        { streamType: { $exists: false } },
         { $set: { streamType: "B2B" } }
-      ).catch(() => {});
-      LiveSession.updateMany(
-        { streamType: { $exists: false }, $or: [{ institutionName: "" }, { institutionName: { $exists: false } }] },
-        { $set: { streamType: "B2C" } }
       ).catch(() => {});
 
       const assignedTeachers = await getAssignedTeacherIdsForStudent(studentProfile, session.userId);

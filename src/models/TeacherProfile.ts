@@ -10,7 +10,7 @@ const TeacherProfileSchema = new Schema<ITeacherProfileDocument>(
     teacherType: {
       type: String,
       enum: ["B2B", "B2C"],
-      default: "B2C",
+      default: "B2B",
       index: true,
     },
     institutionName: { type: String, trim: true, default: "" },

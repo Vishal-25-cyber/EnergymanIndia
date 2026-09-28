@@ -37,15 +37,9 @@ export async function GET(req: NextRequest) {
 
     let query: any = {};
 
-    if (studentType === "B2C") {
-      query = b2cStudentMongoQuery();
-    } else if (studentType === "B2B") {
-      query.studentType = "B2B";
-      if (schoolName && schoolName.trim()) {
-        query.schoolName = { $regex: new RegExp(schoolName.trim(), "i") };
-      }
-    } else if (studentType && studentType !== "ALL") {
-      query.studentType = studentType;
+    if (schoolName && schoolName.trim()) {
+      const escaped = schoolName.trim().replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+      query.schoolName = { $regex: new RegExp(escaped, "i") };
     }
 
     const profiles = (await StudentProfile.find(query)
@@ -84,7 +78,7 @@ export async function GET(req: NextRequest) {
         return true;
       })
       .map((p: any) => {
-        const derivedType = p.studentType || "B2C";
+        const derivedType = "B2B";
 
         const rawSubjects: string[] = Array.isArray(p.subjects)
           ? p.subjects
