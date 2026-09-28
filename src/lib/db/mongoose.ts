@@ -18,6 +18,7 @@ import "@/models/TestResult";
 import "@/models/TeacherRemark";
 import "@/models/ParentCommunication";
 import "@/models/StudentReportHistory";
+import "@/models/Institution";
 
 const MONGODB_URI =
   process.env.MONGODB_DIRECT_URI ||

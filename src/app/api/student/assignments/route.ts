@@ -72,15 +72,6 @@ export async function GET(req: NextRequest) {
         teacherId: { $in: assignedTeachers },
         classLevel: profile.currentClass,
       });
-    } else {
-      // Fallback for new unallocated students: show general batch tasks where assignedStudentIds is empty
-      assignmentFilterConditions.push({
-        classLevel: profile.currentClass,
-        $or: [
-          { assignedStudentIds: { $exists: false } },
-          { assignedStudentIds: { $size: 0 } },
-        ],
-      });
     }
 
     const query: any = { $or: assignmentFilterConditions };

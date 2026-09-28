@@ -26,6 +26,7 @@ import {
   LogOut,
   Lock,
   X,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/components/ui/button";
 import { warmupPortalCache, prefetchApi, invalidateCache, clearAuthAndCaches, useFastFetch } from "@/lib/api-cache";
@@ -147,6 +148,7 @@ export function PortalSidebar({ role }: SidebarProps) {
 
   const adminLinks: SidebarLink[] = React.useMemo(() => [
     { href: "/admin/dashboard", label: "Overview", icon: LayoutDashboard, api: "/api/admin/dashboard" },
+    { href: "/admin/institutions", label: "Schools & Groups", icon: Building2, api: "/api/admin/institutions" },
     { href: "/admin/reports", label: "Performance & Growth", icon: Activity, api: "/api/teacher/reports" },
     {
       href: "/admin/students",

@@ -243,26 +243,35 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Query teacher profile to find allocated students (strictly isolated)
+    // Query teacher profile and student profiles to find allocated group students (strictly isolated)
     const teacherProfile = await TeacherProfile.findOne({ userId: teacherUserId }).lean();
-    let eligibleStudents: any[] = [];
+    const teacherObjId = mongoose.Types.ObjectId.isValid(teacherUserId)
+      ? new mongoose.Types.ObjectId(teacherUserId)
+      : teacherUserId;
 
-    if (teacherProfile?.assignedStudentIds && teacherProfile.assignedStudentIds.length > 0) {
+    const directAllocated = (teacherProfile?.assignedStudentIds || [])
+      .filter(Boolean)
+      .map((id: any) => (id._id || id).toString());
+
+    const reverseAllocated = await StudentProfile.find({
+      assignedTeacherIds: { $in: [teacherUserId, teacherObjId] },
+    })
+      .select("userId")
+      .lean();
+
+    const allAllocatedUserIds = Array.from(
+      new Set([
+        ...directAllocated,
+        ...reverseAllocated.map((s: any) => s.userId?.toString()).filter(Boolean),
+      ])
+    );
+
+    let eligibleStudents: any[] = [];
+    if (allAllocatedUserIds.length > 0) {
       eligibleStudents = await StudentProfile.find({
-        userId: { $in: teacherProfile.assignedStudentIds },
+        userId: { $in: allAllocatedUserIds },
         ...(classLevel ? { currentClass: classLevel } : {}),
-      });
-    } else if (teacherProfile?.teacherType === "B2B" && teacherProfile?.institutionName) {
-      eligibleStudents = await StudentProfile.find({
-        schoolName: { $regex: new RegExp(teacherProfile.institutionName.trim(), "i") },
-        ...(classLevel ? { currentClass: classLevel } : {}),
-      });
-    } else {
-      const studentQuery: any = { currentClass: classLevel };
-      if (targetBatchId) {
-        studentQuery.batchId = targetBatchId;
-      }
-      eligibleStudents = await StudentProfile.find(studentQuery);
+      }).lean();
     }
 
     const assignedStudentUserIds = eligibleStudents.map((st) => st.userId);

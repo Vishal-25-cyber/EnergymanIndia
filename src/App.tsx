@@ -50,6 +50,7 @@ const AdminStaffAttendancePage = lazy(() => import("./app/(portal)/admin/staff-a
 const AdminFinancePage = lazy(() => import("./app/(portal)/admin/finance/page"));
 const AdminAnalyticsPage = lazy(() => import("./app/(portal)/admin/analytics/page"));
 const AdminSettingsPage = lazy(() => import("./app/(portal)/admin/settings/page"));
+const AdminInstitutionsPage = lazy(() => import("./app/(portal)/admin/institutions/page"));
 
 // Live Classroom (Lazy)
 const ClassroomPage = lazy(() => import("./app/classroom/[classId]/page"));
@@ -344,6 +345,7 @@ export default function App() {
             <Route path="finance" element={<AdminFinancePage />} />
             <Route path="analytics" element={<AdminAnalyticsPage />} />
             <Route path="settings" element={<AdminSettingsPage />} />
+            <Route path="institutions" element={<AdminInstitutionsPage />} />
           </Route>
 
           {/* ── Live Classroom Route ── */}

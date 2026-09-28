@@ -341,3 +341,28 @@ export interface IClassroomPoll {
   isActive: boolean;
   votedUserIds: string[];
 }
+
+export interface IClassGroup {
+  groupId: string;
+  groupName: string;
+  classLevel: ClassLevel;
+  facultyUserId: string | IUser;
+  studentUserIds: (string | IUser)[];
+  createdAt?: Date;
+}
+
+export interface IInstitution {
+  _id: string;
+  name: string;
+  code: string;
+  district?: string;
+  address?: string;
+  contactPerson?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  status: "ACTIVE" | "INACTIVE";
+  classesOffered: ClassLevel[];
+  groups?: IClassGroup[];
+  createdAt?: Date;
+  updatedAt?: Date;
+}

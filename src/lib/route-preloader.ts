@@ -36,6 +36,7 @@ const ROUTE_COMPONENT_LOADERS: Record<string, () => Promise<any>> = {
   "/admin/finance": () => import("@/app/(portal)/admin/finance/page"),
   "/admin/analytics": () => import("@/app/(portal)/admin/analytics/page"),
   "/admin/settings": () => import("@/app/(portal)/admin/settings/page"),
+  "/admin/institutions": () => import("@/app/(portal)/admin/institutions/page"),
 };
 
 const ROUTE_API_MAP: Record<string, string> = {
@@ -65,6 +66,7 @@ const ROUTE_API_MAP: Record<string, string> = {
   "/admin/finance": "/api/admin/finance",
   "/admin/analytics": "/api/admin/analytics",
   "/admin/settings": "/api/admin/settings",
+  "/admin/institutions": "/api/admin/institutions",
 };
 
 // Track already loaded chunks to avoid redundant calls
