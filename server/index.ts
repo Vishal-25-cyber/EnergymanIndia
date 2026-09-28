@@ -97,8 +97,8 @@ import * as TeacherDashboard from "../src/app/api/teacher/dashboard/route";
 import * as TeacherMaterials from "../src/app/api/teacher/materials/route";
 import * as TeacherMaterialDetail from "../src/app/api/teacher/materials/[id]/route";
 import * as TeacherAssignments from "../src/app/api/teacher/assignments/route";
-import * as TeacherGrantRetest from "../src/app/api/teacher/assignments/grant-retest/route";
 import * as TeacherStudents from "../src/app/api/teacher/students/route";
+import * as TeacherStudentsGroup from "../src/app/api/teacher/students/group/route";
 import * as TeacherScheduleSwap from "../src/app/api/teacher/schedule/swap/route";
 import * as TeacherScheduleReschedule from "../src/app/api/teacher/schedule/reschedule/route";
 import * as TeacherBatchTimetable from "../src/app/api/teacher/schedule/batch-timetable/route";
@@ -131,6 +131,8 @@ app.post("/api/teacher/assignments/grant-retest", adaptRoute(TeacherGrantRetest.
 app.get("/api/teacher/students", adaptRoute(TeacherStudents.GET));
 app.patch("/api/teacher/students", adaptRoute(TeacherStudents.PATCH));
 app.put("/api/teacher/students", adaptRoute(TeacherStudents.PUT || TeacherStudents.PATCH));
+app.get("/api/teacher/students/group", adaptRoute(TeacherStudentsGroup.GET));
+app.post("/api/teacher/students/group", adaptRoute(TeacherStudentsGroup.POST));
 app.get("/api/teacher/reports", adaptRoute(TeacherReports.GET));
 app.get("/api/teacher/reports/school", adaptRoute(TeacherSchoolReports.GET));
 app.get("/api/teacher/reports/:studentId", adaptRoute(TeacherStudentReportDetail.GET));
@@ -159,6 +161,7 @@ import * as AdminStaffAttendance from "../src/app/api/admin/staff-attendance/rou
 import * as AdminFinance from "../src/app/api/admin/finance/route";
 import * as AdminAnalytics from "../src/app/api/admin/analytics/route";
 import * as AdminSettings from "../src/app/api/admin/settings/route";
+import * as AdminInstitutions from "../src/app/api/admin/institutions/route";
 import * as AdminInquiries from "../src/app/api/admin/inquiries/route";
 
 import * as AdminAllocatableStudents from "../src/app/api/admin/students/allocatable/route";
@@ -167,6 +170,10 @@ import * as AdminTeachersAutoAllocate from "../src/app/api/admin/teachers/auto-a
 app.get("/api/admin/dashboard", adaptRoute(AdminDashboard.GET));
 app.get("/api/admin/inquiries", adaptRoute(AdminInquiries.GET));
 app.patch("/api/admin/inquiries", adaptRoute(AdminInquiries.PATCH));
+
+app.get("/api/admin/institutions", adaptRoute(AdminInstitutions.GET));
+app.post("/api/admin/institutions", adaptRoute(AdminInstitutions.POST));
+app.delete("/api/admin/institutions", adaptRoute(AdminInstitutions.DELETE));
 
 app.get("/api/admin/students/allocatable", adaptRoute(AdminAllocatableStudents.GET));
 app.get("/api/admin/students", adaptRoute(AdminStudents.GET));
