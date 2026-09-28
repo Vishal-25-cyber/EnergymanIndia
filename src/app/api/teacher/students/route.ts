@@ -19,15 +19,33 @@ export async function GET() {
     }
 
     await connectToDatabase();
-    const teacherProfile = await TeacherProfile.findOne({ userId: session.userId });
-    const classesTaught = teacherProfile?.classesTaught || [];
+    const teacherProfile = await TeacherProfile.findOne({ userId: session.userId }).lean();
+    const classesTaught = (teacherProfile?.assignedClasses && teacherProfile.assignedClasses.length > 0
+      ? teacherProfile.assignedClasses
+      : (teacherProfile?.classesTaught || [])) as string[];
 
-    const rawStudents = await StudentProfile.find(
-      classesTaught.length > 0 ? { currentClass: { $in: classesTaught } } : {}
-    )
+    let studentFilter: any = {};
+    if (session.role === "ADMIN") {
+      studentFilter = classesTaught.length > 0 ? { currentClass: { $in: classesTaught } } : {};
+    } else if (teacherProfile?.assignedStudentIds && teacherProfile.assignedStudentIds.length > 0) {
+      studentFilter.userId = { $in: teacherProfile.assignedStudentIds.filter(Boolean) };
+      if (classesTaught.length > 0) {
+        studentFilter.currentClass = { $in: classesTaught };
+      }
+    } else if (teacherProfile?.teacherType === "B2B" && teacherProfile?.institutionName) {
+      studentFilter.schoolName = { $regex: new RegExp(teacherProfile.institutionName.trim(), "i") };
+      if (classesTaught.length > 0) {
+        studentFilter.currentClass = { $in: classesTaught };
+      }
+    } else {
+      // Private faculty with no assigned students yet
+      studentFilter = { _id: null };
+    }
+
+    const rawStudents = await StudentProfile.find(studentFilter)
       .populate("userId", "name email phone status avatarUrl district")
       .populate("batchId")
-      .sort({ currentClass: 1 })
+      .sort({ currentClass: 1, createdAt: 1 })
       .lean();
 
     const [settings, batches] = await Promise.all([
