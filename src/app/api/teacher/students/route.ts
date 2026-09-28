@@ -24,21 +24,39 @@ export async function GET() {
       ? teacherProfile.assignedClasses
       : (teacherProfile?.classesTaught || [])) as string[];
 
+    const mongoose = (await import("mongoose")).default;
+    const teacherUserId = (teacherProfile?.userId?._id || teacherProfile?.userId || session.userId).toString();
+    const teacherObjId = mongoose.Types.ObjectId.isValid(teacherUserId)
+      ? new mongoose.Types.ObjectId(teacherUserId)
+      : teacherUserId;
+
+    const directAllocated = (teacherProfile?.assignedStudentIds || [])
+      .filter(Boolean)
+      .map((id: any) => (id._id || id).toString());
+
+    const reverseAllocated = await StudentProfile.find({
+      assignedTeacherIds: { $in: [teacherUserId, teacherObjId] },
+    })
+      .select("userId")
+      .lean();
+
+    const allAllocatedUserIds = Array.from(
+      new Set([
+        ...directAllocated,
+        ...reverseAllocated.map((s: any) => s.userId?.toString()).filter(Boolean),
+      ])
+    );
+
     let studentFilter: any = {};
     if (session.role === "ADMIN") {
       studentFilter = classesTaught.length > 0 ? { currentClass: { $in: classesTaught } } : {};
-    } else if (teacherProfile?.assignedStudentIds && teacherProfile.assignedStudentIds.length > 0) {
-      studentFilter.userId = { $in: teacherProfile.assignedStudentIds.filter(Boolean) };
-      if (classesTaught.length > 0) {
-        studentFilter.currentClass = { $in: classesTaught };
-      }
-    } else if (teacherProfile?.teacherType === "B2B" && teacherProfile?.institutionName) {
-      studentFilter.schoolName = { $regex: new RegExp(teacherProfile.institutionName.trim(), "i") };
+    } else if (allAllocatedUserIds.length > 0) {
+      studentFilter.userId = { $in: allAllocatedUserIds };
       if (classesTaught.length > 0) {
         studentFilter.currentClass = { $in: classesTaught };
       }
     } else {
-      // Private faculty with no assigned students yet
+      // Faculty with no allocated students in their group yet
       studentFilter = { _id: null };
     }
 

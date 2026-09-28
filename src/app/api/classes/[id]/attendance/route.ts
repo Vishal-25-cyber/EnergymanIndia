@@ -94,27 +94,14 @@ export async function GET(
       })
         .populate("userId", "name email phone avatarUrl status")
         .lean();
-    } else if (teacherProfile?.teacherType === "B2B" && teacherProfile?.institutionName) {
-      // Institutional teacher: only students belonging to this institution
+    } else if (attendedUserIds.length > 0) {
       studentProfiles = await StudentProfile.find({
-        schoolName: { $regex: new RegExp(`^${teacherProfile.institutionName.trim()}$`, "i") },
-        ...(liveClass.classLevel ? { currentClass: liveClass.classLevel } : {}),
-        ...(batchId ? { batchId } : {}),
+        userId: { $in: attendedUserIds },
       })
         .populate("userId", "name email phone avatarUrl status")
         .lean();
     } else {
-      // Fallback for general unassigned classes
-      const queryFilters: any[] = [];
-      if (batchId) queryFilters.push({ batchId });
-      if (liveClass.classLevel) queryFilters.push({ currentClass: liveClass.classLevel });
-      if (attendedUserIds.length > 0) queryFilters.push({ userId: { $in: attendedUserIds } });
-
-      studentProfiles = await StudentProfile.find(
-        queryFilters.length > 0 ? { $or: queryFilters } : {}
-      )
-        .populate("userId", "name email phone avatarUrl status")
-        .lean();
+      studentProfiles = [];
     }
 
     const addedUserIds = new Set<string>();

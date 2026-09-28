@@ -17,6 +17,9 @@ import {
   UserCheck,
   Eye,
   Check,
+  UserPlus,
+  Building2,
+  AlertTriangle,
 } from "lucide-react";
 import { useFastFetch, invalidateCache } from "@/lib/api-cache";
 import { Modal } from "@/components/ui/modal";
@@ -36,6 +39,71 @@ export default function TeacherStudentsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [copiedPhone, setCopiedPhone] = useState(false);
+
+  // Group Allocation Modal state
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [isLoadingGroup, setIsLoadingGroup] = useState(false);
+  const [isSavingGroup, setIsSavingGroup] = useState(false);
+  const [groupData, setGroupData] = useState<{
+    institutionName: string;
+    teacherClasses: string[];
+    candidates: any[];
+    totalInGroup: number;
+  } | null>(null);
+  const [selectedGroupUserIds, setSelectedGroupUserIds] = useState<string[]>([]);
+  const [groupSearch, setGroupSearch] = useState("");
+  const [groupClassFilter, setGroupClassFilter] = useState("ALL");
+  const [groupSaveMessage, setGroupSaveMessage] = useState<string | null>(null);
+
+  const handleOpenManageGroup = async () => {
+    setIsGroupModalOpen(true);
+    setIsLoadingGroup(true);
+    setGroupSaveMessage(null);
+    try {
+      const res = await fetch("/api/teacher/students/group");
+      const d = await res.json();
+      if (res.ok) {
+        setGroupData(d);
+        const inMyGroup = (d.candidates || [])
+          .filter((c: any) => c.isInMyGroup)
+          .map((c: any) => c.userId);
+        setSelectedGroupUserIds(inMyGroup);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoadingGroup(false);
+    }
+  };
+
+  const handleSaveGroupAllocation = async () => {
+    setIsSavingGroup(true);
+    setGroupSaveMessage(null);
+    try {
+      const res = await fetch("/api/teacher/students/group", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentUserIds: selectedGroupUserIds }),
+      });
+      const d = await res.json();
+      if (res.ok) {
+        setGroupSaveMessage(d.message || "Group updated successfully!");
+        invalidateCache("/api/teacher/students");
+        refetch();
+        setTimeout(() => {
+          setIsGroupModalOpen(false);
+          setGroupSaveMessage(null);
+        }, 1200);
+      } else {
+        alert(d.error || "Failed to update group allocation.");
+      }
+    } catch (err: any) {
+      console.error(err);
+      alert(err.message || "Network error. Please try again.");
+    } finally {
+      setIsSavingGroup(false);
+    }
+  };
 
   // Edit form state
   const [formData, setFormData] = useState({
@@ -166,8 +234,18 @@ export default function TeacherStudentsPage() {
           </p>
         </div>
 
-        <div className="text-xs font-mono text-slate-400 font-bold shrink-0">
-          {totalFilteredCount} of {students.length} Students Enrolled
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <button
+            type="button"
+            onClick={handleOpenManageGroup}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#002137] to-[#004b79] hover:from-[#001726] hover:to-[#003659] text-white flex items-center justify-center gap-2 shadow-md shadow-[#002137]/15 cursor-pointer transition-all active:scale-95"
+          >
+            <UserPlus className="w-4 h-4 text-[#dfb74a]" />
+            <span>Manage Group / Add Students</span>
+          </button>
+          <div className="text-xs font-mono text-slate-400 font-bold shrink-0 text-right">
+            {totalFilteredCount} of {students.length} Students in Group
+          </div>
         </div>
       </div>
 
@@ -591,6 +669,241 @@ export default function TeacherStudentsPage() {
               </Button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* ── MANAGE GROUP / ADD STUDENTS MODAL ── */}
+      {isGroupModalOpen && (
+        <Modal
+          isOpen={isGroupModalOpen}
+          onClose={() => setIsGroupModalOpen(false)}
+          title="Manage Class Group Allocation"
+          description={`Allocate newly registered or existing students from ${groupData?.institutionName || "your school"} to your class group.`}
+          maxWidth="2xl"
+        >
+          <div className="space-y-4 pt-1 text-xs">
+            {/* Institution & Classes Banner */}
+            <div className="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-[#004b79] dark:text-[#dfb74a]" />
+                <span className="font-extrabold text-slate-800 dark:text-slate-200">
+                  {groupData?.institutionName || "School Faculty Group"}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {(groupData?.teacherClasses || []).map((c) => (
+                  <span
+                    key={c}
+                    className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#004b79]/10 text-[#004b79] dark:text-sky-300"
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Filter and Search Bar */}
+            <div className="space-y-2.5">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Search by student name, mobile, student ID..."
+                    value={groupSearch}
+                    onChange={(e) => setGroupSearch(e.target.value)}
+                    className="flex h-8 w-full rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 pl-8 pr-3 text-xs font-medium focus:outline-none focus:border-[#004b79]"
+                  />
+                </div>
+
+                {groupData?.candidates && groupData.candidates.length > 0 && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const filteredIds = (groupData?.candidates || [])
+                          .filter((c: any) => {
+                            const matchesClass = groupClassFilter === "ALL" || c.currentClass === groupClassFilter;
+                            const q = groupSearch.toLowerCase().trim();
+                            const matchesQ =
+                              !q ||
+                              c.name?.toLowerCase().includes(q) ||
+                              c.phone?.includes(q) ||
+                              c.studentId?.toLowerCase().includes(q);
+                            return matchesClass && matchesQ;
+                          })
+                          .map((c: any) => c.userId);
+
+                        const allSelected = filteredIds.every((id) => selectedGroupUserIds.includes(id));
+                        if (allSelected) {
+                          setSelectedGroupUserIds(selectedGroupUserIds.filter((id) => !filteredIds.includes(id)));
+                        } else {
+                          setSelectedGroupUserIds(Array.from(new Set([...selectedGroupUserIds, ...filteredIds])));
+                        }
+                      }}
+                      className="px-2.5 py-1 text-[11px] font-bold rounded-lg border border-[#004b79]/30 text-[#004b79] dark:text-sky-300 hover:bg-[#004b79]/10 cursor-pointer transition-colors"
+                    >
+                      Toggle All Filtered
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Class Filter Tabs in Modal */}
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                <button
+                  type="button"
+                  onClick={() => setGroupClassFilter("ALL")}
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                    groupClassFilter === "ALL"
+                      ? "bg-[#002137] text-white"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  All ({groupData?.candidates?.length || 0})
+                </button>
+                {CLASS_LIST.map((cls) => {
+                  const count = (groupData?.candidates || []).filter((c: any) => c.currentClass === cls).length;
+                  if (count === 0) return null;
+                  return (
+                    <button
+                      key={cls}
+                      type="button"
+                      onClick={() => setGroupClassFilter(cls)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold cursor-pointer transition-all ${
+                        groupClassFilter === cls
+                          ? "bg-[#004b79] text-white"
+                          : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400"
+                      }`}
+                    >
+                      {cls} ({count})
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Candidates List */}
+            <div className="max-h-64 overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100 dark:divide-slate-800">
+              {isLoadingGroup ? (
+                <div className="py-12 text-center text-slate-400 text-xs animate-pulse">
+                  Loading students from {groupData?.institutionName || "school"}...
+                </div>
+              ) : !groupData?.candidates || groupData.candidates.length === 0 ? (
+                <div className="py-12 text-center space-y-1">
+                  <p className="font-bold text-slate-700 dark:text-slate-300">
+                    No registered students found for {groupData?.institutionName || "this institution"}.
+                  </p>
+                  <p className="text-slate-400 text-[11px]">
+                    When students sign up with this school name, they will appear here to be added to your group.
+                  </p>
+                </div>
+              ) : (
+                groupData.candidates
+                  .filter((c: any) => {
+                    const matchesClass = groupClassFilter === "ALL" || c.currentClass === groupClassFilter;
+                    const q = groupSearch.toLowerCase().trim();
+                    const matchesQ =
+                      !q ||
+                      c.name?.toLowerCase().includes(q) ||
+                      c.phone?.includes(q) ||
+                      c.studentId?.toLowerCase().includes(q);
+                    return matchesClass && matchesQ;
+                  })
+                  .map((c: any) => {
+                    const isSelected = selectedGroupUserIds.includes(c.userId);
+                    return (
+                      <div
+                        key={c.userId}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedGroupUserIds(selectedGroupUserIds.filter((id) => id !== c.userId));
+                          } else {
+                            setSelectedGroupUserIds([...selectedGroupUserIds, c.userId]);
+                          }
+                        }}
+                        className={`pt-2 pb-2 px-2.5 rounded-xl flex items-center justify-between gap-3 cursor-pointer transition-colors ${
+                          isSelected
+                            ? "bg-blue-50/70 dark:bg-blue-950/30 border border-[#004b79]/20"
+                            : "hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {}}
+                            className="w-4 h-4 rounded text-[#004b79] focus:ring-[#004b79] cursor-pointer"
+                          />
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-slate-100">{c.name}</span>
+                              <span className="font-mono text-[10px] text-slate-400">{c.studentId}</span>
+                              <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                                {c.currentClass}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400">
+                              {c.phone ? `Phone: ${c.phone} • ` : ""}
+                              {c.subjects?.length > 0 ? c.subjects.join(", ") : "All Subjects"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div>
+                          {isSelected ? (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">
+                              In Your Group
+                            </span>
+                          ) : c.isAssignedToOther ? (
+                            <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                              Assigned: {c.otherTeacherNames.join(", ")}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+                              Newly Registered / Unassigned
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+
+            {groupSaveMessage && (
+              <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold text-center">
+                {groupSaveMessage}
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-slate-800">
+              <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                {selectedGroupUserIds.length} students allocated to your group
+              </span>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsGroupModalOpen(false)}
+                  className="rounded-xl font-bold text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={isSavingGroup}
+                  onClick={handleSaveGroupAllocation}
+                  className="rounded-xl font-bold text-xs bg-[#002137] hover:bg-[#001726] text-white shadow-sm"
+                >
+                  {isSavingGroup ? "Saving Group..." : "Save Group Allocation"}
+                </Button>
+              </div>
+            </div>
+          </div>
         </Modal>
       )}
     </main>

@@ -105,38 +105,9 @@ export async function resolveClassStreamAndStudents({
     });
   }
 
-  // 2. If no specific students allocated yet, query all students belonging to the teacher's institution
-  if (eligible.length === 0 && institutionName) {
-    const instRegex = new RegExp(
-      `^${institutionName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")}$`,
-      "i"
-    );
-
-    const schoolStudents = await StudentProfile.find({
-      schoolName: { $regex: instRegex },
-    }).lean();
-
-    eligible = schoolStudents.filter((st: any) => {
-      if (classLevel && !isClassMatching(st.currentClass, [classLevel])) {
-        return false;
-      }
-      if (Array.isArray(st.subjects) && st.subjects.length > 0) {
-        const matchesSubject = st.subjects.some((s: string) => subjectRegex.test(s));
-        if (!matchesSubject) return false;
-      }
-      return true;
-    });
-  }
-
-  // 3. Fallback to batch students if needed
-  if (eligible.length === 0 && batchId) {
-    const batchStudents = await StudentProfile.find({ batchId }).lean();
-    eligible = batchStudents.filter((st: any) => {
-      if (classLevel && !isClassMatching(st.currentClass, [classLevel])) return false;
-      return true;
-    });
-  }
-
+  // Strictly isolate to the teacher's allocated group.
+  // We do NOT broadcast to the whole school so teachers' groups never interfere with each other
+  // and newly signed up students are not included until added by faculty or admin.
   const assignedIds = eligible.map((st: any) => st.userId).filter(Boolean);
 
   return {
@@ -149,6 +120,8 @@ export async function resolveClassStreamAndStudents({
 
 /**
  * Builds the MongoDB query condition for live classes that a student is authorized to view.
+ * Strictly limited to classes of teachers allocated to this student's group or where the student
+ * is explicitly in assignedStudentIds. Newly signed-up students see NO classes until added to a group.
  */
 export function buildStudentClassAccessQuery(
   studentProfile: any,
@@ -169,13 +142,13 @@ export function buildStudentClassAccessQuery(
   const allTeachers = Array.from(new Set([...directTeachers, ...assignedTeacherUserIds]));
 
   const orConditions: any[] = [
-    // 1. Explicitly assigned to this student
+    // 1. Explicitly in the session's assigned group
     { assignedStudentIds: sessionUserId },
   ];
 
-  // 2. Created by any teacher assigned to this student (matching classLevel)
+  // 2. Created by a teacher specifically allocated to this student
   if (allTeachers.length > 0) {
-    orConditions.push({
+    const teacherCond: any = {
       teacherId: { $in: allTeachers },
       classLevel: { $in: classVariants },
       $or: [
@@ -183,28 +156,18 @@ export function buildStudentClassAccessQuery(
         { assignedStudentIds: { $size: 0 } },
         { assignedStudentIds: sessionUserId },
       ],
-    });
-  }
+    };
 
-  // 3. Institutional classes for their school
-  // 3. Institutional classes for their school
-  const schoolName = (studentProfile?.schoolName || "").trim();
-  if (schoolName && !/individual/i.test(schoolName)) {
-    const instRegex = new RegExp(
-      `^${schoolName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")}$`,
-      "i"
-    );
+    const schoolName = (studentProfile?.schoolName || "").trim();
+    if (schoolName && !/individual/i.test(schoolName)) {
+      const instRegex = new RegExp(
+        `^${schoolName.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&")}$`,
+        "i"
+      );
+      teacherCond.institutionName = { $regex: instRegex };
+    }
 
-    orConditions.push({
-      streamType: "B2B",
-      institutionName: { $regex: instRegex },
-      classLevel: { $in: classVariants },
-      $or: [
-        { assignedStudentIds: { $exists: false } },
-        { assignedStudentIds: { $size: 0 } },
-        { assignedStudentIds: sessionUserId },
-      ],
-    });
+    orConditions.push(teacherCond);
   }
 
   return { $or: orConditions };
