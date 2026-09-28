@@ -533,6 +533,10 @@ export default function TeacherAssignmentsPage() {
         ? localStorage.getItem("acuity_auth_token") || sessionStorage.getItem("acuity_auth_token") || ""
         : "";
 
+      const targetType = (formData.type && formData.type !== "ALL")
+        ? formData.type
+        : (activeCategory !== "ALL" ? activeCategory : "ASSIGNMENT");
+
       const res = await fetch("/api/teacher/assignments", {
         method: "POST",
         credentials: "include",
@@ -545,12 +549,12 @@ export default function TeacherAssignmentsPage() {
           batchId: targetBatchId || "",
           title: formData.title.trim(),
           description: formData.description.trim() || `${formData.classLevel} ${formData.subject} — ${formData.title.trim()}`,
-          type: activeCategory,
+          type: targetType,
           dueDate: fullDueIso || formData.dueDate,
           testDate: fullDueIso || formData.dueDate,
-          maxMarks: Number(formData.maxMarks) || (activeCategory === "TEST" ? 50 : 20),
-          durationMinutes: activeCategory === "TEST" ? Number(formData.durationMinutes) || 45 : undefined,
-          proctoringRequired: activeCategory === "TEST" ? formData.proctoringRequired : false,
+          maxMarks: Number(formData.maxMarks) || (targetType === "TEST" ? 50 : 20),
+          durationMinutes: targetType === "TEST" ? Number(formData.durationMinutes) || 45 : undefined,
+          proctoringRequired: targetType === "TEST" ? formData.proctoringRequired : false,
           attachmentUrl: formData.attachmentUrl || "",
           attachmentName: formData.attachmentName || "",
           attachmentSize: formData.attachmentSize || "",
@@ -563,7 +567,7 @@ export default function TeacherAssignmentsPage() {
         setIsCreateModal(false);
         setPublishError("");
         setFormData({
-          type: activeCategory,
+          type: activeCategory === "ALL" ? "ASSIGNMENT" : activeCategory,
           title: "",
           description: "",
           subject: availableSubjects[0] || "Mathematics",
@@ -573,7 +577,7 @@ export default function TeacherAssignmentsPage() {
           proctoringRequired: true,
           dueDate: "",
           dueTime: "21:00",
-          maxMarks: activeCategory === "TEST" ? 50 : 20,
+          maxMarks: (activeCategory === "TEST" || targetType === "TEST") ? 50 : 20,
           attachmentUrl: "",
           attachmentName: "",
           attachmentSize: "",
@@ -1231,7 +1235,7 @@ export default function TeacherAssignmentsPage() {
           isOpen={isCreateModal}
           onClose={() => setIsCreateModal(false)}
           maxWidth="3xl"
-          title={`Create ${activeCategory === "TEST" ? "Timed Proctored Test" : activeCategory === "HOMEWORK" ? "Daily Homework" : "Assignment"}`}
+          title={`Create ${formData.type === "TEST" ? "Timed Proctored Test" : formData.type === "HOMEWORK" ? "Daily Homework" : "Assignment"}`}
         >
           <form onSubmit={handleCreate} className="space-y-3 pt-1">
             {publishError && (
@@ -1240,6 +1244,39 @@ export default function TeacherAssignmentsPage() {
                 <span>{publishError}</span>
               </div>
             )}
+
+            {/* Task Type Switcher */}
+            <div className="space-y-1">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Task Classification *
+              </label>
+              <div className="grid grid-cols-3 gap-2 p-1 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+                {[
+                  { id: "ASSIGNMENT", label: "📝 Assignment" },
+                  { id: "HOMEWORK", label: "📚 Homework" },
+                  { id: "TEST", label: "⏱️ Proctored Test" },
+                ].map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        type: cat.id as any,
+                        maxMarks: cat.id === "TEST" ? 50 : (prev.maxMarks === 50 ? 20 : prev.maxMarks),
+                      }))
+                    }
+                    className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all cursor-pointer text-center ${
+                      formData.type === cat.id
+                        ? "bg-[#004b79] text-white shadow-xs"
+                        : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {/* Row 1: Title */}
             <div className="space-y-1">
@@ -1251,7 +1288,7 @@ export default function TeacherAssignmentsPage() {
                 required
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder={activeCategory === "TEST" ? "e.g. Quadratic Equations Unit Test 1" : "e.g. Worksheet #4 on Trigonometry"}
+                placeholder={formData.type === "TEST" ? "e.g. Quadratic Equations Unit Test 1" : formData.type === "HOMEWORK" ? "e.g. Daily Practice Problems Ch. 3" : "e.g. Worksheet #4 on Trigonometry"}
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-[#004b79]"
               />
             </div>
@@ -1310,7 +1347,7 @@ export default function TeacherAssignmentsPage() {
             </div>
 
             {/* Row 3: Timing & Proctoring (Compact) */}
-            {activeCategory === "TEST" ? (
+            {formData.type === "TEST" ? (
               <div className="p-2.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 space-y-2">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   <div className="space-y-1">
@@ -1525,7 +1562,7 @@ export default function TeacherAssignmentsPage() {
                     ? "Uploading Question Paper..."
                     : isPublishing
                     ? "Publishing..."
-                    : `Publish ${activeCategory === "TEST" ? "Proctored Test" : activeCategory === "HOMEWORK" ? "Homework" : "Assignment"}`}
+                    : `Publish ${formData.type === "TEST" ? "Proctored Test" : formData.type === "HOMEWORK" ? "Homework" : "Assignment"}`}
                 </span>
               </button>
             </div>

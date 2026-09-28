@@ -170,7 +170,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Please fill all required fields (title, subject, class level)." }, { status: 400 });
     }
 
-    const taskType = type || "ASSIGNMENT";
+    const validTypes = ["ASSIGNMENT", "TEST", "HOMEWORK"];
+    const taskType = validTypes.includes(type) ? type : "ASSIGNMENT";
     let finalDueDate = new Date(Date.now() + 86400000 * 3);
     if (dueDate) {
       const parsed = new Date(dueDate);
