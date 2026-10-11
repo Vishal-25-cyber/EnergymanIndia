@@ -73,6 +73,44 @@ export async function resolveClassStreamAndStudents({
     ? new mongoose.Types.ObjectId(teacherUserId)
     : teacherUserId;
 
+  // 1. Check for specific group(s) in Institution where this teacher is assigned for classLevel and subject
+  let groupStudentIds: string[] = [];
+  try {
+    const Institution = (await import("@/models/Institution")).default;
+    const institutionDoc = await Institution.findOne({
+      "groups.facultyUserId": { $in: [teacherUserId, teacherObjId] },
+    }).lean();
+
+    if (institutionDoc && Array.isArray(institutionDoc.groups)) {
+      const matchingGroups = institutionDoc.groups.filter((g: any) => {
+        const isTeacher = (g.facultyUserId?._id || g.facultyUserId || "").toString() === teacherUserId.toString();
+        if (!isTeacher) return false;
+        if (classLevel && !isClassMatching(g.classLevel, [classLevel])) return false;
+        if (subject && g.subject && g.subject !== "All Subjects") {
+          if (!subjectRegex.test(g.subject)) return false;
+        }
+        return true;
+      });
+
+      if (matchingGroups.length > 0) {
+        groupStudentIds = Array.from(
+          new Set(
+            matchingGroups.flatMap((g: any) =>
+              (g.studentUserIds || []).map((id: any) => (id._id || id).toString()).filter(Boolean)
+            )
+          )
+        );
+      }
+    }
+  } catch (err) {
+    console.warn("Group resolution warning:", err);
+  }
+
+  // 2. Check if the teacher has explicitly allocated students
+  const directAllocated = (teacherProfile?.assignedStudentIds || [])
+    .filter(Boolean)
+    .map((id: any) => (id._id || id).toString());
+
   const reverseAllocated = await StudentProfile.find({
     assignedTeacherIds: { $in: [teacherUserId, teacherObjId] },
   })
@@ -81,6 +119,7 @@ export async function resolveClassStreamAndStudents({
 
   const allAllocatedIds = Array.from(
     new Set([
+      ...groupStudentIds,
       ...directAllocated,
       ...reverseAllocated.map((s: any) => s.userId?.toString()).filter(Boolean),
     ])
@@ -88,7 +127,18 @@ export async function resolveClassStreamAndStudents({
 
   let eligible: any[] = [];
 
-  if (allAllocatedIds.length > 0) {
+  if (groupStudentIds.length > 0) {
+    const studentDocs = await StudentProfile.find({
+      userId: { $in: groupStudentIds },
+    }).lean();
+
+    eligible = studentDocs.filter((st: any) => {
+      if (classLevel && !isClassMatching(st.currentClass, [classLevel])) {
+        return false;
+      }
+      return true;
+    });
+  } else if (allAllocatedIds.length > 0) {
     const studentDocs = await StudentProfile.find({
       userId: { $in: allAllocatedIds },
     }).lean();

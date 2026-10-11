@@ -71,6 +71,12 @@ export async function GET(req: NextRequest) {
       assignmentFilterConditions.push({
         teacherId: { $in: assignedTeachers },
         classLevel: profile.currentClass,
+        $or: [
+          { assignedStudentIds: { $exists: false } },
+          { assignedStudentIds: { $size: 0 } },
+          { assignedStudentIds: session.userId },
+          { assignedStudentIds: studentObjId },
+        ],
       });
     }
 
@@ -78,7 +84,16 @@ export async function GET(req: NextRequest) {
 
     // If student selected specific subjects, filter by their subjects
     if (Array.isArray(profile.subjects) && profile.subjects.length > 0) {
-      query.subject = { $in: profile.subjects };
+      query.$and = [
+        {
+          $or: [
+            { subject: { $in: profile.subjects } },
+            ...profile.subjects.map((sub: string) => ({ subject: { $regex: new RegExp(`^${sub.trim()}$`, "i") } })),
+            { subject: { $exists: false } },
+            { subject: null },
+          ],
+        },
+      ];
     }
 
     if (typeFilter && typeFilter !== "ALL") {

@@ -9,8 +9,13 @@ const ClassGroupSchema = new Schema(
     groupName: { type: String, required: true, trim: true },
     classLevel: {
       type: String,
-      enum: ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10"],
       required: true,
+      trim: true,
+    },
+    subject: {
+      type: String,
+      default: "All Subjects",
+      trim: true,
     },
     facultyUserId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     studentUserIds: [{ type: Schema.Types.ObjectId, ref: "User" }],
@@ -34,12 +39,8 @@ const InstitutionSchema = new Schema<IInstitutionDocument>(
       default: "ACTIVE",
       index: true,
     },
-    classesOffered: [
-      {
-        type: String,
-        enum: ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10"],
-      },
-    ],
+    classesOffered: [{ type: String, trim: true }],
+    subjectsOffered: [{ type: String, trim: true }],
     groups: [ClassGroupSchema],
   },
   {

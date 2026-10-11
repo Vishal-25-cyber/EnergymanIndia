@@ -22,13 +22,17 @@ import {
   ChevronUp,
   ShieldCheck,
   Sparkles,
+  Edit,
+  Settings,
+  KeyRound,
+  Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useFastFetch, invalidateCache } from "@/lib/api-cache";
 
-const AVAILABLE_CLASSES = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10"];
-const AVAILABLE_SUBJECTS = ["Mathematics", "Science", "Physics", "Chemistry", "Biology", "English", "Social Science"];
+const DEFAULT_CLASSES = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12"];
+const DEFAULT_SUBJECTS = ["Mathematics", "Science", "Physics", "Chemistry", "Biology", "English", "Social Science", "Computer Science"];
 
 export default function AdminInstitutionsPage() {
   const { data, refetch, isLoading } = useFastFetch("/api/admin/institutions");
@@ -42,23 +46,28 @@ export default function AdminInstitutionsPage() {
   };
 
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedInstId, setSelectedInstId] = useState<string | null>(null);
   const [expandedInstIds, setExpandedInstIds] = useState<Set<string>>(new Set());
 
-  // Modal states
+  // Modal visibility states
   const [showAddInstModal, setShowAddInstModal] = useState(false);
   const [showAddFacultyModal, setShowAddFacultyModal] = useState(false);
+  const [showEditFacultyModal, setShowEditFacultyModal] = useState(false);
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [showGroupModal, setShowGroupModal] = useState(false);
 
-  // Form states
+  // Active institution / entity states
   const [activeInst, setActiveInst] = useState<any>(null);
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  // New Institution Form
+  // Custom inputs for institution modal
+  const [customClassInput, setCustomClassInput] = useState("");
+  const [customSubjectInput, setCustomSubjectInput] = useState("");
+
+  // Institution Form (Create & Edit)
   const [instForm, setInstForm] = useState({
+    id: "",
     name: "",
     code: "",
     district: "",
@@ -66,7 +75,8 @@ export default function AdminInstitutionsPage() {
     contactPerson: "",
     contactPhone: "",
     contactEmail: "",
-    classesOffered: ["Class 9", "Class 10"],
+    classesOffered: ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10"],
+    subjectsOffered: ["Mathematics", "Science", "Social Science", "English", "Physics", "Chemistry"],
   });
 
   // New Faculty Form
@@ -79,6 +89,17 @@ export default function AdminInstitutionsPage() {
     specialization: "Mathematics & Science",
     classesTaught: ["Class 9", "Class 10"],
     subjects: ["Mathematics", "Science"],
+  });
+
+  // Edit Faculty Form (Multi-class, multi-subject)
+  const [editFacultyForm, setEditFacultyForm] = useState({
+    teacherUserId: "",
+    name: "",
+    qualification: "",
+    specialization: "",
+    classesTaught: [] as string[],
+    subjects: [] as string[],
+    password: "",
   });
 
   // New Student Form
@@ -99,6 +120,7 @@ export default function AdminInstitutionsPage() {
     groupId: "",
     groupName: "",
     classLevel: "Class 10",
+    subject: "All Subjects",
     facultyUserId: "",
     studentUserIds: [] as string[],
   });
@@ -112,10 +134,57 @@ export default function AdminInstitutionsPage() {
     });
   };
 
+  // Open Create Institution Modal
+  const handleOpenCreateInstitution = () => {
+    setActiveInst(null);
+    setErrorMsg("");
+    setSuccessMsg("");
+    setInstForm({
+      id: "",
+      name: "",
+      code: "",
+      district: "",
+      address: "",
+      contactPerson: "",
+      contactPhone: "",
+      contactEmail: "",
+      classesOffered: ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10"],
+      subjectsOffered: ["Mathematics", "Science", "Social Science", "English", "Physics", "Chemistry"],
+    });
+    setCustomClassInput("");
+    setCustomSubjectInput("");
+    setShowAddInstModal(true);
+  };
+
+  // Open Edit Institution Modal
+  const handleOpenEditInstitution = (inst: any) => {
+    setActiveInst(inst);
+    setErrorMsg("");
+    setSuccessMsg("");
+    setInstForm({
+      id: inst._id,
+      name: inst.name,
+      code: inst.code,
+      district: inst.district || "",
+      address: inst.address || "",
+      contactPerson: inst.contactPerson || "",
+      contactPhone: inst.contactPhone || "",
+      contactEmail: inst.contactEmail || "",
+      classesOffered: inst.classesOffered?.length ? inst.classesOffered : ["Class 9", "Class 10"],
+      subjectsOffered: inst.subjectsOffered?.length ? inst.subjectsOffered : ["Mathematics", "Science", "English"],
+    });
+    setCustomClassInput("");
+    setCustomSubjectInput("");
+    setShowAddInstModal(true);
+  };
+
+  // Open Add Faculty Modal
   const handleOpenAddFaculty = (inst: any) => {
     setActiveInst(inst);
     setErrorMsg("");
     setSuccessMsg("");
+    const availableCls = inst.classesOffered?.length ? inst.classesOffered : ["Class 10"];
+    const availableSub = inst.subjectsOffered?.length ? inst.subjectsOffered : ["Mathematics"];
     setFacultyForm({
       name: "",
       username: "",
@@ -123,12 +192,30 @@ export default function AdminInstitutionsPage() {
       password: "",
       qualification: "B.Ed, B.Sc",
       specialization: "Mathematics & Science",
-      classesTaught: inst.classesOffered?.length ? [inst.classesOffered[0]] : ["Class 10"],
-      subjects: ["Mathematics", "Science"],
+      classesTaught: availableCls.slice(0, 2),
+      subjects: availableSub.slice(0, 2),
     });
     setShowAddFacultyModal(true);
   };
 
+  // Open Edit Faculty Modal
+  const handleOpenEditFaculty = (inst: any, faculty: any) => {
+    setActiveInst(inst);
+    setErrorMsg("");
+    setSuccessMsg("");
+    setEditFacultyForm({
+      teacherUserId: faculty.userId,
+      name: faculty.name,
+      qualification: faculty.qualification || "",
+      specialization: faculty.specialization || "",
+      classesTaught: Array.isArray(faculty.classesTaught) ? faculty.classesTaught : [],
+      subjects: Array.isArray(faculty.subjects) ? faculty.subjects : [],
+      password: "",
+    });
+    setShowEditFacultyModal(true);
+  };
+
+  // Open Add Student Modal
   const handleOpenAddStudent = (inst: any) => {
     setActiveInst(inst);
     setErrorMsg("");
@@ -147,6 +234,7 @@ export default function AdminInstitutionsPage() {
     setShowAddStudentModal(true);
   };
 
+  // Open Group Modal
   const handleOpenGroupModal = (inst: any, existingGroup?: any) => {
     setActiveInst(inst);
     setErrorMsg("");
@@ -156,15 +244,18 @@ export default function AdminInstitutionsPage() {
         groupId: existingGroup.groupId,
         groupName: existingGroup.groupName,
         classLevel: existingGroup.classLevel,
-        facultyUserId: existingGroup.facultyUserId?.toString() || "",
+        subject: existingGroup.subject || "All Subjects",
+        facultyUserId: (existingGroup.facultyUserId?._id || existingGroup.facultyUserId || "").toString(),
         studentUserIds: (existingGroup.studentUserIds || []).map((id: any) => (id._id || id).toString()),
       });
     } else {
       const initialClass = inst.classesOffered?.[0] || "Class 10";
+      const initialSubject = inst.subjectsOffered?.[0] || "Mathematics";
       setGroupForm({
         groupId: "",
-        groupName: `${initialClass} - Section A`,
+        groupName: `${initialClass} - ${initialSubject} - Section A`,
         classLevel: initialClass,
+        subject: initialSubject,
         facultyUserId: inst.faculty?.[0]?.userId || "",
         studentUserIds: [],
       });
@@ -172,8 +263,8 @@ export default function AdminInstitutionsPage() {
     setShowGroupModal(true);
   };
 
-  // Submit New Institution
-  const handleCreateInstitution = async (e: React.FormEvent) => {
+  // Submit Institution (Create or Update)
+  const handleSaveInstitution = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!instForm.name.trim()) {
       setErrorMsg("Institution name is required.");
@@ -182,18 +273,20 @@ export default function AdminInstitutionsPage() {
     setSubmitting(true);
     setErrorMsg("");
     try {
+      const isEdit = Boolean(instForm.id);
       const res = await fetch("/api/admin/institutions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "CREATE_INSTITUTION",
+          action: isEdit ? "UPDATE_INSTITUTION" : "CREATE_INSTITUTION",
+          institutionId: instForm.id || undefined,
           ...instForm,
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create institution.");
+      if (!res.ok) throw new Error(data.error || "Failed to save institution.");
 
-      setSuccessMsg(data.message || "Institution created successfully!");
+      setSuccessMsg(data.message || (isEdit ? "Institution updated successfully!" : "Institution created successfully!"));
       invalidateCache("/api/admin/institutions");
       refetch();
       setTimeout(() => {
@@ -245,6 +338,42 @@ export default function AdminInstitutionsPage() {
     }
   };
 
+  // Submit Faculty Updates (Multiple Classes and Subjects)
+  const handleUpdateFaculty = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editFacultyForm.teacherUserId) {
+      setErrorMsg("Faculty ID missing.");
+      return;
+    }
+    setSubmitting(true);
+    setErrorMsg("");
+    try {
+      const res = await fetch("/api/admin/institutions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "UPDATE_FACULTY",
+          ...editFacultyForm,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update faculty assignments.");
+
+      setSuccessMsg(data.message || "Faculty classes and subjects updated successfully!");
+      invalidateCache("/api/admin/institutions");
+      invalidateCache("/api/admin/teachers");
+      refetch();
+      setTimeout(() => {
+        setShowEditFacultyModal(false);
+        setSuccessMsg("");
+      }, 1200);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Something went wrong.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Submit New Student
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -287,7 +416,7 @@ export default function AdminInstitutionsPage() {
   const handleSaveGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!groupForm.groupName.trim()) {
-      setErrorMsg("Please provide a group name (e.g. Class 10 - Section A).");
+      setErrorMsg("Please provide a group name (e.g. Class 10 - Mathematics - Section A).");
       return;
     }
     if (!groupForm.facultyUserId) {
@@ -321,6 +450,28 @@ export default function AdminInstitutionsPage() {
       setErrorMsg(err.message || "Something went wrong.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Delete Group
+  const handleDeleteGroup = async (instId: string, groupId: string, groupName: string) => {
+    if (!confirm(`Are you sure you want to remove group "${groupName}"?`)) return;
+    try {
+      const res = await fetch("/api/admin/institutions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "DELETE_GROUP",
+          institutionId: instId,
+          groupId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to delete group.");
+      invalidateCache("/api/admin/institutions");
+      refetch();
+    } catch (err: any) {
+      alert(err.message || "Error deleting group.");
     }
   };
 
@@ -366,30 +517,16 @@ export default function AdminInstitutionsPage() {
             Schools, Faculty & Class Groups
           </h1>
           <p className="text-sm text-blue-100 max-w-2xl leading-relaxed">
-            Create school institutions, add teachers and students with active username and password credentials, and allocate class groups so tests and live classes are strictly posted to designated participants.
+            Create schools, configure classes & subjects, assign faculty across multiple classes and subjects, and create isolated student groups so tests and live sessions are strictly restricted to designated participants.
           </p>
         </div>
         <div className="relative z-10 flex items-center gap-3">
           <Button
-            onClick={() => {
-              setErrorMsg("");
-              setSuccessMsg("");
-              setInstForm({
-                name: "",
-                code: "",
-                district: "",
-                address: "",
-                contactPerson: "",
-                contactPhone: "",
-                contactEmail: "",
-                classesOffered: ["Class 9", "Class 10"],
-              });
-              setShowAddInstModal(true);
-            }}
+            onClick={handleOpenCreateInstitution}
             className="bg-white text-blue-700 hover:bg-blue-50 font-bold px-5 py-2.5 rounded-xl shadow-lg shadow-black/10 flex items-center gap-2 border border-white/20 transition-all active:scale-95"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Create Institution</span>
+            <span>Create School Institution</span>
           </Button>
         </div>
       </div>
@@ -398,13 +535,13 @@ export default function AdminInstitutionsPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Institutions / Schools</span>
+            <span>Schools Registered</span>
             <Building2 className="w-4 h-4 text-blue-600" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white mt-2">
             {summary.totalInstitutions}
           </div>
-          <span className="text-[11px] text-slate-400">Registered schools</span>
+          <span className="text-[11px] text-slate-400">Institutional partners</span>
         </div>
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
@@ -431,17 +568,17 @@ export default function AdminInstitutionsPage() {
 
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm">
           <div className="flex items-center justify-between text-slate-500 text-xs font-medium">
-            <span>Active Groups</span>
+            <span>Class Groups</span>
             <Layers className="w-4 h-4 text-amber-600" />
           </div>
           <div className="text-2xl font-black text-slate-900 dark:text-white mt-2">
             {summary.totalGroups}
           </div>
-          <span className="text-[11px] text-slate-400">Isolated class groups</span>
+          <span className="text-[11px] text-slate-400">Isolated class & subject batches</span>
         </div>
       </div>
 
-      {/* ── Search & Filter Bar ── */}
+      {/* ── Search Bar ── */}
       <div className="flex items-center gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl px-4 py-2.5 shadow-sm">
         <Search className="w-4 h-4 text-slate-400 shrink-0" />
         <input
@@ -465,7 +602,7 @@ export default function AdminInstitutionsPage() {
       <div className="space-y-4">
         {isLoading && institutions.length === 0 ? (
           <div className="p-12 text-center text-slate-400 text-sm">
-            Loading institutions and group allocations...
+            Loading institutions, faculty, and group allocations...
           </div>
         ) : filteredInstitutions.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl p-12 text-center space-y-4">
@@ -477,12 +614,12 @@ export default function AdminInstitutionsPage() {
               <p className="text-xs text-slate-400 max-w-sm mx-auto">
                 {searchQuery
                   ? "No schools matched your search. Try another keyword or clear filter."
-                  : "Get started by creating your first school institution to allocate teachers and students."}
+                  : "Get started by creating your first school institution to configure classes, subjects, and allocate teachers."}
               </p>
             </div>
             {!searchQuery && (
               <Button
-                onClick={() => setShowAddInstModal(true)}
+                onClick={handleOpenCreateInstitution}
                 className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-xl"
               >
                 Create School Institution
@@ -495,6 +632,8 @@ export default function AdminInstitutionsPage() {
             const facultyCount = inst.faculty?.length || 0;
             const studentCount = inst.students?.length || 0;
             const groupCount = inst.groups?.length || 0;
+            const classesOffered: string[] = inst.classesOffered || [];
+            const subjectsOffered: string[] = inst.subjectsOffered || [];
 
             return (
               <div
@@ -550,6 +689,13 @@ export default function AdminInstitutionsPage() {
                         <span>New Group</span>
                       </Button>
                       <button
+                        onClick={() => handleOpenEditInstitution(inst)}
+                        className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded-xl transition-all"
+                        title="Edit School Classes & Subjects"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
                         onClick={() => handleDeleteInstitution(inst)}
                         className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all"
                         title="Delete Institution"
@@ -560,7 +706,7 @@ export default function AdminInstitutionsPage() {
                   </div>
 
                   {/* Badges / Metrics bar */}
-                  <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
                     <div className="flex items-center gap-4 flex-wrap">
                       <span className="font-medium text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
                         <Users className="w-3.5 h-3.5 text-emerald-600" />
@@ -574,21 +720,39 @@ export default function AdminInstitutionsPage() {
                         <Layers className="w-3.5 h-3.5 text-amber-600" />
                         <strong className="text-slate-900 dark:text-white">{groupCount}</strong> Groups
                       </span>
-                      <div className="flex items-center gap-1">
-                        {(inst.classesOffered || []).map((cls: string) => (
+
+                      {/* Classes Pill List */}
+                      <div className="flex items-center gap-1 flex-wrap">
+                        <span className="text-[10px] text-slate-400 uppercase font-semibold mr-0.5">Classes:</span>
+                        {classesOffered.map((cls: string) => (
                           <span
                             key={cls}
-                            className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-semibold text-slate-600 dark:text-slate-300"
+                            className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 text-[10px] font-bold border border-blue-200/50 dark:border-blue-800/50"
                           >
                             {cls}
                           </span>
                         ))}
                       </div>
+
+                      {/* Subjects Pill List */}
+                      {subjectsOffered.length > 0 && (
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="text-[10px] text-slate-400 uppercase font-semibold mr-0.5">Subjects:</span>
+                          {subjectsOffered.map((sub: string) => (
+                            <span
+                              key={sub}
+                              className="px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 text-[10px] font-bold border border-emerald-200/50 dark:border-emerald-800/50"
+                            >
+                              {sub}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
 
                     <button
                       onClick={() => toggleExpand(inst._id)}
-                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer"
+                      className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer self-end sm:self-center"
                     >
                       <span>{isExpanded ? "Collapse Details" : "View Groups & Rosters"}</span>
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
@@ -604,7 +768,7 @@ export default function AdminInstitutionsPage() {
                       <div className="flex items-center justify-between">
                         <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 flex items-center gap-2">
                           <Layers className="w-3.5 h-3.5 text-amber-600" />
-                          <span>Class Groups ({groupCount})</span>
+                          <span>Class & Subject Groups ({groupCount})</span>
                         </h4>
                         <button
                           onClick={() => handleOpenGroupModal(inst)}
@@ -617,7 +781,7 @@ export default function AdminInstitutionsPage() {
 
                       {groupCount === 0 ? (
                         <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs text-slate-500 text-center">
-                          No class groups created yet. Click "New Group" to allocate a faculty member to specific students.
+                          No class groups created yet. Click "New Group" to allocate a faculty member to specific students for a class and subject.
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -627,27 +791,41 @@ export default function AdminInstitutionsPage() {
                               className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3 relative hover:border-blue-300 transition-all"
                             >
                               <div className="flex items-start justify-between gap-2">
-                                <div className="space-y-0.5">
+                                <div className="space-y-1">
                                   <div className="font-bold text-slate-900 dark:text-white text-sm">
                                     {grp.groupName}
                                   </div>
-                                  <span className="inline-block px-1.5 py-0.5 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 rounded text-[10px] font-semibold">
-                                    {grp.classLevel}
-                                  </span>
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    <span className="inline-block px-1.5 py-0.5 bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 rounded text-[10px] font-bold border border-blue-200 dark:border-blue-900">
+                                      {grp.classLevel}
+                                    </span>
+                                    <span className="inline-block px-1.5 py-0.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 rounded text-[10px] font-bold border border-emerald-200 dark:border-emerald-900">
+                                      {grp.subject || "All Subjects"}
+                                    </span>
+                                  </div>
                                 </div>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => handleOpenGroupModal(inst, grp)}
-                                  className="h-7 text-xs font-bold text-blue-600 px-2"
-                                >
-                                  Edit Group
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => handleOpenGroupModal(inst, grp)}
+                                    className="h-7 text-xs font-bold text-blue-600 px-2"
+                                  >
+                                    Edit
+                                  </Button>
+                                  <button
+                                    onClick={() => handleDeleteGroup(inst._id, grp.groupId, grp.groupName)}
+                                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-all"
+                                    title="Delete Group"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
                               </div>
 
                               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 space-y-1 text-xs">
                                 <div className="text-[11px] font-semibold text-slate-500">
-                                  Designated Faculty:
+                                  Designated Faculty (Mam / Sir):
                                 </div>
                                 <div className="font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
                                   <span className="w-2 h-2 rounded-full bg-emerald-500" />
@@ -711,24 +889,67 @@ export default function AdminInstitutionsPage() {
                           {inst.faculty.map((f: any) => (
                             <div
                               key={f.userId}
-                              className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1 text-xs"
+                              className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl space-y-2 text-xs"
                             >
                               <div className="flex items-center justify-between">
                                 <span className="font-bold text-slate-900 dark:text-white">
                                   {f.name}
                                 </span>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleOpenEditFaculty(inst, f)}
+                                  className="h-6 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 px-2 py-0"
+                                >
+                                  Edit Classes
+                                </Button>
+                              </div>
+                              <div className="text-[11px] text-slate-500 font-mono truncate">
+                                {f.email} {f.phone && `• ${f.phone}`}
+                              </div>
+                              <div className="text-[11px] text-slate-600 dark:text-slate-300">
+                                {f.qualification} {f.specialization && `• ${f.specialization}`}
+                              </div>
+
+                              {/* Multi-classes & Multi-subjects badges */}
+                              <div className="space-y-1 pt-1.5 border-t border-slate-100 dark:border-slate-800">
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  <span className="text-[10px] text-slate-400 font-semibold mr-0.5">Classes:</span>
+                                  {Array.isArray(f.classesTaught) && f.classesTaught.length > 0 ? (
+                                    f.classesTaught.map((cls: string) => (
+                                      <span
+                                        key={cls}
+                                        className="px-1.5 py-0.2 rounded bg-blue-50 text-blue-700 text-[10px] font-bold"
+                                      >
+                                        {cls}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <span className="text-[10px] text-slate-400">All classes</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  <span className="text-[10px] text-slate-400 font-semibold mr-0.5">Subjects:</span>
+                                  {Array.isArray(f.subjects) && f.subjects.length > 0 ? (
+                                    f.subjects.map((sub: string) => (
+                                      <span
+                                        key={sub}
+                                        className="px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold"
+                                      >
+                                        {sub}
+                                      </span>
+                                    ))
+                                  ) : (
+                                    <span className="text-[10px] text-slate-400">All subjects</span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="text-[10px] text-slate-400 font-semibold pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                                <span>Group Students: {f.assignedStudentCount}</span>
                                 <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 font-semibold">
                                   {f.status}
                                 </span>
-                              </div>
-                              <div className="text-[11px] text-slate-500 font-mono truncate">
-                                {f.email} • {f.phone}
-                              </div>
-                              <div className="text-[11px] text-slate-600 dark:text-slate-300">
-                                {f.qualification} • {f.specialization}
-                              </div>
-                              <div className="text-[10px] text-slate-400 font-semibold pt-1 border-t border-slate-100 dark:border-slate-800">
-                                Group Students: {f.assignedStudentCount}
                               </div>
                             </div>
                           ))}
@@ -797,15 +1018,15 @@ export default function AdminInstitutionsPage() {
       </div>
 
       {/* ──────────────────────────────────────────────────────────────────────── */}
-      {/* MODAL 1: ADD NEW INSTITUTION                                            */}
+      {/* MODAL 1: CREATE / EDIT SCHOOL INSTITUTION                                */}
       {/* ──────────────────────────────────────────────────────────────────────── */}
       {showAddInstModal && (
         <Modal
           isOpen={showAddInstModal}
           onClose={() => setShowAddInstModal(false)}
-          title="Create New School Institution"
+          title={instForm.id ? `Edit School • ${instForm.name}` : "Create New School Institution"}
         >
-          <form onSubmit={handleCreateInstitution} className="space-y-4 pt-2">
+          <form onSubmit={handleSaveInstitution} className="space-y-4 pt-2">
             {errorMsg && (
               <div className="p-3 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 shrink-0" />
@@ -896,12 +1117,13 @@ export default function AdminInstitutionsPage() {
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                Classes Offered
+            {/* Classes Offered Selector */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Classes Offered in this School
               </label>
-              <div className="flex items-center gap-2 flex-wrap">
-                {AVAILABLE_CLASSES.map((cls) => {
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {Array.from(new Set([...DEFAULT_CLASSES, ...instForm.classesOffered])).map((cls) => {
                   const isSelected = instForm.classesOffered.includes(cls);
                   return (
                     <button
@@ -913,7 +1135,7 @@ export default function AdminInstitutionsPage() {
                           : [...instForm.classesOffered, cls];
                         setInstForm({ ...instForm, classesOffered: next });
                       }}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${
                         isSelected
                           ? "bg-blue-600 text-white shadow-sm"
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
@@ -923,6 +1145,83 @@ export default function AdminInstitutionsPage() {
                     </button>
                   );
                 })}
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="text"
+                  placeholder="Add custom class (e.g. Section B / Class 11)"
+                  value={customClassInput}
+                  onChange={(e) => setCustomClassInput(e.target.value)}
+                  className="px-3 py-1.5 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white flex-1"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    const clean = customClassInput.trim();
+                    if (clean && !instForm.classesOffered.includes(clean)) {
+                      setInstForm({ ...instForm, classesOffered: [...instForm.classesOffered, clean] });
+                      setCustomClassInput("");
+                    }
+                  }}
+                  className="bg-slate-800 text-white text-xs px-3 h-8 rounded-xl font-bold"
+                >
+                  + Add Class
+                </Button>
+              </div>
+            </div>
+
+            {/* Subjects Offered Selector */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                Subjects Offered in this School
+              </label>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {Array.from(new Set([...DEFAULT_SUBJECTS, ...instForm.subjectsOffered])).map((sub) => {
+                  const isSelected = instForm.subjectsOffered.includes(sub);
+                  return (
+                    <button
+                      key={sub}
+                      type="button"
+                      onClick={() => {
+                        const next = isSelected
+                          ? instForm.subjectsOffered.filter((s) => s !== sub)
+                          : [...instForm.subjectsOffered, sub];
+                        setInstForm({ ...instForm, subjectsOffered: next });
+                      }}
+                      className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all ${
+                        isSelected
+                          ? "bg-emerald-600 text-white shadow-sm"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                      }`}
+                    >
+                      {sub}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <input
+                  type="text"
+                  placeholder="Add custom subject (e.g. Tamil / Chemistry)"
+                  value={customSubjectInput}
+                  onChange={(e) => setCustomSubjectInput(e.target.value)}
+                  className="px-3 py-1.5 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white flex-1"
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    const clean = customSubjectInput.trim();
+                    if (clean && !instForm.subjectsOffered.includes(clean)) {
+                      setInstForm({ ...instForm, subjectsOffered: [...instForm.subjectsOffered, clean] });
+                      setCustomSubjectInput("");
+                    }
+                  }}
+                  className="bg-slate-800 text-white text-xs px-3 h-8 rounded-xl font-bold"
+                >
+                  + Add Subject
+                </Button>
               </div>
             </div>
 
@@ -940,7 +1239,7 @@ export default function AdminInstitutionsPage() {
                 disabled={submitting}
                 className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4"
               >
-                {submitting ? "Creating..." : "Save Institution"}
+                {submitting ? "Saving..." : instForm.id ? "Update Institution" : "Save Institution"}
               </Button>
             </div>
           </form>
@@ -1055,12 +1354,13 @@ export default function AdminInstitutionsPage() {
               />
             </div>
 
+            {/* Multiple Classes Taught */}
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                Classes Taught
+                Assign Classes Taught (Can assign to multiple classes)
               </label>
-              <div className="flex items-center gap-2 flex-wrap">
-                {AVAILABLE_CLASSES.map((cls) => {
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {(activeInst?.classesOffered || DEFAULT_CLASSES).map((cls: string) => {
                   const isSelected = facultyForm.classesTaught.includes(cls);
                   return (
                     <button
@@ -1074,11 +1374,42 @@ export default function AdminInstitutionsPage() {
                       }}
                       className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
                         isSelected
-                          ? "bg-emerald-600 text-white shadow-sm"
+                          ? "bg-blue-600 text-white shadow-sm"
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
                       }`}
                     >
                       {cls}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Multiple Subjects Taught */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                Assign Subjects Taught (Can assign to multiple subjects)
+              </label>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {(activeInst?.subjectsOffered || DEFAULT_SUBJECTS).map((sub: string) => {
+                  const isSelected = facultyForm.subjects.includes(sub);
+                  return (
+                    <button
+                      key={sub}
+                      type="button"
+                      onClick={() => {
+                        const next = isSelected
+                          ? facultyForm.subjects.filter((s) => s !== sub)
+                          : [...facultyForm.subjects, sub];
+                        setFacultyForm({ ...facultyForm, subjects: next });
+                      }}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                        isSelected
+                          ? "bg-emerald-600 text-white shadow-sm"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                      }`}
+                    >
+                      {sub}
                     </button>
                   );
                 })}
@@ -1100,6 +1431,163 @@ export default function AdminInstitutionsPage() {
                 className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4"
               >
                 {submitting ? "Creating Faculty..." : "Create Faculty Account"}
+              </Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* ──────────────────────────────────────────────────────────────────────── */}
+      {/* MODAL 2B: EDIT FACULTY (Assign Multiple Classes & Subjects)              */}
+      {/* ──────────────────────────────────────────────────────────────────────── */}
+      {showEditFacultyModal && (
+        <Modal
+          isOpen={showEditFacultyModal}
+          onClose={() => setShowEditFacultyModal(false)}
+          title={`Assign Multiple Classes & Subjects • ${editFacultyForm.name}`}
+        >
+          <form onSubmit={handleUpdateFaculty} className="space-y-4 pt-2">
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+            {successMsg && (
+              <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 shrink-0" />
+                <span>{successMsg}</span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Faculty Name
+              </label>
+              <input
+                type="text"
+                value={editFacultyForm.name}
+                onChange={(e) => setEditFacultyForm({ ...editFacultyForm, name: e.target.value })}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Qualification
+                </label>
+                <input
+                  type="text"
+                  value={editFacultyForm.qualification}
+                  onChange={(e) => setEditFacultyForm({ ...editFacultyForm, qualification: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Specialization
+                </label>
+                <input
+                  type="text"
+                  value={editFacultyForm.specialization}
+                  onChange={(e) => setEditFacultyForm({ ...editFacultyForm, specialization: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+                />
+              </div>
+            </div>
+
+            {/* Multiple Classes Taught */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                Classes Taught by this Faculty (Select multiple classes)
+              </label>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {(activeInst?.classesOffered || DEFAULT_CLASSES).map((cls: string) => {
+                  const isSelected = editFacultyForm.classesTaught.includes(cls);
+                  return (
+                    <button
+                      key={cls}
+                      type="button"
+                      onClick={() => {
+                        const next = isSelected
+                          ? editFacultyForm.classesTaught.filter((c) => c !== cls)
+                          : [...editFacultyForm.classesTaught, cls];
+                        setEditFacultyForm({ ...editFacultyForm, classesTaught: next });
+                      }}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                        isSelected
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                      }`}
+                    >
+                      {cls}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Multiple Subjects Taught */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                Subjects Taught by this Faculty (Select multiple subjects)
+              </label>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {(activeInst?.subjectsOffered || DEFAULT_SUBJECTS).map((sub: string) => {
+                  const isSelected = editFacultyForm.subjects.includes(sub);
+                  return (
+                    <button
+                      key={sub}
+                      type="button"
+                      onClick={() => {
+                        const next = isSelected
+                          ? editFacultyForm.subjects.filter((s) => s !== sub)
+                          : [...editFacultyForm.subjects, sub];
+                        setEditFacultyForm({ ...editFacultyForm, subjects: next });
+                      }}
+                      className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+                        isSelected
+                          ? "bg-emerald-600 text-white shadow-sm"
+                          : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300"
+                      }`}
+                    >
+                      {sub}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Reset Login Password (Optional)
+              </label>
+              <input
+                type="text"
+                placeholder="Leave blank to keep existing password"
+                value={editFacultyForm.password}
+                onChange={(e) => setEditFacultyForm({ ...editFacultyForm, password: e.target.value })}
+                className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+              />
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowEditFacultyModal(false)}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={submitting}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4"
+              >
+                {submitting ? "Updating..." : "Save Faculty Assignment"}
               </Button>
             </div>
           </form>
@@ -1183,7 +1671,7 @@ export default function AdminInstitutionsPage() {
                   onChange={(e) => setStudentForm({ ...studentForm, currentClass: e.target.value })}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
                 >
-                  {AVAILABLE_CLASSES.map((cls) => (
+                  {(activeInst?.classesOffered || DEFAULT_CLASSES).map((cls: string) => (
                     <option key={cls} value={cls}>
                       {cls}
                     </option>
@@ -1202,6 +1690,7 @@ export default function AdminInstitutionsPage() {
                 >
                   <option value="State Board">State Board</option>
                   <option value="CBSE">CBSE</option>
+                  <option value="ICSE">ICSE</option>
                 </select>
               </div>
             </div>
@@ -1281,7 +1770,7 @@ export default function AdminInstitutionsPage() {
         <Modal
           isOpen={showGroupModal}
           onClose={() => setShowGroupModal(false)}
-          title={`Allocate Class Group • ${activeInst?.name}`}
+          title={`Allocate Class & Subject Group • ${activeInst?.name}`}
         >
           <form onSubmit={handleSaveGroup} className="space-y-4 pt-2">
             {errorMsg && (
@@ -1297,21 +1786,21 @@ export default function AdminInstitutionsPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Group / Section Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Class 10 - Section A"
-                  value={groupForm.groupName}
-                  onChange={(e) => setGroupForm({ ...groupForm, groupName: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
-                />
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Group / Section Name *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Class 10 - Mathematics - Section A"
+                value={groupForm.groupName}
+                onChange={(e) => setGroupForm({ ...groupForm, groupName: e.target.value })}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+              />
+            </div>
 
+            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                   Class Level *
@@ -1321,9 +1810,27 @@ export default function AdminInstitutionsPage() {
                   onChange={(e) => setGroupForm({ ...groupForm, classLevel: e.target.value })}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
                 >
-                  {AVAILABLE_CLASSES.map((cls) => (
+                  {(activeInst?.classesOffered || DEFAULT_CLASSES).map((cls: string) => (
                     <option key={cls} value={cls}>
                       {cls}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Subject *
+                </label>
+                <select
+                  value={groupForm.subject}
+                  onChange={(e) => setGroupForm({ ...groupForm, subject: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+                >
+                  <option value="All Subjects">All Subjects</option>
+                  {(activeInst?.subjectsOffered || DEFAULT_SUBJECTS).map((sub: string) => (
+                    <option key={sub} value={sub}>
+                      {sub}
                     </option>
                   ))}
                 </select>
@@ -1341,11 +1848,15 @@ export default function AdminInstitutionsPage() {
                 className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
               >
                 <option value="">-- Select Faculty Mam / Sir --</option>
-                {(activeInst?.faculty || []).map((f: any) => (
-                  <option key={f.userId} value={f.userId}>
-                    {f.name} ({f.email}) • {f.specialization || "Faculty"}
-                  </option>
-                ))}
+                {(activeInst?.faculty || []).map((f: any) => {
+                  const taughtClasses = Array.isArray(f.classesTaught) ? f.classesTaught.join(", ") : "";
+                  const taughtSubjects = Array.isArray(f.subjects) ? f.subjects.join(", ") : "";
+                  return (
+                    <option key={f.userId} value={f.userId}>
+                      {f.name} ({taughtSubjects || "All Subjects"} • {taughtClasses || "All Classes"})
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -1435,7 +1946,7 @@ export default function AdminInstitutionsPage() {
                 })()}
               </div>
               <div className="text-[11px] text-slate-400">
-                Selected: <strong className="text-slate-800 dark:text-white">{groupForm.studentUserIds.length}</strong> students. These students will strictly receive live classes, timetable, and tests from this designated teacher.
+                Selected: <strong className="text-slate-800 dark:text-white">{groupForm.studentUserIds.length}</strong> students. These students will strictly receive live classes, timetable, and tests from this designated teacher for <strong className="text-slate-800 dark:text-white">{groupForm.subject}</strong> without interference.
               </div>
             </div>
 

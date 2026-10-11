@@ -345,7 +345,8 @@ export interface IClassroomPoll {
 export interface IClassGroup {
   groupId: string;
   groupName: string;
-  classLevel: ClassLevel;
+  classLevel: ClassLevel | string;
+  subject?: string;
   facultyUserId: string | IUser;
   studentUserIds: (string | IUser)[];
   createdAt?: Date;
@@ -361,7 +362,8 @@ export interface IInstitution {
   contactPhone?: string;
   contactEmail?: string;
   status: "ACTIVE" | "INACTIVE";
-  classesOffered: ClassLevel[];
+  classesOffered: (ClassLevel | string)[];
+  subjectsOffered?: string[];
   groups?: IClassGroup[];
   createdAt?: Date;
   updatedAt?: Date;

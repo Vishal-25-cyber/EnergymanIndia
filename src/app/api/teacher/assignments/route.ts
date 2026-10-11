@@ -266,8 +266,46 @@ export async function POST(req: NextRequest) {
       ])
     );
 
+    // 1. Check for specific group(s) in Institution where this teacher is assigned for classLevel and subject
+    let groupStudentIds: string[] = [];
+    try {
+      const Institution = (await import("@/models/Institution")).default;
+      const institutionDoc = await Institution.findOne({
+        "groups.facultyUserId": { $in: [teacherUserId, teacherObjId] },
+      }).lean();
+
+      if (institutionDoc && Array.isArray(institutionDoc.groups)) {
+        const matchingGroups = institutionDoc.groups.filter((g: any) => {
+          const isTeacher = (g.facultyUserId?._id || g.facultyUserId || "").toString() === teacherUserId.toString();
+          if (!isTeacher) return false;
+          if (classLevel && g.classLevel !== classLevel) return false;
+          if (subject && g.subject && g.subject !== "All Subjects") {
+            if (!new RegExp(`^${subject.trim()}$`, "i").test(g.subject)) return false;
+          }
+          return true;
+        });
+
+        if (matchingGroups.length > 0) {
+          groupStudentIds = Array.from(
+            new Set(
+              matchingGroups.flatMap((g: any) =>
+                (g.studentUserIds || []).map((id: any) => (id._id || id).toString()).filter(Boolean)
+              )
+            )
+          );
+        }
+      }
+    } catch (err) {
+      console.warn("Group resolution warning in assignments:", err);
+    }
+
     let eligibleStudents: any[] = [];
-    if (allAllocatedUserIds.length > 0) {
+    if (groupStudentIds.length > 0) {
+      eligibleStudents = await StudentProfile.find({
+        userId: { $in: groupStudentIds },
+        ...(classLevel ? { currentClass: classLevel } : {}),
+      }).lean();
+    } else if (allAllocatedUserIds.length > 0) {
       eligibleStudents = await StudentProfile.find({
         userId: { $in: allAllocatedUserIds },
         ...(classLevel ? { currentClass: classLevel } : {}),

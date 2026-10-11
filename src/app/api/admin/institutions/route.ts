@@ -187,6 +187,7 @@ export async function POST(req: NextRequest) {
         contactPhone,
         contactEmail,
         classesOffered,
+        subjectsOffered,
       } = body;
 
       if (!name || !name.trim()) {
@@ -215,6 +216,11 @@ export async function POST(req: NextRequest) {
         ? classesOffered
         : defaultClasses;
 
+      const defaultSubjects = ["Mathematics", "Science", "Physics", "Chemistry", "Biology", "English", "Social Science"];
+      const finalSubjects = Array.isArray(subjectsOffered) && subjectsOffered.length > 0
+        ? subjectsOffered
+        : defaultSubjects;
+
       const institution = await Institution.create({
         name: cleanName,
         code: cleanCode,
@@ -224,6 +230,7 @@ export async function POST(req: NextRequest) {
         contactPhone: contactPhone ? sanitize10DigitPhone(contactPhone) : "",
         contactEmail: (contactEmail || "").trim().toLowerCase(),
         classesOffered: finalClasses,
+        subjectsOffered: finalSubjects,
         status: "ACTIVE",
         groups: [],
       });
@@ -240,6 +247,53 @@ export async function POST(req: NextRequest) {
         success: true,
         message: `Institution "${cleanName}" created successfully!`,
         institution,
+      });
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 1B. UPDATE INSTITUTION (Classes, Subjects, Details)
+    // ──────────────────────────────────────────────────────────────────────────
+    if (action === "UPDATE_INSTITUTION") {
+      const {
+        institutionId,
+        name,
+        code,
+        district,
+        address,
+        contactPerson,
+        contactPhone,
+        contactEmail,
+        classesOffered,
+        subjectsOffered,
+        status,
+      } = body;
+
+      if (!institutionId) {
+        return NextResponse.json({ error: "Institution ID is required." }, { status: 400 });
+      }
+
+      const inst = await Institution.findById(institutionId);
+      if (!inst) {
+        return NextResponse.json({ error: "Institution not found." }, { status: 404 });
+      }
+
+      if (name) inst.name = name.trim();
+      if (code) inst.code = code.trim().toUpperCase();
+      if (district !== undefined) inst.district = district.trim();
+      if (address !== undefined) inst.address = address.trim();
+      if (contactPerson !== undefined) inst.contactPerson = contactPerson.trim();
+      if (contactPhone !== undefined) inst.contactPhone = contactPhone ? sanitize10DigitPhone(contactPhone) : "";
+      if (contactEmail !== undefined) inst.contactEmail = contactEmail.trim().toLowerCase();
+      if (Array.isArray(classesOffered)) inst.classesOffered = classesOffered;
+      if (Array.isArray(subjectsOffered)) inst.subjectsOffered = subjectsOffered;
+      if (status) inst.status = status;
+
+      await inst.save();
+
+      return NextResponse.json({
+        success: true,
+        message: `Institution "${inst.name}" updated successfully!`,
+        institution: inst,
       });
     }
 
@@ -547,6 +601,7 @@ export async function POST(req: NextRequest) {
         groupId,
         groupName,
         classLevel,
+        subject,
         facultyUserId,
         studentUserIds,
       } = body;
@@ -555,7 +610,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Institution ID is required." }, { status: 400 });
       }
       if (!groupName || !groupName.trim()) {
-        return NextResponse.json({ error: "Group name is required (e.g. Class 10 - Section A)." }, { status: 400 });
+        return NextResponse.json({ error: "Group name is required (e.g. Class 10 - Section A - Mathematics)." }, { status: 400 });
       }
       if (!facultyUserId) {
         return NextResponse.json({ error: "Please select the designated faculty member (Mam/Sir) for this group." }, { status: 400 });
@@ -567,6 +622,8 @@ export async function POST(req: NextRequest) {
       }
 
       const cleanGroupId = groupId || `grp_${Date.now()}`;
+      const cleanClassLevel = (classLevel || "Class 10").trim();
+      const cleanSubject = (subject || "All Subjects").trim();
       const selectedStudentIds = Array.isArray(studentUserIds)
         ? studentUserIds.filter(Boolean).map((id: any) => (id._id || id).toString())
         : [];
@@ -579,7 +636,8 @@ export async function POST(req: NextRequest) {
       const groupPayload: any = {
         groupId: cleanGroupId,
         groupName: groupName.trim(),
-        classLevel: classLevel || "Class 10",
+        classLevel: cleanClassLevel,
+        subject: cleanSubject,
         facultyUserId: new mongoose.Types.ObjectId(facultyUserId),
         studentUserIds: selectedStudentIds.map((id) => new mongoose.Types.ObjectId(id)),
         createdAt: new Date(),
@@ -593,7 +651,7 @@ export async function POST(req: NextRequest) {
       await inst.save();
 
       // Bidirectional Synchronization:
-      // 1. Update TeacherProfile assignedStudentIds
+      // 1. Update TeacherProfile assignedStudentIds, assignedClasses, and assignedSubjects
       const teacherObjId = mongoose.Types.ObjectId.isValid(facultyUserId)
         ? new mongoose.Types.ObjectId(facultyUserId)
         : facultyUserId;
@@ -607,14 +665,44 @@ export async function POST(req: NextRequest) {
         const currentAssigned = (teacherProf.assignedStudentIds || []).map((s: any) => (s._id || s).toString());
         const mergedSet = new Set([...currentAssigned, ...selectedStudentIds]);
         teacherProf.assignedStudentIds = Array.from(mergedSet).map((id) => new mongoose.Types.ObjectId(id)) as any;
+
+        // Ensure teacher's assignedClasses contains classLevel
+        const curClasses = Array.isArray(teacherProf.assignedClasses) ? teacherProf.assignedClasses : [];
+        if (!curClasses.includes(cleanClassLevel)) {
+          teacherProf.assignedClasses = [...curClasses, cleanClassLevel];
+        }
+        const curClassesTaught = Array.isArray(teacherProf.classesTaught) ? teacherProf.classesTaught : [];
+        if (!curClassesTaught.includes(cleanClassLevel)) {
+          teacherProf.classesTaught = [...curClassesTaught, cleanClassLevel];
+        }
+
+        // If subject is specific, ensure teacher's assignedSubjects contains subject
+        if (cleanSubject && cleanSubject !== "All Subjects") {
+          const curSubjects = Array.isArray(teacherProf.assignedSubjects) ? teacherProf.assignedSubjects : [];
+          if (!curSubjects.includes(cleanSubject)) {
+            teacherProf.assignedSubjects = [...curSubjects, cleanSubject];
+          }
+          const curTSubjects = Array.isArray(teacherProf.subjects) ? teacherProf.subjects : [];
+          if (!curTSubjects.includes(cleanSubject)) {
+            teacherProf.subjects = [...curTSubjects, cleanSubject];
+          }
+        }
         await teacherProf.save();
       }
 
-      // 2. Update StudentProfile assignedTeacherIds for all students in this group
+      // 2. Update StudentProfile assignedTeacherIds and subjects for all students in this group
       if (selectedStudentIds.length > 0) {
+        const studentUpdate: any = {
+          $addToSet: {
+            assignedTeacherIds: new mongoose.Types.ObjectId(facultyUserId),
+          },
+        };
+        if (cleanSubject && cleanSubject !== "All Subjects") {
+          studentUpdate.$addToSet.subjects = cleanSubject;
+        }
         await StudentProfile.updateMany(
           { userId: { $in: selectedStudentIds } },
-          { $addToSet: { assignedTeacherIds: new mongoose.Types.ObjectId(facultyUserId) } }
+          studentUpdate
         );
       }
 
@@ -623,13 +711,70 @@ export async function POST(req: NextRequest) {
         action: "ADMIN_INSTITUTION_GROUP_SAVED",
         entityType: "INSTITUTION",
         entityId: institutionId,
-        details: { groupName, classLevel, facultyUserId, studentCount: selectedStudentIds.length },
+        details: { groupName, classLevel: cleanClassLevel, subject: cleanSubject, facultyUserId, studentCount: selectedStudentIds.length },
       });
 
       return NextResponse.json({
         success: true,
-        message: `Group "${groupName}" saved successfully! Faculty allocated to ${selectedStudentIds.length} students.`,
+        message: `Group "${groupName}" (${cleanClassLevel} • ${cleanSubject}) saved successfully! Faculty allocated to ${selectedStudentIds.length} students.`,
         group: groupPayload,
+      });
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 4B. UPDATE FACULTY MULTIPLE CLASSES & SUBJECTS
+    // ──────────────────────────────────────────────────────────────────────────
+    if (action === "UPDATE_FACULTY") {
+      const {
+        teacherUserId,
+        name,
+        classesTaught,
+        subjects,
+        qualification,
+        specialization,
+        password,
+      } = body;
+
+      if (!teacherUserId) {
+        return NextResponse.json({ error: "Teacher user ID is required." }, { status: 400 });
+      }
+
+      const teacherObjId = mongoose.Types.ObjectId.isValid(teacherUserId)
+        ? new mongoose.Types.ObjectId(teacherUserId)
+        : teacherUserId;
+
+      const teacherProf = await TeacherProfile.findOne({
+        $or: [{ userId: teacherUserId }, { userId: teacherObjId }, { _id: teacherUserId }],
+      });
+
+      if (!teacherProf) {
+        return NextResponse.json({ error: "Teacher profile not found." }, { status: 404 });
+      }
+
+      if (Array.isArray(classesTaught)) {
+        teacherProf.classesTaught = classesTaught;
+        teacherProf.assignedClasses = classesTaught;
+      }
+      if (Array.isArray(subjects)) {
+        teacherProf.subjects = subjects;
+        teacherProf.assignedSubjects = subjects;
+      }
+      if (qualification) teacherProf.qualification = qualification.trim();
+      if (specialization) teacherProf.specialization = specialization.trim();
+      await teacherProf.save();
+
+      const userUpdate: any = {};
+      if (name) userUpdate.name = name.trim();
+      if (password && password.trim().length >= 6) {
+        userUpdate.passwordHash = await hashPassword(password.trim());
+      }
+      if (Object.keys(userUpdate).length > 0) {
+        await User.findByIdAndUpdate(teacherProf.userId, userUpdate);
+      }
+
+      return NextResponse.json({
+        success: true,
+        message: "Faculty classes, subjects, and credentials updated successfully!",
       });
     }
 
