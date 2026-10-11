@@ -106,11 +106,7 @@ export async function resolveClassStreamAndStudents({
     console.warn("Group resolution warning:", err);
   }
 
-  // 2. Check if the teacher has explicitly allocated students
-  const directAllocated = (teacherProfile?.assignedStudentIds || [])
-    .filter(Boolean)
-    .map((id: any) => (id._id || id).toString());
-
+  // 2. Query students who have teacher assigned directly or in reverse mapping
   const reverseAllocated = await StudentProfile.find({
     assignedTeacherIds: { $in: [teacherUserId, teacherObjId] },
   })

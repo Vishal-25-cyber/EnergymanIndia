@@ -97,6 +97,7 @@ import * as TeacherDashboard from "../src/app/api/teacher/dashboard/route";
 import * as TeacherMaterials from "../src/app/api/teacher/materials/route";
 import * as TeacherMaterialDetail from "../src/app/api/teacher/materials/[id]/route";
 import * as TeacherAssignments from "../src/app/api/teacher/assignments/route";
+import * as TeacherGrantRetest from "../src/app/api/teacher/assignments/grant-retest/route";
 import * as TeacherStudents from "../src/app/api/teacher/students/route";
 import * as TeacherStudentsGroup from "../src/app/api/teacher/students/group/route";
 import * as TeacherScheduleSwap from "../src/app/api/teacher/schedule/swap/route";
