@@ -14,6 +14,7 @@ const TeacherProfileSchema = new Schema<ITeacherProfileDocument>(
       index: true,
     },
     institutionName: { type: String, trim: true, default: "" },
+    personalEmail: { type: String, trim: true, lowercase: true, default: "" },
     qualification: { type: String, required: true, trim: true },
     specialization: { type: String, required: true, trim: true },
     subjects: [{ type: String, trim: true }],

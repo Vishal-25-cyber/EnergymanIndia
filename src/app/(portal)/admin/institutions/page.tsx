@@ -35,6 +35,8 @@ import {
   sanitize10DigitPhone,
   isValidStudentEmail,
   ensureStudentEmail,
+  isValidMantifEmail,
+  ensureMantifEmail,
   isValidGeneralEmail,
 } from "@/lib/validations/phone";
 
@@ -89,6 +91,7 @@ export default function AdminInstitutionsPage() {
   // New Faculty Form
   const [facultyForm, setFacultyForm] = useState({
     name: "",
+    personalEmail: "",
     username: "",
     phone: "",
     password: "",
@@ -112,6 +115,7 @@ export default function AdminInstitutionsPage() {
   // New Student Form
   const [studentForm, setStudentForm] = useState({
     name: "",
+    personalEmail: "",
     username: "",
     phone: "",
     password: "",
@@ -194,6 +198,7 @@ export default function AdminInstitutionsPage() {
     const availableSub = inst.subjectsOffered?.length ? inst.subjectsOffered : ["Mathematics"];
     setFacultyForm({
       name: "",
+      personalEmail: "",
       username: "",
       phone: "",
       password: "",
@@ -229,6 +234,7 @@ export default function AdminInstitutionsPage() {
     setSuccessMsg("");
     setStudentForm({
       name: "",
+      personalEmail: "",
       username: "",
       phone: "",
       password: "",
@@ -345,11 +351,25 @@ export default function AdminInstitutionsPage() {
       setErrorMsg("Faculty full name is required (min 2 characters).");
       return;
     }
-    const facultyEmail = facultyForm.username.trim().toLowerCase();
-    if (!facultyEmail || !isValidGeneralEmail(facultyEmail)) {
-      setErrorMsg("Please provide a valid faculty login email address.");
+
+    const cleanPersonalEmail = facultyForm.personalEmail.trim().toLowerCase();
+    if (!cleanPersonalEmail || !isValidGeneralEmail(cleanPersonalEmail)) {
+      setErrorMsg("Please provide a valid personal email address (e.g. solairaj495@gmail.com).");
       return;
     }
+
+    const rawFacultyEmail = facultyForm.username.trim().toLowerCase();
+    if (!rawFacultyEmail) {
+      setErrorMsg("Faculty official login email is required and must end with @mantif.com.");
+      return;
+    }
+
+    const facultyLoginEmail = ensureMantifEmail(rawFacultyEmail);
+    if (!isValidMantifEmail(facultyLoginEmail)) {
+      setErrorMsg("Faculty official login email must end with @mantif.com (e.g. name@mantif.com).");
+      return;
+    }
+
     if (!facultyForm.password.trim() || facultyForm.password.trim().length < 6) {
       setErrorMsg("Login password must be at least 6 characters.");
       return;
@@ -387,14 +407,15 @@ export default function AdminInstitutionsPage() {
           institutionId: activeInst?._id,
           institutionName: activeInst?.name,
           ...facultyForm,
-          username: facultyEmail,
-          email: facultyEmail,
+          personalEmail: cleanPersonalEmail,
+          username: facultyLoginEmail,
+          email: facultyLoginEmail,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add faculty member.");
 
-      setSuccessMsg(data.message || "Faculty member created with login credentials!");
+      setSuccessMsg(data.message || `Faculty member created with login: ${facultyLoginEmail}!`);
       invalidateCache("/api/admin/institutions");
       invalidateCache("/api/admin/teachers");
       refetch();
@@ -446,7 +467,7 @@ export default function AdminInstitutionsPage() {
     }
   };
 
-  // Submit New Student (Must End with @mantif.com)
+  // Submit New Student (Must End with @mantif.com & Personal Email)
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!studentForm.name.trim() || studentForm.name.trim().length < 2) {
@@ -454,10 +475,22 @@ export default function AdminInstitutionsPage() {
       return;
     }
 
+    const cleanPersonalEmail = studentForm.personalEmail.trim().toLowerCase();
+    if (!cleanPersonalEmail || !isValidGeneralEmail(cleanPersonalEmail)) {
+      setErrorMsg("Please provide a valid personal or parent email address.");
+      return;
+    }
+
     // Auto-ensure @mantif.com on student email
-    const studentLoginEmail = ensureStudentEmail(studentForm.username);
-    if (!isValidStudentEmail(studentLoginEmail)) {
-      setErrorMsg("Student email must end with @mantif.com (e.g. arun@mantif.com).");
+    const rawStudentEmail = studentForm.username.trim().toLowerCase();
+    if (!rawStudentEmail) {
+      setErrorMsg("Student official login email is required and must end with @mantif.com.");
+      return;
+    }
+
+    const studentLoginEmail = ensureMantifEmail(rawStudentEmail);
+    if (!isValidMantifEmail(studentLoginEmail)) {
+      setErrorMsg("Student official login email must end with @mantif.com (e.g. arun@mantif.com).");
       return;
     }
 
@@ -493,6 +526,7 @@ export default function AdminInstitutionsPage() {
           institutionId: activeInst?._id,
           institutionName: activeInst?.name,
           ...studentForm,
+          personalEmail: cleanPersonalEmail,
           username: studentLoginEmail,
           email: studentLoginEmail,
         }),
@@ -1012,8 +1046,13 @@ export default function AdminInstitutionsPage() {
                                 </Button>
                               </div>
                               <div className="text-[11px] text-slate-500 font-mono truncate">
-                                {f.email} {f.phone && `• ${f.phone}`}
+                                Login: <span className="font-semibold text-slate-700 dark:text-slate-300">{f.email}</span> {f.phone && `• ${f.phone}`}
                               </div>
+                              {f.personalEmail && (
+                                <div className="text-[10px] text-slate-500 truncate">
+                                  Personal: <span className="text-slate-700 dark:text-slate-300">{f.personalEmail}</span>
+                                </div>
+                              )}
                               <div className="text-[11px] text-slate-600 dark:text-slate-300">
                                 {f.qualification} {f.specialization && `• ${f.specialization}`}
                               </div>
@@ -1104,6 +1143,11 @@ export default function AdminInstitutionsPage() {
                                 <div className="text-[11px] text-slate-500">
                                   Login: <span className="font-mono text-slate-700 dark:text-slate-300">{st.email}</span> • Phone: {st.phone}
                                 </div>
+                                {st.personalEmail && (
+                                  <div className="text-[10px] text-slate-500">
+                                    Personal: <span className="text-slate-700 dark:text-slate-300">{st.personalEmail}</span>
+                                  </div>
+                                )}
                               </div>
                               <div className="text-right text-[11px] text-slate-500">
                                 {st.parentName && <div>Parent: {st.parentName}</div>}
@@ -1344,24 +1388,56 @@ export default function AdminInstitutionsPage() {
               />
             </div>
 
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Faculty Personal Email (e.g. Gmail / Yahoo) *
+              </label>
+              <input
+                type="email"
+                required
+                placeholder="e.g. solairaj495@gmail.com"
+                value={facultyForm.personalEmail}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const updates: any = { personalEmail: val };
+                  if (!facultyForm.username || facultyForm.username.endsWith("@mantif.com")) {
+                    const prefix = val.includes("@") ? val.split("@")[0] : val;
+                    if (prefix.trim()) {
+                      updates.username = `${prefix.trim().toLowerCase()}@mantif.com`;
+                    }
+                  }
+                  setFacultyForm({ ...facultyForm, ...updates });
+                }}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Username / Login Email *
+                  Official Mantif Login Email * (Ends with @mantif.com)
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. priya.mam@school.edu"
+                  placeholder="e.g. solairaj495@mantif.com"
                   value={facultyForm.username}
                   onChange={(e) => setFacultyForm({ ...facultyForm, username: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+                  onBlur={(e) => {
+                    if (e.target.value.trim()) {
+                      setFacultyForm({ ...facultyForm, username: ensureMantifEmail(e.target.value) });
+                    }
+                  }}
+                  className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
                 />
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                  Official login account ending with @mantif.com
+                </span>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Login Password *
+                  Login Password * (Min 6 chars)
                 </label>
                 <input
                   type="text"
@@ -1692,6 +1768,30 @@ export default function AdminInstitutionsPage() {
               />
             </div>
 
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Personal / Parent Contact Email *
+              </label>
+              <input
+                type="email"
+                required
+                placeholder="e.g. parent@gmail.com"
+                value={studentForm.personalEmail}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const updates: any = { personalEmail: val };
+                  if (!studentForm.username || studentForm.username.endsWith("@mantif.com")) {
+                    const prefix = val.includes("@") ? val.split("@")[0] : val;
+                    if (prefix.trim()) {
+                      updates.username = `${prefix.trim().toLowerCase()}@mantif.com`;
+                    }
+                  }
+                  setStudentForm({ ...studentForm, ...updates });
+                }}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -1705,13 +1805,13 @@ export default function AdminInstitutionsPage() {
                   onChange={(e) => setStudentForm({ ...studentForm, username: e.target.value })}
                   onBlur={(e) => {
                     if (e.target.value.trim()) {
-                      setStudentForm({ ...studentForm, username: ensureStudentEmail(e.target.value) });
+                      setStudentForm({ ...studentForm, username: ensureMantifEmail(e.target.value) });
                     }
                   }}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+                  className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
                 />
                 <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">
-                  Must end with @mantif.com
+                  Login username will end with @mantif.com
                 </span>
               </div>
 

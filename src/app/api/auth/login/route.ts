@@ -28,18 +28,20 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Email or phone number is required." }, { status: 400 });
       }
 
-      // Find user by email or phone
+      // Find user by email, personalEmail, or phone
       let user = await User.findOne({
         role: "STUDENT",
-        $or: [{ email: loginId }, { phone: loginId }],
+        $or: [{ email: loginId }, { personalEmail: loginId }, { phone: loginId }],
       });
 
-      // Fallback: If user exists and has a StudentProfile or matches student record
+      // Fallback: Check if user exists with role STUDENT or has StudentProfile
       if (!user) {
         const potentialUser = await User.findOne({
-          $or: [{ email: loginId }, { phone: loginId }],
+          $or: [{ email: loginId }, { personalEmail: loginId }, { phone: loginId }],
         });
-        if (potentialUser) {
+        if (potentialUser && potentialUser.role === "STUDENT") {
+          user = potentialUser;
+        } else if (potentialUser && potentialUser.role !== "TEACHER" && potentialUser.role !== "ADMIN") {
           const profile = await StudentProfile.findOne({ userId: potentialUser._id });
           if (profile || potentialUser.email === "vishalk.23cse@kongu.edu" || potentialUser.phone === "6381180488") {
             user = potentialUser;
@@ -227,10 +229,15 @@ export async function POST(req: NextRequest) {
     // TEACHER LOGIN
     if (role === "TEACHER") {
       const loginEmail = (email || identifier || "").trim().toLowerCase();
-      let user = await User.findOne({ email: loginEmail });
+      let user = await User.findOne({
+        role: "TEACHER",
+        $or: [{ email: loginEmail }, { personalEmail: loginEmail }, { phone: loginEmail }],
+      });
 
       if (!user) {
-        user = await User.findOne({ phone: loginEmail });
+        user = await User.findOne({
+          $or: [{ email: loginEmail }, { personalEmail: loginEmail }, { phone: loginEmail }],
+        });
       }
 
       if (!user) {

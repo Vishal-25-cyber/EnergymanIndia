@@ -26,6 +26,7 @@ export interface IUser {
   _id: string;
   name: string;
   email: string;
+  personalEmail?: string;
   phone: string;
   altPhone?: string;
   district?: string;

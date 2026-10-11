@@ -31,6 +31,9 @@ import {
   isValid10DigitPhone,
   isValidStudentEmail,
   ensureStudentEmail,
+  isValidMantifEmail,
+  ensureMantifEmail,
+  isValidGeneralEmail,
 } from "@/lib/validations/phone";
 
 export default function TeacherStudentsPage() {
@@ -115,6 +118,7 @@ export default function TeacherStudentsPage() {
   const [isAddingStudent, setIsAddingStudent] = useState(false);
   const [addStudentForm, setAddStudentForm] = useState({
     name: "",
+    personalEmail: "",
     username: "",
     password: "",
     currentClass: "Class 10",
@@ -136,8 +140,20 @@ export default function TeacherStudentsPage() {
       return;
     }
 
-    const cleanEmail = ensureStudentEmail(addStudentForm.username);
-    if (!isValidStudentEmail(cleanEmail)) {
+    const cleanPersonalEmail = addStudentForm.personalEmail.trim().toLowerCase();
+    if (!cleanPersonalEmail || !isValidGeneralEmail(cleanPersonalEmail)) {
+      setAddStudentError("Please provide a valid personal or parent email address.");
+      return;
+    }
+
+    const rawEmail = addStudentForm.username.trim().toLowerCase();
+    if (!rawEmail) {
+      setAddStudentError("Student official login email is required and must end with @mantif.com.");
+      return;
+    }
+
+    const cleanEmail = ensureMantifEmail(rawEmail);
+    if (!isValidMantifEmail(cleanEmail)) {
       setAddStudentError("Student login email must end with @mantif.com (e.g. name@mantif.com).");
       return;
     }
@@ -169,6 +185,7 @@ export default function TeacherStudentsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...addStudentForm,
+          personalEmail: cleanPersonalEmail,
           username: cleanEmail,
           email: cleanEmail,
         }),
@@ -184,6 +201,7 @@ export default function TeacherStudentsPage() {
         setAddStudentSuccess(null);
         setAddStudentForm({
           name: "",
+          personalEmail: "",
           username: "",
           password: "",
           currentClass: "Class 10",
@@ -516,7 +534,15 @@ export default function TeacherStudentsPage() {
                                 <>
                                   <span>·</span>
                                   <span className="font-mono text-[11px] text-slate-400 truncate max-w-[200px]">
-                                    {s.userId.email}
+                                    Login: {s.userId.email}
+                                  </span>
+                                </>
+                              )}
+                              {s.userId?.personalEmail && (
+                                <>
+                                  <span>·</span>
+                                  <span className="text-[11px] text-slate-400 truncate max-w-[200px]">
+                                    Personal: {s.userId.personalEmail}
                                   </span>
                                 </>
                               )}
@@ -1049,10 +1075,34 @@ export default function TeacherStudentsPage() {
               />
             </div>
 
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Personal / Parent Contact Email *
+              </label>
+              <input
+                type="email"
+                required
+                placeholder="e.g. parent@gmail.com"
+                value={addStudentForm.personalEmail}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const updates: any = { personalEmail: val };
+                  if (!addStudentForm.username || addStudentForm.username.endsWith("@mantif.com")) {
+                    const prefix = val.includes("@") ? val.split("@")[0] : val;
+                    if (prefix.trim()) {
+                      updates.username = `${prefix.trim().toLowerCase()}@mantif.com`;
+                    }
+                  }
+                  setAddStudentForm({ ...addStudentForm, ...updates });
+                }}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+              />
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Login Email * (Must end with @mantif.com)
+                  Official Mantif Login Email * (Ends with @mantif.com)
                 </label>
                 <input
                   type="text"
@@ -1062,10 +1112,10 @@ export default function TeacherStudentsPage() {
                   onChange={(e) => setAddStudentForm({ ...addStudentForm, username: e.target.value })}
                   onBlur={(e) => {
                     if (e.target.value.trim()) {
-                      setAddStudentForm({ ...addStudentForm, username: ensureStudentEmail(e.target.value) });
+                      setAddStudentForm({ ...addStudentForm, username: ensureMantifEmail(e.target.value) });
                     }
                   }}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+                  className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
                 />
                 <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">
                   Login username will end with @mantif.com

@@ -9,6 +9,7 @@ const UserSchema = new Schema<IUserDocument>(
   {
     name: { type: String, required: true, trim: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true, index: true },
+    personalEmail: { type: String, lowercase: true, trim: true, default: "", index: true },
     phone: { type: String, required: true, trim: true, index: true },
     altPhone: { type: String, trim: true },
     district: { type: String, trim: true, default: "" },

@@ -14,6 +14,7 @@ const StudentProfileSchema = new Schema<IStudentProfileDocument>(
       index: true,
     },
     schoolName: { type: String, required: true, trim: true },
+    personalEmail: { type: String, trim: true, lowercase: true, default: "" },
     district: { type: String, trim: true, default: "" },
     board: {
       type: String,

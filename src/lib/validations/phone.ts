@@ -64,17 +64,18 @@ export const emailDomainSchema = z
   );
 
 /**
- * Strict Student Email Validation:
+ * Strict Mantif Official Email Validation:
  * Must end with @mantif.com
  */
-export const STUDENT_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@mantif\.com$/i;
+export const MANTIF_EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@mantif\.com$/i;
+export const STUDENT_EMAIL_REGEX = MANTIF_EMAIL_REGEX;
 
-export const isValidStudentEmail = (email?: string | null): boolean => {
+export const isValidMantifEmail = (email?: string | null): boolean => {
   if (!email) return false;
-  return STUDENT_EMAIL_REGEX.test(email.trim().toLowerCase());
+  return MANTIF_EMAIL_REGEX.test(email.trim().toLowerCase());
 };
 
-export const ensureStudentEmail = (val: string): string => {
+export const ensureMantifEmail = (val: string): string => {
   const clean = (val || "").trim().toLowerCase();
   if (!clean) return "";
   if (clean.endsWith("@mantif.com")) return clean;
@@ -84,6 +85,10 @@ export const ensureStudentEmail = (val: string): string => {
   }
   return `${clean}@mantif.com`;
 };
+
+// Aliases for backwards compatibility
+export const isValidStudentEmail = isValidMantifEmail;
+export const ensureStudentEmail = ensureMantifEmail;
 
 export const isValidGeneralEmail = (email?: string | null): boolean => {
   if (!email) return false;

@@ -14,6 +14,8 @@ import {
   sanitize10DigitPhone,
   isValidStudentEmail,
   ensureStudentEmail,
+  isValidMantifEmail,
+  ensureMantifEmail,
   isValidGeneralEmail,
 } from "@/lib/validations/phone";
 
@@ -58,7 +60,7 @@ export async function GET(req: NextRequest) {
         const teacherProfiles = await TeacherProfile.find({
           institutionName: { $regex: instRegex },
         })
-          .populate("userId", "name email phone status avatarUrl createdAt")
+          .populate("userId", "name email personalEmail phone status avatarUrl createdAt")
           .lean();
 
         const facultyList = teacherProfiles
@@ -70,6 +72,7 @@ export async function GET(req: NextRequest) {
               userId: u._id?.toString() || u.toString(),
               name: u.name,
               email: u.email,
+              personalEmail: u.personalEmail || tp.personalEmail || "",
               phone: u.phone,
               status: u.status,
               qualification: tp.qualification,
@@ -85,7 +88,7 @@ export async function GET(req: NextRequest) {
         const studentProfiles = await StudentProfile.find({
           schoolName: { $regex: instRegex },
         })
-          .populate("userId", "name email phone status avatarUrl createdAt")
+          .populate("userId", "name email personalEmail phone status avatarUrl createdAt")
           .lean();
 
         const studentList = studentProfiles
@@ -98,6 +101,7 @@ export async function GET(req: NextRequest) {
               studentId: sp.studentId || "",
               name: u.name,
               email: u.email,
+              personalEmail: u.personalEmail || sp.personalEmail || "",
               phone: u.phone,
               currentClass: sp.currentClass,
               board: sp.board,
@@ -335,13 +339,14 @@ export async function POST(req: NextRequest) {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 2. ADD FACULTY MEMBER (Username & Password)
+    // 2. ADD FACULTY MEMBER (Username & Password & Personal Email)
     // ──────────────────────────────────────────────────────────────────────────
     if (action === "ADD_FACULTY") {
       const {
         institutionId,
         institutionName,
         name,
+        personalEmail,
         username,
         email,
         phone,
@@ -356,9 +361,19 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Faculty member name must be at least 2 characters." }, { status: 400 });
       }
 
-      const loginEmail = (username || email || "").trim().toLowerCase();
-      if (!loginEmail || !isValidGeneralEmail(loginEmail)) {
-        return NextResponse.json({ error: "A valid faculty login email address is required." }, { status: 400 });
+      const cleanPersonalEmail = (personalEmail || "").trim().toLowerCase();
+      if (!cleanPersonalEmail || !isValidGeneralEmail(cleanPersonalEmail)) {
+        return NextResponse.json({ error: "Please provide a valid personal email address for the faculty member." }, { status: 400 });
+      }
+
+      const rawLogin = (username || email || "").trim().toLowerCase();
+      if (!rawLogin) {
+        return NextResponse.json({ error: "Faculty login email is required and must end with @mantif.com." }, { status: 400 });
+      }
+
+      const loginEmail = ensureMantifEmail(rawLogin);
+      if (!isValidMantifEmail(loginEmail)) {
+        return NextResponse.json({ error: "Faculty login email must end with @mantif.com (e.g. name@mantif.com)." }, { status: 400 });
       }
 
       const userPassword = (password || "").trim();
@@ -387,19 +402,22 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Target school/institution not specified." }, { status: 400 });
       }
 
-      // Check if user already exists
-      const existingUser = await User.findOne({
-        $or: [
-          { email: loginEmail },
-          ...(cleanPhone ? [{ phone: cleanPhone }] : []),
-        ],
-      });
+      // STRICT PROTECTION: Ensure email does NOT interfere with existing Student or Admin account
+      const existingUserWithEmail = await User.findOne({ email: loginEmail });
+      if (existingUserWithEmail && existingUserWithEmail.role !== "TEACHER") {
+        return NextResponse.json(
+          {
+            error: `The login email "${loginEmail}" is already registered to a ${existingUserWithEmail.role.toLowerCase()} account. Student and Faculty accounts cannot share the same Mantif login ID.`,
+          },
+          { status: 409 }
+        );
+      }
 
-      let facultyUser = existingUser;
+      // Check if faculty user already exists (isolated strictly to TEACHER role)
+      let facultyUser = await User.findOne({ email: loginEmail, role: "TEACHER" });
       if (facultyUser) {
-        // Update credentials and role if already registered
         facultyUser.name = name.trim();
-        facultyUser.role = "TEACHER";
+        facultyUser.personalEmail = cleanPersonalEmail;
         facultyUser.status = "ACTIVE";
         facultyUser.passwordHash = await hashPassword(userPassword);
         if (cleanPhone) facultyUser.phone = cleanPhone;
@@ -409,6 +427,7 @@ export async function POST(req: NextRequest) {
         facultyUser = await User.create({
           name: name.trim(),
           email: loginEmail,
+          personalEmail: cleanPersonalEmail,
           phone: cleanPhone || `9${Math.floor(100000000 + Math.random() * 900000000)}`,
           passwordHash,
           role: "TEACHER",
@@ -435,6 +454,7 @@ export async function POST(req: NextRequest) {
           staffId,
           teacherType: "B2B",
           institutionName: targetInstitutionName,
+          personalEmail: cleanPersonalEmail,
           qualification: (qualification || "B.Ed, B.Sc").trim(),
           specialization: (specialization || "Mathematics & Science").trim(),
           subjects: finalSubjects,
@@ -448,6 +468,7 @@ export async function POST(req: NextRequest) {
       } else {
         profile.teacherType = "B2B";
         profile.institutionName = targetInstitutionName;
+        profile.personalEmail = cleanPersonalEmail;
         profile.approvalStatus = "ACTIVE";
         profile.classesTaught = finalClasses;
         profile.assignedClasses = finalClasses;
@@ -463,29 +484,31 @@ export async function POST(req: NextRequest) {
         action: "ADMIN_INSTITUTION_FACULTY_ADDED",
         entityType: "TEACHER",
         entityId: facultyUser._id.toString(),
-        details: { name: facultyUser.name, email: loginEmail, institution: targetInstitutionName },
+        details: { name: facultyUser.name, email: loginEmail, personalEmail: cleanPersonalEmail, institution: targetInstitutionName },
       });
 
       return NextResponse.json({
         success: true,
-        message: `Faculty member "${facultyUser.name}" added to ${targetInstitutionName} with active login credentials!`,
+        message: `Faculty member "${facultyUser.name}" added with login: ${loginEmail}!`,
         user: {
           id: facultyUser._id,
           name: facultyUser.name,
           email: facultyUser.email,
+          personalEmail: facultyUser.personalEmail,
           phone: facultyUser.phone,
         },
       });
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 3. ADD STUDENT MEMBER (Username & Password & Must End with @mantif.com)
+    // 3. ADD STUDENT MEMBER (Personal Email & Login Must End with @mantif.com)
     // ──────────────────────────────────────────────────────────────────────────
     if (action === "ADD_STUDENT") {
       const {
         institutionId,
         institutionName,
         name,
+        personalEmail,
         username,
         email,
         phone,
@@ -501,16 +524,21 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Student full name is required (min 2 characters)." }, { status: 400 });
       }
 
+      const cleanPersonalEmail = (personalEmail || "").trim().toLowerCase();
+      if (!cleanPersonalEmail || !isValidGeneralEmail(cleanPersonalEmail)) {
+        return NextResponse.json({ error: "Please provide a valid personal or parent email address." }, { status: 400 });
+      }
+
       // Strictly format and enforce student email ending with @mantif.com
       const rawEmail = (username || email || "").trim().toLowerCase();
       if (!rawEmail) {
-        return NextResponse.json({ error: "Student email is required and must end with @mantif.com." }, { status: 400 });
+        return NextResponse.json({ error: "Student login email is required and must end with @mantif.com." }, { status: 400 });
       }
 
-      const loginEmail = ensureStudentEmail(rawEmail);
-      if (!isValidStudentEmail(loginEmail)) {
+      const loginEmail = ensureMantifEmail(rawEmail);
+      if (!isValidMantifEmail(loginEmail)) {
         return NextResponse.json({
-          error: "Student email must end with @mantif.com (e.g. username@mantif.com).",
+          error: "Student login email must end with @mantif.com (e.g. username@mantif.com).",
         }, { status: 400 });
       }
 
@@ -563,18 +591,22 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Target school/institution not specified." }, { status: 400 });
       }
 
-      // Check if user already exists
-      const existingUser = await User.findOne({
-        $or: [
-          { email: loginEmail },
-          ...(cleanPhone ? [{ phone: cleanPhone }] : []),
-        ],
-      });
+      // STRICT PROTECTION: Ensure login email does NOT interfere with existing Teacher or Admin account
+      const existingUserWithEmail = await User.findOne({ email: loginEmail });
+      if (existingUserWithEmail && existingUserWithEmail.role !== "STUDENT") {
+        return NextResponse.json(
+          {
+            error: `The login email "${loginEmail}" is already registered to a ${existingUserWithEmail.role.toLowerCase()} account. Student and Faculty accounts cannot share the same Mantif login ID.`,
+          },
+          { status: 409 }
+        );
+      }
 
-      let studentUser = existingUser;
+      // Check if student user already exists (isolated strictly to STUDENT role)
+      let studentUser = await User.findOne({ email: loginEmail, role: "STUDENT" });
       if (studentUser) {
         studentUser.name = name.trim();
-        studentUser.role = "STUDENT";
+        studentUser.personalEmail = cleanPersonalEmail;
         studentUser.status = "ACTIVE";
         studentUser.passwordHash = await hashPassword(userPassword);
         if (cleanPhone) studentUser.phone = cleanPhone;
@@ -584,6 +616,7 @@ export async function POST(req: NextRequest) {
         studentUser = await User.create({
           name: name.trim(),
           email: loginEmail,
+          personalEmail: cleanPersonalEmail,
           phone: cleanPhone || `9${Math.floor(100000000 + Math.random() * 900000000)}`,
           passwordHash,
           role: "STUDENT",
@@ -598,7 +631,6 @@ export async function POST(req: NextRequest) {
 
       const studentCount = await StudentProfile.countDocuments();
       const formattedStudentId = `STD_${String(studentCount + 1).padStart(3, "0")}`;
-
       const assignedTeachers = effectiveFacultyId ? [effectiveFacultyId] : [];
 
       let profile = await StudentProfile.findOne({ userId: studentUser._id });
@@ -608,6 +640,7 @@ export async function POST(req: NextRequest) {
           studentId: formattedStudentId,
           studentType: "B2B",
           schoolName: targetInstitutionName,
+          personalEmail: cleanPersonalEmail,
           board: board || "State Board",
           currentClass: currentClass || "Class 10",
           subjects: ["Mathematics", "Science"],
@@ -621,6 +654,7 @@ export async function POST(req: NextRequest) {
       } else {
         profile.studentType = "B2B";
         profile.schoolName = targetInstitutionName;
+        profile.personalEmail = cleanPersonalEmail;
         if (currentClass) profile.currentClass = currentClass;
         if (board) profile.board = board;
         profile.parentName = parentName.trim();
