@@ -263,6 +263,19 @@ export default function AdminInstitutionsPage() {
     setShowGroupModal(true);
   };
 
+  const getAuthHeaders = () => {
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("acuity_auth_token") || sessionStorage.getItem("acuity_auth_token") || ""
+        : "";
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+      headers["x-auth-token"] = token;
+    }
+    return headers;
+  };
+
   // Submit Institution (Create or Update)
   const handleSaveInstitution = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -276,7 +289,8 @@ export default function AdminInstitutionsPage() {
       const isEdit = Boolean(instForm.id);
       const res = await fetch("/api/admin/institutions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
+        credentials: "include",
         body: JSON.stringify({
           action: isEdit ? "UPDATE_INSTITUTION" : "CREATE_INSTITUTION",
           institutionId: instForm.id || undefined,
@@ -312,7 +326,8 @@ export default function AdminInstitutionsPage() {
     try {
       const res = await fetch("/api/admin/institutions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
+        credentials: "include",
         body: JSON.stringify({
           action: "ADD_FACULTY",
           institutionId: activeInst?._id,
@@ -350,7 +365,8 @@ export default function AdminInstitutionsPage() {
     try {
       const res = await fetch("/api/admin/institutions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
+        credentials: "include",
         body: JSON.stringify({
           action: "UPDATE_FACULTY",
           ...editFacultyForm,
@@ -386,7 +402,8 @@ export default function AdminInstitutionsPage() {
     try {
       const res = await fetch("/api/admin/institutions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
+        credentials: "include",
         body: JSON.stringify({
           action: "ADD_STUDENT",
           institutionId: activeInst?._id,
@@ -428,7 +445,8 @@ export default function AdminInstitutionsPage() {
     try {
       const res = await fetch("/api/admin/institutions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
+        credentials: "include",
         body: JSON.stringify({
           action: "SAVE_GROUP",
           institutionId: activeInst?._id,
@@ -459,7 +477,8 @@ export default function AdminInstitutionsPage() {
     try {
       const res = await fetch("/api/admin/institutions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: getAuthHeaders(),
+        credentials: "include",
         body: JSON.stringify({
           action: "DELETE_GROUP",
           institutionId: instId,
@@ -483,6 +502,8 @@ export default function AdminInstitutionsPage() {
     try {
       const res = await fetch(`/api/admin/institutions?id=${encodeURIComponent(inst._id)}`, {
         method: "DELETE",
+        headers: getAuthHeaders(),
+        credentials: "include",
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to delete institution.");
