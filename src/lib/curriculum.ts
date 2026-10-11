@@ -11,7 +11,9 @@ export type SupportedClass =
   | "Class 7"
   | "Class 8"
   | "Class 9"
-  | "Class 10";
+  | "Class 10"
+  | "Class 11"
+  | "Class 12";
 
 export interface ClassCurriculum {
   classLevel: SupportedClass;
@@ -33,6 +35,8 @@ export const CLASS_LIST: SupportedClass[] = [
   "Class 8",
   "Class 9",
   "Class 10",
+  "Class 11",
+  "Class 12",
 ];
 
 export const CURRICULUM_DATA: Record<SupportedBoard, Record<SupportedClass, string[]>> = {
@@ -42,6 +46,8 @@ export const CURRICULUM_DATA: Record<SupportedBoard, Record<SupportedClass, stri
     "Class 8": ["Mathematics", "Science", "English", "Social Science"],
     "Class 9": ["Mathematics", "Science", "English", "Social Science"],
     "Class 10": ["Mathematics", "Science", "English", "Social Science"],
+    "Class 11": ["Mathematics", "Physics", "Chemistry", "Biology", "Computer Science", "English"],
+    "Class 12": ["Mathematics", "Physics", "Chemistry", "Biology", "Computer Science", "English"],
   },
   "State Board": {
     "Class 6": ["Tamil", "English", "Mathematics", "Science", "Social Science"],
@@ -49,6 +55,8 @@ export const CURRICULUM_DATA: Record<SupportedBoard, Record<SupportedClass, stri
     "Class 8": ["Tamil", "English", "Mathematics", "Science", "Social Science"],
     "Class 9": ["Tamil", "English", "Mathematics", "Science", "Social Science"],
     "Class 10": ["Tamil", "English", "Mathematics", "Science", "Social Science"],
+    "Class 11": ["Tamil", "English", "Mathematics", "Physics", "Chemistry", "Biology", "Computer Science"],
+    "Class 12": ["Tamil", "English", "Mathematics", "Physics", "Chemistry", "Biology", "Computer Science"],
   },
 };
 

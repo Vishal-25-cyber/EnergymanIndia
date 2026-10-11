@@ -23,14 +23,8 @@ const StudentProfileSchema = new Schema<IStudentProfileDocument>(
     },
     currentClass: {
       type: String,
-      enum: [
-        "Class 6",
-        "Class 7",
-        "Class 8",
-        "Class 9",
-        "Class 10",
-      ],
       required: true,
+      trim: true,
       index: true,
     },
     subjects: [{ type: String, trim: true }],

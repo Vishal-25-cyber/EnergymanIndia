@@ -9,8 +9,13 @@ import AssignmentSubmission from "@/models/AssignmentSubmission";
 import Payment from "@/models/Payment";
 import SystemSettings from "@/models/SystemSettings";
 import { hashPassword } from "@/lib/auth/passwords";
-import { recordAuditLog } from "@/lib/audit";
-import { isValid10DigitPhone, isValidAcuityOrGmail, sanitize10DigitPhone } from "@/lib/validations/phone";
+import {
+  isValid10DigitPhone,
+  isValidAcuityOrGmail,
+  isValidStudentEmail,
+  ensureStudentEmail,
+  sanitize10DigitPhone,
+} from "@/lib/validations/phone";
 import { emitPaymentStatusUpdate } from "@/lib/payment-events";
 
 export async function GET(req: NextRequest) {
@@ -130,44 +135,58 @@ export async function POST(req: NextRequest) {
       altEmergencyPhone,
     } = body;
 
-    if (!name || !email || !phone || !currentClass || !batchId || !parentName || !parentPhone) {
-      return NextResponse.json({ error: "Required fields missing" }, { status: 400 });
+    if (!name || name.trim().length < 2) {
+      return NextResponse.json({ error: "Student full name is required (min 2 characters)." }, { status: 400 });
     }
 
-    if (!isValidAcuityOrGmail(email)) {
+    const studentEmail = ensureStudentEmail(email);
+    if (!isValidStudentEmail(studentEmail) && !isValidAcuityOrGmail(studentEmail)) {
       return NextResponse.json(
-        { error: "Email address must end with @mantif.edu, @acuity.edu, or @gmail.com." },
+        { error: "Student email must end with @mantif.com (e.g. username@mantif.com)." },
         { status: 400 }
       );
     }
 
-    if (!isValid10DigitPhone(phone)) {
-      return NextResponse.json(
-        { error: "Student mobile number must be exactly 10 digits and cannot start with 0." },
-        { status: 400 }
-      );
+    if (!password || password.trim().length < 6) {
+      return NextResponse.json({ error: "Student password must be at least 6 characters." }, { status: 400 });
     }
 
-    if (!isValid10DigitPhone(parentPhone)) {
+    if (!parentName || parentName.trim().length < 2) {
+      return NextResponse.json({ error: "Parent or guardian name is required." }, { status: 400 });
+    }
+
+    if (!parentPhone || !isValid10DigitPhone(parentPhone)) {
       return NextResponse.json(
         { error: "Parent mobile number must be exactly 10 digits and cannot start with 0." },
         { status: 400 }
       );
     }
 
+    if (phone && !isValid10DigitPhone(phone)) {
+      return NextResponse.json(
+        { error: "Student mobile number must be exactly 10 digits and cannot start with 0." },
+        { status: 400 }
+      );
+    }
+
     await connectToDatabase();
 
-    const existing = await User.findOne({ $or: [{ email: email.toLowerCase() }, { phone }] });
+    const existing = await User.findOne({
+      $or: [
+        { email: studentEmail.toLowerCase() },
+        ...(phone ? [{ phone: sanitize10DigitPhone(phone) }] : []),
+      ],
+    });
     if (existing) {
       return NextResponse.json({ error: "Email or phone already registered" }, { status: 409 });
     }
 
-    const passwordHash = await hashPassword(password || "Student@123");
+    const passwordHash = await hashPassword(password.trim());
 
     const user = await User.create({
       name: name.trim(),
-      email: email.toLowerCase().trim(),
-      phone: sanitize10DigitPhone(phone),
+      email: studentEmail.toLowerCase().trim(),
+      phone: phone ? sanitize10DigitPhone(phone) : `9${Math.floor(100000000 + Math.random() * 900000000)}`,
       passwordHash,
       role: "STUDENT",
       status: "ACTIVE",

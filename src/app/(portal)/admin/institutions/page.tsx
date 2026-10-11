@@ -30,6 +30,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { useFastFetch, invalidateCache } from "@/lib/api-cache";
+import {
+  isValid10DigitPhone,
+  sanitize10DigitPhone,
+  isValidStudentEmail,
+  ensureStudentEmail,
+  isValidGeneralEmail,
+} from "@/lib/validations/phone";
 
 const DEFAULT_CLASSES = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12"];
 const DEFAULT_SUBJECTS = ["Mathematics", "Science", "Physics", "Chemistry", "Biology", "English", "Social Science", "Computer Science"];
@@ -279,10 +286,27 @@ export default function AdminInstitutionsPage() {
   // Submit Institution (Create or Update)
   const handleSaveInstitution = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!instForm.name.trim()) {
-      setErrorMsg("Institution name is required.");
+    if (!instForm.name.trim() || instForm.name.trim().length < 2) {
+      setErrorMsg("Institution name is required (min 2 characters).");
       return;
     }
+    if (instForm.contactPhone && !isValid10DigitPhone(instForm.contactPhone)) {
+      setErrorMsg("Contact phone must be exactly 10 digits and cannot start with 0.");
+      return;
+    }
+    if (instForm.contactEmail && !isValidGeneralEmail(instForm.contactEmail)) {
+      setErrorMsg("Please provide a valid contact email address.");
+      return;
+    }
+    if (!instForm.classesOffered.length) {
+      setErrorMsg("Please select at least one class offered.");
+      return;
+    }
+    if (!instForm.subjectsOffered.length) {
+      setErrorMsg("Please select at least one subject offered.");
+      return;
+    }
+
     setSubmitting(true);
     setErrorMsg("");
     try {
@@ -317,10 +341,40 @@ export default function AdminInstitutionsPage() {
   // Submit New Faculty
   const handleCreateFaculty = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!facultyForm.name.trim() || !facultyForm.username.trim() || !facultyForm.password.trim()) {
-      setErrorMsg("Please provide Faculty Name, Username/Email, and Password.");
+    if (!facultyForm.name.trim() || facultyForm.name.trim().length < 2) {
+      setErrorMsg("Faculty full name is required (min 2 characters).");
       return;
     }
+    const facultyEmail = facultyForm.username.trim().toLowerCase();
+    if (!facultyEmail || !isValidGeneralEmail(facultyEmail)) {
+      setErrorMsg("Please provide a valid faculty login email address.");
+      return;
+    }
+    if (!facultyForm.password.trim() || facultyForm.password.trim().length < 6) {
+      setErrorMsg("Login password must be at least 6 characters.");
+      return;
+    }
+    if (facultyForm.phone && !isValid10DigitPhone(facultyForm.phone)) {
+      setErrorMsg("Faculty mobile number must be exactly 10 digits and cannot start with 0.");
+      return;
+    }
+    if (!facultyForm.qualification.trim()) {
+      setErrorMsg("Faculty qualification is required (e.g. M.Sc, B.Ed).");
+      return;
+    }
+    if (!facultyForm.specialization.trim()) {
+      setErrorMsg("Specialization / Subject focus is required.");
+      return;
+    }
+    if (!facultyForm.classesTaught || facultyForm.classesTaught.length === 0) {
+      setErrorMsg("Please assign at least one class taught by this faculty member.");
+      return;
+    }
+    if (!facultyForm.subjects || facultyForm.subjects.length === 0) {
+      setErrorMsg("Please assign at least one subject taught by this faculty member.");
+      return;
+    }
+
     setSubmitting(true);
     setErrorMsg("");
     try {
@@ -333,6 +387,8 @@ export default function AdminInstitutionsPage() {
           institutionId: activeInst?._id,
           institutionName: activeInst?.name,
           ...facultyForm,
+          username: facultyEmail,
+          email: facultyEmail,
         }),
       });
       const data = await res.json();
@@ -390,13 +446,41 @@ export default function AdminInstitutionsPage() {
     }
   };
 
-  // Submit New Student
+  // Submit New Student (Must End with @mantif.com)
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentForm.name.trim() || !studentForm.username.trim() || !studentForm.password.trim()) {
-      setErrorMsg("Please provide Student Name, Username/Email, and Password.");
+    if (!studentForm.name.trim() || studentForm.name.trim().length < 2) {
+      setErrorMsg("Student full name is required (min 2 characters).");
       return;
     }
+
+    // Auto-ensure @mantif.com on student email
+    const studentLoginEmail = ensureStudentEmail(studentForm.username);
+    if (!isValidStudentEmail(studentLoginEmail)) {
+      setErrorMsg("Student email must end with @mantif.com (e.g. arun@mantif.com).");
+      return;
+    }
+
+    if (!studentForm.password.trim() || studentForm.password.trim().length < 6) {
+      setErrorMsg("Student login password must be at least 6 characters.");
+      return;
+    }
+
+    if (!studentForm.parentName.trim()) {
+      setErrorMsg("Parent / Guardian name is required.");
+      return;
+    }
+
+    if (!studentForm.parentPhone || !isValid10DigitPhone(studentForm.parentPhone)) {
+      setErrorMsg("Parent phone number must be exactly 10 digits and cannot start with 0.");
+      return;
+    }
+
+    if (studentForm.phone && !isValid10DigitPhone(studentForm.phone)) {
+      setErrorMsg("Student phone number must be exactly 10 digits and cannot start with 0.");
+      return;
+    }
+
     setSubmitting(true);
     setErrorMsg("");
     try {
@@ -409,12 +493,14 @@ export default function AdminInstitutionsPage() {
           institutionId: activeInst?._id,
           institutionName: activeInst?.name,
           ...studentForm,
+          username: studentLoginEmail,
+          email: studentLoginEmail,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to add student.");
 
-      setSuccessMsg(data.message || "Student created with login credentials!");
+      setSuccessMsg(data.message || `Student created with login: ${studentLoginEmail}`);
       invalidateCache("/api/admin/institutions");
       invalidateCache("/api/admin/students");
       refetch();
@@ -1167,29 +1253,6 @@ export default function AdminInstitutionsPage() {
                   );
                 })}
               </div>
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="text"
-                  placeholder="Add custom class (e.g. Section B / Class 11)"
-                  value={customClassInput}
-                  onChange={(e) => setCustomClassInput(e.target.value)}
-                  className="px-3 py-1.5 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white flex-1"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => {
-                    const clean = customClassInput.trim();
-                    if (clean && !instForm.classesOffered.includes(clean)) {
-                      setInstForm({ ...instForm, classesOffered: [...instForm.classesOffered, clean] });
-                      setCustomClassInput("");
-                    }
-                  }}
-                  className="bg-slate-800 text-white text-xs px-3 h-8 rounded-xl font-bold"
-                >
-                  + Add Class
-                </Button>
-              </div>
             </div>
 
             {/* Subjects Offered Selector */}
@@ -1220,29 +1283,6 @@ export default function AdminInstitutionsPage() {
                     </button>
                   );
                 })}
-              </div>
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="text"
-                  placeholder="Add custom subject (e.g. Tamil / Chemistry)"
-                  value={customSubjectInput}
-                  onChange={(e) => setCustomSubjectInput(e.target.value)}
-                  className="px-3 py-1.5 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white flex-1"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() => {
-                    const clean = customSubjectInput.trim();
-                    if (clean && !instForm.subjectsOffered.includes(clean)) {
-                      setInstForm({ ...instForm, subjectsOffered: [...instForm.subjectsOffered, clean] });
-                      setCustomSubjectInput("");
-                    }
-                  }}
-                  className="bg-slate-800 text-white text-xs px-3 h-8 rounded-xl font-bold"
-                >
-                  + Add Subject
-                </Button>
               </div>
             </div>
 
@@ -1655,21 +1695,29 @@ export default function AdminInstitutionsPage() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Username / Login Email *
+                  Student Login Email * (Ends with @mantif.com)
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. arun@school.edu"
+                  placeholder="e.g. arun@mantif.com"
                   value={studentForm.username}
                   onChange={(e) => setStudentForm({ ...studentForm, username: e.target.value })}
+                  onBlur={(e) => {
+                    if (e.target.value.trim()) {
+                      setStudentForm({ ...studentForm, username: ensureStudentEmail(e.target.value) });
+                    }
+                  }}
                   className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
                 />
+                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">
+                  Must end with @mantif.com
+                </span>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Login Password *
+                  Login Password * (Min 6 chars)
                 </label>
                 <input
                   type="text"

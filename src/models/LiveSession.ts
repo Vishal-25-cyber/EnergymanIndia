@@ -52,14 +52,8 @@ const LiveSessionSchema = new Schema<ILiveSessionDocument>(
     subject: { type: String, required: true, trim: true, index: true },
     classLevel: {
       type: String,
-      enum: [
-        "Class 6",
-        "Class 7",
-        "Class 8",
-        "Class 9",
-        "Class 10",
-      ],
       default: "Class 10",
+      trim: true,
       index: true,
     },
     streamType: {

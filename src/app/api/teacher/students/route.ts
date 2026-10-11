@@ -10,6 +10,13 @@ import Batch from "@/models/Batch";
 import Payment from "@/models/Payment";
 import SystemSettings from "@/models/SystemSettings";
 import { formatStudentId } from "@/lib/id-generator";
+import { hashPassword } from "@/lib/auth/passwords";
+import {
+  isValid10DigitPhone,
+  sanitize10DigitPhone,
+  isValidStudentEmail,
+  ensureStudentEmail,
+} from "@/lib/validations/phone";
 
 export async function GET() {
   try {
@@ -240,4 +247,161 @@ export async function PATCH(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   return PATCH(req);
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session || (session.role !== "TEACHER" && session.role !== "ADMIN")) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    await connectToDatabase();
+    const body = await req.json();
+    const {
+      name,
+      username,
+      email,
+      password,
+      phone,
+      currentClass,
+      board,
+      parentName,
+      parentPhone,
+      batchId,
+    } = body;
+
+    if (!name || name.trim().length < 2) {
+      return NextResponse.json({ error: "Student name is required (min 2 characters)." }, { status: 400 });
+    }
+
+    const rawEmail = (username || email || "").trim().toLowerCase();
+    if (!rawEmail) {
+      return NextResponse.json({ error: "Student email is required." }, { status: 400 });
+    }
+
+    const studentLoginEmail = ensureStudentEmail(rawEmail);
+    if (!isValidStudentEmail(studentLoginEmail)) {
+      return NextResponse.json(
+        { error: "Student email must end with @mantif.com (e.g. name@mantif.com)." },
+        { status: 400 }
+      );
+    }
+
+    const userPassword = (password || "").trim();
+    if (!userPassword || userPassword.length < 6) {
+      return NextResponse.json({ error: "Password must be at least 6 characters for student login." }, { status: 400 });
+    }
+
+    if (!parentName || parentName.trim().length < 2) {
+      return NextResponse.json({ error: "Parent or guardian name is required." }, { status: 400 });
+    }
+
+    if (!parentPhone || !isValid10DigitPhone(parentPhone)) {
+      return NextResponse.json({ error: "Parent phone must be exactly 10 digits and cannot start with 0." }, { status: 400 });
+    }
+
+    if (phone && !isValid10DigitPhone(phone)) {
+      return NextResponse.json({ error: "Student phone must be exactly 10 digits and cannot start with 0." }, { status: 400 });
+    }
+
+    // Resolve teacher's profile & institution
+    const teacherProfile = await TeacherProfile.findOne({ userId: session.userId });
+    const targetInstitution = teacherProfile?.institutionName || "Mantif School";
+
+    const cleanPhone = phone ? sanitize10DigitPhone(phone) : "";
+    const cleanParentPhone = sanitize10DigitPhone(parentPhone);
+
+    // Check existing
+    let user = await User.findOne({
+      $or: [
+        { email: studentLoginEmail },
+        ...(cleanPhone ? [{ phone: cleanPhone }] : []),
+      ],
+    });
+
+    if (user) {
+      user.name = name.trim();
+      user.role = "STUDENT";
+      user.status = "ACTIVE";
+      user.passwordHash = await hashPassword(userPassword);
+      if (cleanPhone) user.phone = cleanPhone;
+      await user.save();
+    } else {
+      const passwordHash = await hashPassword(userPassword);
+      user = await User.create({
+        name: name.trim(),
+        email: studentLoginEmail,
+        phone: cleanPhone || `9${Math.floor(100000000 + Math.random() * 900000000)}`,
+        passwordHash,
+        role: "STUDENT",
+        status: "ACTIVE",
+        avatarUrl: "",
+      });
+    }
+
+    // Default batch
+    let targetBatchId = batchId;
+    if (!targetBatchId) {
+      const defaultBatch = await Batch.findOne().lean();
+      targetBatchId = defaultBatch?._id;
+    }
+
+    const studentCount = await StudentProfile.countDocuments();
+    const formattedStudentId = `STD_${String(studentCount + 1).padStart(3, "0")}`;
+
+    let profile = await StudentProfile.findOne({ userId: user._id });
+    if (!profile) {
+      profile = await StudentProfile.create({
+        userId: user._id,
+        studentId: formattedStudentId,
+        studentType: "B2B",
+        schoolName: targetInstitution,
+        board: board || "State Board",
+        currentClass: currentClass || teacherProfile?.classesTaught?.[0] || "Class 10",
+        subjects: teacherProfile?.subjects || ["Mathematics", "Science"],
+        assignedTeacherIds: [session.userId],
+        batchId: targetBatchId,
+        parentName: parentName.trim(),
+        parentPhone: cleanParentPhone,
+        streakCount: 1,
+        attendanceRiskLevel: "LOW",
+      });
+    } else {
+      profile.studentType = "B2B";
+      profile.schoolName = targetInstitution;
+      if (currentClass) profile.currentClass = currentClass;
+      if (board) profile.board = board;
+      profile.parentName = parentName.trim();
+      profile.parentPhone = cleanParentPhone;
+      const curTeachers = (profile.assignedTeacherIds || []).map((t: any) => t.toString());
+      if (!curTeachers.includes(session.userId.toString())) {
+        profile.assignedTeacherIds = [...curTeachers, session.userId];
+      }
+      await profile.save();
+    }
+
+    // Add student to teacher's assignedStudentIds
+    if (teacherProfile) {
+      const curStudentIds = (teacherProfile.assignedStudentIds || []).map((s: any) => s.toString());
+      if (!curStudentIds.includes(user._id.toString())) {
+        teacherProfile.assignedStudentIds = [...curStudentIds, user._id];
+        await teacherProfile.save();
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Student "${user.name}" (${studentLoginEmail}) added successfully with active login credentials!`,
+      student: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+      },
+    });
+  } catch (error: any) {
+    console.error("Teacher Student Create Error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

@@ -15,7 +15,10 @@ export type ClassLevel =
   | "Class 7"
   | "Class 8"
   | "Class 9"
-  | "Class 10";
+  | "Class 10"
+  | "Class 11"
+  | "Class 12"
+  | string;
 
 export type EducationBoard = "CBSE" | "State Board";
 

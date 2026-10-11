@@ -9,7 +9,13 @@ import StudentProfile from "@/models/StudentProfile";
 import Batch from "@/models/Batch";
 import { hashPassword } from "@/lib/auth/passwords";
 import { recordAuditLog } from "@/lib/audit";
-import { isValid10DigitPhone, sanitize10DigitPhone } from "@/lib/validations/phone";
+import {
+  isValid10DigitPhone,
+  sanitize10DigitPhone,
+  isValidStudentEmail,
+  ensureStudentEmail,
+  isValidGeneralEmail,
+} from "@/lib/validations/phone";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -17,7 +23,7 @@ export const revalidate = 0;
 export async function GET(req: NextRequest) {
   try {
     const session = await getSession(req);
-    if (!session || session.role !== "ADMIN") {
+    if (!session || (session.role !== "ADMIN" && session.role !== "TEACHER")) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -166,13 +172,18 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getSession(req);
-    if (!session || session.role !== "ADMIN") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!session || (session.role !== "ADMIN" && session.role !== "TEACHER")) {
+      return NextResponse.json({ error: "Unauthorized access." }, { status: 401 });
     }
 
     await connectToDatabase();
     const body = await req.json();
     const { action } = body;
+
+    // Only Admin can create institutions, update faculty/institutions, save groups, or delete
+    if (session.role === "TEACHER" && action !== "ADD_STUDENT") {
+      return NextResponse.json({ error: "Faculty members are only authorized to add students." }, { status: 403 });
+    }
 
     // ──────────────────────────────────────────────────────────────────────────
     // 1. CREATE INSTITUTION
@@ -190,8 +201,19 @@ export async function POST(req: NextRequest) {
         subjectsOffered,
       } = body;
 
-      if (!name || !name.trim()) {
-        return NextResponse.json({ error: "Institution name is required." }, { status: 400 });
+      if (!name || name.trim().length < 2) {
+        return NextResponse.json({ error: "Institution name is required (at least 2 characters)." }, { status: 400 });
+      }
+
+      if (contactPhone && !isValid10DigitPhone(contactPhone)) {
+        return NextResponse.json(
+          { error: "Contact phone must be exactly 10 digits and cannot start with 0." },
+          { status: 400 }
+        );
+      }
+
+      if (contactEmail && !isValidGeneralEmail(contactEmail)) {
+        return NextResponse.json({ error: "Please provide a valid contact email address." }, { status: 400 });
       }
 
       const cleanName = name.trim();
@@ -211,12 +233,12 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      const defaultClasses = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10"];
+      const defaultClasses = ["Class 6", "Class 7", "Class 8", "Class 9", "Class 10", "Class 11", "Class 12"];
       const finalClasses = Array.isArray(classesOffered) && classesOffered.length > 0
         ? classesOffered
         : defaultClasses;
 
-      const defaultSubjects = ["Mathematics", "Science", "Physics", "Chemistry", "Biology", "English", "Social Science"];
+      const defaultSubjects = ["Mathematics", "Science", "Physics", "Chemistry", "Biology", "English", "Social Science", "Computer Science"];
       const finalSubjects = Array.isArray(subjectsOffered) && subjectsOffered.length > 0
         ? subjectsOffered
         : defaultSubjects;
@@ -277,13 +299,28 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Institution not found." }, { status: 404 });
       }
 
-      if (name) inst.name = name.trim();
+      if (name) {
+        if (name.trim().length < 2) {
+          return NextResponse.json({ error: "Institution name must be at least 2 characters." }, { status: 400 });
+        }
+        inst.name = name.trim();
+      }
       if (code) inst.code = code.trim().toUpperCase();
       if (district !== undefined) inst.district = district.trim();
       if (address !== undefined) inst.address = address.trim();
       if (contactPerson !== undefined) inst.contactPerson = contactPerson.trim();
-      if (contactPhone !== undefined) inst.contactPhone = contactPhone ? sanitize10DigitPhone(contactPhone) : "";
-      if (contactEmail !== undefined) inst.contactEmail = contactEmail.trim().toLowerCase();
+      if (contactPhone !== undefined) {
+        if (contactPhone && !isValid10DigitPhone(contactPhone)) {
+          return NextResponse.json({ error: "Contact phone must be exactly 10 digits and cannot start with 0." }, { status: 400 });
+        }
+        inst.contactPhone = contactPhone ? sanitize10DigitPhone(contactPhone) : "";
+      }
+      if (contactEmail !== undefined) {
+        if (contactEmail && !isValidGeneralEmail(contactEmail)) {
+          return NextResponse.json({ error: "Please enter a valid contact email." }, { status: 400 });
+        }
+        inst.contactEmail = contactEmail.trim().toLowerCase();
+      }
       if (Array.isArray(classesOffered)) inst.classesOffered = classesOffered;
       if (Array.isArray(subjectsOffered)) inst.subjectsOffered = subjectsOffered;
       if (status) inst.status = status;
@@ -315,18 +352,22 @@ export async function POST(req: NextRequest) {
         subjects,
       } = body;
 
-      if (!name || !name.trim()) {
-        return NextResponse.json({ error: "Faculty member name is required." }, { status: 400 });
+      if (!name || name.trim().length < 2) {
+        return NextResponse.json({ error: "Faculty member name must be at least 2 characters." }, { status: 400 });
       }
 
       const loginEmail = (username || email || "").trim().toLowerCase();
-      if (!loginEmail) {
-        return NextResponse.json({ error: "Faculty username / email is required." }, { status: 400 });
+      if (!loginEmail || !isValidGeneralEmail(loginEmail)) {
+        return NextResponse.json({ error: "A valid faculty login email address is required." }, { status: 400 });
       }
 
       const userPassword = (password || "").trim();
       if (!userPassword || userPassword.length < 6) {
-        return NextResponse.json({ error: "Password must be at least 6 characters." }, { status: 400 });
+        return NextResponse.json({ error: "Faculty password must be at least 6 characters." }, { status: 400 });
+      }
+
+      if (phone && !isValid10DigitPhone(phone)) {
+        return NextResponse.json({ error: "Faculty phone number must be exactly 10 digits and cannot start with 0." }, { status: 400 });
       }
 
       const cleanPhone = phone ? sanitize10DigitPhone(phone) : "";
@@ -438,7 +479,7 @@ export async function POST(req: NextRequest) {
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 3. ADD STUDENT MEMBER (Username & Password & Optional Direct Faculty Allocation)
+    // 3. ADD STUDENT MEMBER (Username & Password & Must End with @mantif.com)
     // ──────────────────────────────────────────────────────────────────────────
     if (action === "ADD_STUDENT") {
       const {
@@ -456,33 +497,68 @@ export async function POST(req: NextRequest) {
         assignedFacultyId,
       } = body;
 
-      if (!name || !name.trim()) {
-        return NextResponse.json({ error: "Student name is required." }, { status: 400 });
+      if (!name || name.trim().length < 2) {
+        return NextResponse.json({ error: "Student full name is required (min 2 characters)." }, { status: 400 });
       }
 
-      const loginEmail = (username || email || "").trim().toLowerCase();
-      if (!loginEmail) {
-        return NextResponse.json({ error: "Student username / email is required." }, { status: 400 });
+      // Strictly format and enforce student email ending with @mantif.com
+      const rawEmail = (username || email || "").trim().toLowerCase();
+      if (!rawEmail) {
+        return NextResponse.json({ error: "Student email is required and must end with @mantif.com." }, { status: 400 });
+      }
+
+      const loginEmail = ensureStudentEmail(rawEmail);
+      if (!isValidStudentEmail(loginEmail)) {
+        return NextResponse.json({
+          error: "Student email must end with @mantif.com (e.g. username@mantif.com).",
+        }, { status: 400 });
       }
 
       const userPassword = (password || "").trim();
       if (!userPassword || userPassword.length < 6) {
-        return NextResponse.json({ error: "Password must be at least 6 characters." }, { status: 400 });
+        return NextResponse.json({ error: "Student login password must be at least 6 characters." }, { status: 400 });
       }
 
+      if (phone && !isValid10DigitPhone(phone)) {
+        return NextResponse.json({ error: "Student phone number must be exactly 10 digits and cannot start with 0." }, { status: 400 });
+      }
       const cleanPhone = phone ? sanitize10DigitPhone(phone) : "";
 
-      // Resolve Institution
+      if (!parentName || parentName.trim().length < 2) {
+        return NextResponse.json({ error: "Parent or guardian name is required." }, { status: 400 });
+      }
+
+      if (!parentPhone || !isValid10DigitPhone(parentPhone)) {
+        return NextResponse.json({ error: "Parent phone must be exactly 10 digits and cannot start with 0." }, { status: 400 });
+      }
+      const cleanParentPhone = sanitize10DigitPhone(parentPhone);
+
+      // Resolve Institution: if called by Teacher, can fallback to teacher's institution
       let instDoc: any = null;
+      let targetInstitutionName = "";
+
       if (institutionId) {
         instDoc = await Institution.findById(institutionId);
+        targetInstitutionName = instDoc?.name || "";
       } else if (institutionName) {
         instDoc = await Institution.findOne({
           name: { $regex: new RegExp(`^${institutionName.trim()}$`, "i") },
         });
+        targetInstitutionName = instDoc?.name || institutionName.trim();
       }
 
-      const targetInstitutionName = instDoc?.name || institutionName?.trim() || "";
+      // If session is TEACHER, fallback to teacher's institution if not found
+      let effectiveFacultyId = assignedFacultyId;
+      if (session.role === "TEACHER") {
+        const teacherProf = await TeacherProfile.findOne({ userId: session.userId });
+        if (!targetInstitutionName && teacherProf?.institutionName) {
+          targetInstitutionName = teacherProf.institutionName;
+        }
+        if (!effectiveFacultyId) {
+          effectiveFacultyId = session.userId.toString();
+        }
+      }
+
       if (!targetInstitutionName) {
         return NextResponse.json({ error: "Target school/institution not specified." }, { status: 400 });
       }
@@ -523,7 +599,7 @@ export async function POST(req: NextRequest) {
       const studentCount = await StudentProfile.countDocuments();
       const formattedStudentId = `STD_${String(studentCount + 1).padStart(3, "0")}`;
 
-      const assignedTeachers = assignedFacultyId ? [assignedFacultyId] : [];
+      const assignedTeachers = effectiveFacultyId ? [effectiveFacultyId] : [];
 
       let profile = await StudentProfile.findOne({ userId: studentUser._id });
       if (!profile) {
@@ -537,8 +613,8 @@ export async function POST(req: NextRequest) {
           subjects: ["Mathematics", "Science"],
           assignedTeacherIds: assignedTeachers,
           batchId: targetBatchId,
-          parentName: (parentName || `${name.trim()}'s Guardian`).trim(),
-          parentPhone: parentPhone ? sanitize10DigitPhone(parentPhone) : cleanPhone || "9876543210",
+          parentName: parentName.trim(),
+          parentPhone: cleanParentPhone,
           streakCount: 1,
           attendanceRiskLevel: "LOW",
         });
@@ -547,21 +623,21 @@ export async function POST(req: NextRequest) {
         profile.schoolName = targetInstitutionName;
         if (currentClass) profile.currentClass = currentClass;
         if (board) profile.board = board;
-        if (parentName) profile.parentName = parentName.trim();
-        if (parentPhone) profile.parentPhone = sanitize10DigitPhone(parentPhone);
-        if (assignedFacultyId) {
+        profile.parentName = parentName.trim();
+        profile.parentPhone = cleanParentPhone;
+        if (effectiveFacultyId) {
           const currentTeachers = (profile.assignedTeacherIds || []).map((t: any) => t.toString());
-          if (!currentTeachers.includes(assignedFacultyId.toString())) {
-            profile.assignedTeacherIds = [...currentTeachers, assignedFacultyId];
+          if (!currentTeachers.includes(effectiveFacultyId.toString())) {
+            profile.assignedTeacherIds = [...currentTeachers, effectiveFacultyId];
           }
         }
         await profile.save();
       }
 
       // If assigned to a teacher, also update TeacherProfile.assignedStudentIds
-      if (assignedFacultyId) {
+      if (effectiveFacultyId) {
         const teacherProf = await TeacherProfile.findOne({
-          $or: [{ userId: assignedFacultyId }, { _id: assignedFacultyId }],
+          $or: [{ userId: effectiveFacultyId }, { _id: effectiveFacultyId }],
         });
         if (teacherProf) {
           const curStudents = (teacherProf.assignedStudentIds || []).map((s: any) => s.toString());
@@ -574,7 +650,7 @@ export async function POST(req: NextRequest) {
 
       await recordAuditLog({
         actorId: session.userId,
-        action: "ADMIN_INSTITUTION_STUDENT_ADDED",
+        action: "INSTITUTION_STUDENT_ADDED",
         entityType: "STUDENT",
         entityId: studentUser._id.toString(),
         details: { name: studentUser.name, email: loginEmail, institution: targetInstitutionName },
@@ -582,7 +658,7 @@ export async function POST(req: NextRequest) {
 
       return NextResponse.json({
         success: true,
-        message: `Student "${studentUser.name}" added to ${targetInstitutionName} with active login credentials!`,
+        message: `Student "${studentUser.name}" (${loginEmail}) added to ${targetInstitutionName} with active login credentials!`,
         user: {
           id: studentUser._id,
           name: studentUser.name,

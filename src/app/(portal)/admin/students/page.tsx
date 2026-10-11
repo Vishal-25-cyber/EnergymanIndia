@@ -19,7 +19,13 @@ import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 import { useFastFetch, invalidateCache } from "@/lib/api-cache";
-import { sanitize10DigitPhone, isValid10DigitPhone, isValidAcuityOrGmail } from "@/lib/validations/phone";
+import {
+  sanitize10DigitPhone,
+  isValid10DigitPhone,
+  isValidAcuityOrGmail,
+  isValidStudentEmail,
+  ensureStudentEmail,
+} from "@/lib/validations/phone";
 import { formatStudentId } from "@/lib/id-generator";
 
 const CLASS_OPTIONS = [
@@ -28,6 +34,8 @@ const CLASS_OPTIONS = [
   "Class 8",
   "Class 9",
   "Class 10",
+  "Class 11",
+  "Class 12",
 ];
 
 const BOARD_OPTIONS = ["CBSE", "State Board"];
@@ -198,15 +206,20 @@ export default function AdminStudentsPage() {
 
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newStudent.email && !isValidAcuityOrGmail(newStudent.email)) {
-      alert("Student email must end with @mantif.edu, @acuity.edu, or @gmail.com.");
+    const cleanEmail = ensureStudentEmail(newStudent.email);
+    if (!isValidStudentEmail(cleanEmail) && !isValidAcuityOrGmail(cleanEmail)) {
+      alert("Student email must end with @mantif.com (e.g. name@mantif.com).");
+      return;
+    }
+    if (!newStudent.password || newStudent.password.trim().length < 6) {
+      alert("Student password must be at least 6 characters.");
       return;
     }
     if (newStudent.phone && !isValid10DigitPhone(newStudent.phone)) {
       alert("Student mobile number must be exactly 10 digits and cannot start with 0.");
       return;
     }
-    if (newStudent.parentPhone && !isValid10DigitPhone(newStudent.parentPhone)) {
+    if (!newStudent.parentPhone || !isValid10DigitPhone(newStudent.parentPhone)) {
       alert("Parent mobile number must be exactly 10 digits and cannot start with 0.");
       return;
     }
@@ -216,7 +229,10 @@ export default function AdminStudentsPage() {
       const res = await fetch("/api/admin/students", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newStudent),
+        body: JSON.stringify({
+          ...newStudent,
+          email: cleanEmail,
+        }),
       });
 
       const resData = await res.json();
@@ -835,14 +851,24 @@ export default function AdminStudentsPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Email Address *</label>
+                  <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">
+                    Email Address * (Ends with @mantif.com)
+                  </label>
                   <Input
                     required
-                    type="email"
-                    placeholder="priya@mantif.edu"
+                    type="text"
+                    placeholder="priya@mantif.com"
                     value={newStudent.email}
                     onChange={(e) => setNewStudent({ ...newStudent, email: e.target.value })}
+                    onBlur={(e) => {
+                      if (e.target.value.trim()) {
+                        setNewStudent({ ...newStudent, email: ensureStudentEmail(e.target.value) });
+                      }
+                    }}
                   />
+                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium mt-0.5 block">
+                    Student email must end with @mantif.com
+                  </span>
                 </div>
                 <div>
                   <label className="block font-bold mb-1 text-slate-700 dark:text-slate-300">Phone Number (10 Digits) *</label>

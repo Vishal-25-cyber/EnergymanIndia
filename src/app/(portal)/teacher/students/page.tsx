@@ -27,6 +27,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { CLASS_LIST } from "@/lib/curriculum";
 import { formatStudentId } from "@/lib/id-generator";
+import {
+  isValid10DigitPhone,
+  isValidStudentEmail,
+  ensureStudentEmail,
+} from "@/lib/validations/phone";
 
 export default function TeacherStudentsPage() {
   const { data, refetch, isLoading } = useFastFetch("/api/teacher/students");
@@ -102,6 +107,96 @@ export default function TeacherStudentsPage() {
       alert(err.message || "Network error. Please try again.");
     } finally {
       setIsSavingGroup(false);
+    }
+  };
+
+  // Add Student State for Teacher
+  const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
+  const [isAddingStudent, setIsAddingStudent] = useState(false);
+  const [addStudentForm, setAddStudentForm] = useState({
+    name: "",
+    username: "",
+    password: "",
+    currentClass: "Class 10",
+    board: "State Board",
+    parentName: "",
+    parentPhone: "",
+    phone: "",
+  });
+  const [addStudentError, setAddStudentError] = useState<string | null>(null);
+  const [addStudentSuccess, setAddStudentSuccess] = useState<string | null>(null);
+
+  const handleCreateStudent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddStudentError(null);
+    setAddStudentSuccess(null);
+
+    if (!addStudentForm.name.trim() || addStudentForm.name.trim().length < 2) {
+      setAddStudentError("Student full name is required (min 2 characters).");
+      return;
+    }
+
+    const cleanEmail = ensureStudentEmail(addStudentForm.username);
+    if (!isValidStudentEmail(cleanEmail)) {
+      setAddStudentError("Student login email must end with @mantif.com (e.g. name@mantif.com).");
+      return;
+    }
+
+    if (!addStudentForm.password.trim() || addStudentForm.password.trim().length < 6) {
+      setAddStudentError("Student password must be at least 6 characters.");
+      return;
+    }
+
+    if (!addStudentForm.parentName.trim()) {
+      setAddStudentError("Parent / Guardian name is required.");
+      return;
+    }
+
+    if (!addStudentForm.parentPhone || !isValid10DigitPhone(addStudentForm.parentPhone)) {
+      setAddStudentError("Parent mobile phone must be exactly 10 digits and cannot start with 0.");
+      return;
+    }
+
+    if (addStudentForm.phone && !isValid10DigitPhone(addStudentForm.phone)) {
+      setAddStudentError("Student mobile phone must be exactly 10 digits and cannot start with 0.");
+      return;
+    }
+
+    setIsAddingStudent(true);
+    try {
+      const res = await fetch("/api/teacher/students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...addStudentForm,
+          username: cleanEmail,
+          email: cleanEmail,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Failed to create student account.");
+
+      setAddStudentSuccess(d.message || `Student created! Login: ${cleanEmail}`);
+      invalidateCache("/api/teacher/students");
+      refetch();
+      setTimeout(() => {
+        setIsAddStudentModalOpen(false);
+        setAddStudentSuccess(null);
+        setAddStudentForm({
+          name: "",
+          username: "",
+          password: "",
+          currentClass: "Class 10",
+          board: "State Board",
+          parentName: "",
+          parentPhone: "",
+          phone: "",
+        });
+      }, 1500);
+    } catch (err: any) {
+      setAddStudentError(err.message || "Something went wrong.");
+    } finally {
+      setIsAddingStudent(false);
     }
   };
 
@@ -237,11 +332,23 @@ export default function TeacherStudentsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <button
             type="button"
+            onClick={() => {
+              setIsAddStudentModalOpen(true);
+              setAddStudentError(null);
+              setAddStudentSuccess(null);
+            }}
+            className="px-4 py-2.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 shadow-md cursor-pointer transition-all active:scale-95"
+          >
+            <UserPlus className="w-4 h-4 text-white" />
+            <span>+ Add Student</span>
+          </button>
+          <button
+            type="button"
             onClick={handleOpenManageGroup}
             className="px-4 py-2.5 rounded-xl text-xs font-bold bg-gradient-to-r from-[#002137] to-[#004b79] hover:from-[#001726] hover:to-[#003659] text-white flex items-center justify-center gap-2 shadow-md shadow-[#002137]/15 cursor-pointer transition-all active:scale-95"
           >
             <UserPlus className="w-4 h-4 text-[#dfb74a]" />
-            <span>Manage Group / Add Students</span>
+            <span>Manage Group</span>
           </button>
           <div className="text-xs font-mono text-slate-400 font-bold shrink-0 text-right">
             {totalFilteredCount} of {students.length} Students in Group
@@ -904,6 +1011,177 @@ export default function TeacherStudentsPage() {
               </div>
             </div>
           </div>
+        </Modal>
+      )}
+
+      {/* ── TEACHER ADD STUDENT MODAL ── */}
+      {isAddStudentModalOpen && (
+        <Modal
+          isOpen={isAddStudentModalOpen}
+          onClose={() => setIsAddStudentModalOpen(false)}
+          title="Add New Student to Class"
+        >
+          <form onSubmit={handleCreateStudent} className="space-y-4 pt-2">
+            {addStudentError && (
+              <div className="p-3 rounded-xl bg-red-50 text-red-700 border border-red-200 text-xs flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>{addStudentError}</span>
+              </div>
+            )}
+            {addStudentSuccess && (
+              <div className="p-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs flex items-center gap-2">
+                <Check className="w-4 h-4 shrink-0" />
+                <span>{addStudentSuccess}</span>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Student Full Name *
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="e.g. Arun Kumar"
+                value={addStudentForm.name}
+                onChange={(e) => setAddStudentForm({ ...addStudentForm, name: e.target.value })}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Login Email * (Must end with @mantif.com)
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. arun@mantif.com"
+                  value={addStudentForm.username}
+                  onChange={(e) => setAddStudentForm({ ...addStudentForm, username: e.target.value })}
+                  onBlur={(e) => {
+                    if (e.target.value.trim()) {
+                      setAddStudentForm({ ...addStudentForm, username: ensureStudentEmail(e.target.value) });
+                    }
+                  }}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+                />
+                <span className="text-[10px] text-blue-600 dark:text-blue-400 font-medium">
+                  Login username will end with @mantif.com
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Login Password * (Min 6 chars)
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Student@123"
+                  value={addStudentForm.password}
+                  onChange={(e) => setAddStudentForm({ ...addStudentForm, password: e.target.value })}
+                  className="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Class Level *
+                </label>
+                <select
+                  value={addStudentForm.currentClass}
+                  onChange={(e) => setAddStudentForm({ ...addStudentForm, currentClass: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+                >
+                  {(groupData?.teacherClasses?.length ? groupData.teacherClasses : CLASS_LIST).map((cls: string) => (
+                    <option key={cls} value={cls}>
+                      {cls}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Board *
+                </label>
+                <select
+                  value={addStudentForm.board}
+                  onChange={(e) => setAddStudentForm({ ...addStudentForm, board: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+                >
+                  <option value="State Board">State Board</option>
+                  <option value="CBSE">CBSE</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Parent / Guardian Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Ramesh Kumar"
+                  value={addStudentForm.parentName}
+                  onChange={(e) => setAddStudentForm({ ...addStudentForm, parentName: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                  Parent Phone (10 digits) *
+                </label>
+                <input
+                  type="tel"
+                  required
+                  placeholder="e.g. 9876543210"
+                  value={addStudentForm.parentPhone}
+                  onChange={(e) => setAddStudentForm({ ...addStudentForm, parentPhone: e.target.value })}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Student Mobile Phone (Optional, 10 digits)
+              </label>
+              <input
+                type="tel"
+                placeholder="e.g. 9876543211"
+                value={addStudentForm.phone}
+                onChange={(e) => setAddStudentForm({ ...addStudentForm, phone: e.target.value })}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+              />
+            </div>
+
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAddStudentModalOpen(false)}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={isAddingStudent}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4"
+              >
+                {isAddingStudent ? "Creating Student..." : "Create Student Account"}
+              </Button>
+            </div>
+          </form>
         </Modal>
       )}
     </main>

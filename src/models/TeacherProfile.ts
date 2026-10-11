@@ -17,31 +17,9 @@ const TeacherProfileSchema = new Schema<ITeacherProfileDocument>(
     qualification: { type: String, required: true, trim: true },
     specialization: { type: String, required: true, trim: true },
     subjects: [{ type: String, trim: true }],
-    classesTaught: [
-      {
-        type: String,
-        enum: [
-          "Class 6",
-          "Class 7",
-          "Class 8",
-          "Class 9",
-          "Class 10",
-        ],
-      },
-    ],
+    classesTaught: [{ type: String, trim: true }],
     assignedSubjects: [{ type: String, trim: true }],
-    assignedClasses: [
-      {
-        type: String,
-        enum: [
-          "Class 6",
-          "Class 7",
-          "Class 8",
-          "Class 9",
-          "Class 10",
-        ],
-      },
-    ],
+    assignedClasses: [{ type: String, trim: true }],
     assignedStudentIds: [{ type: Schema.Types.ObjectId, ref: "User" }],
     experienceYears: { type: Number, required: true, default: 0 },
     district: { type: String, trim: true, default: "" },
