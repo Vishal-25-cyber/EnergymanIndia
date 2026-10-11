@@ -1730,38 +1730,21 @@ export default function AdminInstitutionsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Class Level *
-                </label>
-                <select
-                  value={studentForm.currentClass}
-                  onChange={(e) => setStudentForm({ ...studentForm, currentClass: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
-                >
-                  {(activeInst?.classesOffered || DEFAULT_CLASSES).map((cls: string) => (
-                    <option key={cls} value={cls}>
-                      {cls}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Education Board
-                </label>
-                <select
-                  value={studentForm.board}
-                  onChange={(e) => setStudentForm({ ...studentForm, board: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
-                >
-                  <option value="State Board">State Board</option>
-                  <option value="CBSE">CBSE</option>
-                  <option value="ICSE">ICSE</option>
-                </select>
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Class Level *
+              </label>
+              <select
+                value={studentForm.currentClass}
+                onChange={(e) => setStudentForm({ ...studentForm, currentClass: e.target.value })}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+              >
+                {(activeInst?.classesOffered || DEFAULT_CLASSES).map((cls: string) => (
+                  <option key={cls} value={cls}>
+                    {cls}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {/* Direct Faculty Allocation */}

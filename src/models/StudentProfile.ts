@@ -17,8 +17,8 @@ const StudentProfileSchema = new Schema<IStudentProfileDocument>(
     district: { type: String, trim: true, default: "" },
     board: {
       type: String,
-      enum: ["CBSE", "State Board"],
-      required: true,
+      default: "State Board",
+      trim: true,
       index: true,
     },
     currentClass: {

@@ -1087,37 +1087,21 @@ export default function TeacherStudentsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Class Level *
-                </label>
-                <select
-                  value={addStudentForm.currentClass}
-                  onChange={(e) => setAddStudentForm({ ...addStudentForm, currentClass: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
-                >
-                  {(groupData?.teacherClasses?.length ? groupData.teacherClasses : CLASS_LIST).map((cls: string) => (
-                    <option key={cls} value={cls}>
-                      {cls}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  Board *
-                </label>
-                <select
-                  value={addStudentForm.board}
-                  onChange={(e) => setAddStudentForm({ ...addStudentForm, board: e.target.value })}
-                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
-                >
-                  <option value="State Board">State Board</option>
-                  <option value="CBSE">CBSE</option>
-                </select>
-              </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
+                Class Level *
+              </label>
+              <select
+                value={addStudentForm.currentClass}
+                onChange={(e) => setAddStudentForm({ ...addStudentForm, currentClass: e.target.value })}
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:outline-blue-600"
+              >
+                {(groupData?.teacherClasses?.length ? groupData.teacherClasses : CLASS_LIST).map((cls: string) => (
+                  <option key={cls} value={cls}>
+                    {cls}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
