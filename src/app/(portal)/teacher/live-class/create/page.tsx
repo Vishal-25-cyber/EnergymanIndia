@@ -139,6 +139,8 @@ export default function TeacherCreateLiveClassPage() {
   const router = useRouter();
   const isSubmittingRef = useRef(false);
   const [batches, setBatches] = useState<any[]>([]);
+  const [allocatedClasses, setAllocatedClasses] = useState<string[]>([]);
+  const [allocatedSubjects, setAllocatedSubjects] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -180,18 +182,67 @@ export default function TeacherCreateLiveClassPage() {
     { title: string; fileUrl: string; fileName?: string; fileSize?: string; category: string }[]
   >([]);
 
-  const availableSubjects = Array.from(
-    new Set([
-      "Mathematics",
-      "Science",
-      "Physics",
-      "Chemistry",
-      "Biology",
-      "English",
-      "Social Science",
-      ...getSubjectsForClassAndBoard(formData.classLevel, "CBSE"),
-    ])
-  );
+  // Fetch teacher allocated classes & subjects
+  useEffect(() => {
+    async function loadTeacherAllocations() {
+      try {
+        const token =
+          typeof window !== "undefined"
+            ? localStorage.getItem("acuity_auth_token") || sessionStorage.getItem("acuity_auth_token") || ""
+            : "";
+        const res = await fetch("/api/teacher/profile", {
+          credentials: "include",
+          headers: token ? { Authorization: `Bearer ${token}`, "x-auth-token": token } : {},
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const tClasses: string[] = data.allocatedClasses || data.assignedClasses || [];
+          const tSubjects: string[] = data.allocatedSubjects || data.assignedSubjects || [];
+          if (tClasses.length > 0) setAllocatedClasses(tClasses);
+          if (tSubjects.length > 0) setAllocatedSubjects(tSubjects);
+
+          setFormData((prev) => ({
+            ...prev,
+            classLevel: tClasses.length > 0 ? tClasses[0] : prev.classLevel,
+            subject: tSubjects.length > 0 ? tSubjects[0] : prev.subject,
+          }));
+        }
+      } catch (err) {
+        console.error("Failed to load teacher allocations:", err);
+      }
+    }
+    loadTeacherAllocations();
+  }, []);
+
+  const classOptions = allocatedClasses.length > 0 ? allocatedClasses : CLASS_LIST;
+
+  const availableSubjects = allocatedSubjects.length > 0
+    ? allocatedSubjects
+    : Array.from(
+        new Set([
+          "Mathematics",
+          "Science",
+          "Physics",
+          "Chemistry",
+          "Biology",
+          "English",
+          "Social Science",
+          ...getSubjectsForClassAndBoard(formData.classLevel, "CBSE"),
+        ])
+      );
+
+  const handleClassChange = (newClass: string) => {
+    setFormData((prev) => {
+      const nextSubject = allocatedSubjects.length > 0
+        ? (allocatedSubjects.includes(prev.subject) ? prev.subject : allocatedSubjects[0])
+        : prev.subject;
+      return {
+        ...prev,
+        classLevel: newClass,
+        subject: nextSubject,
+      };
+    });
+  };
 
   useEffect(() => {
     async function loadBatches() {
@@ -414,6 +465,11 @@ export default function TeacherCreateLiveClassPage() {
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                 Subject <span className="text-rose-500">*</span>
+                {allocatedSubjects.length > 0 && (
+                  <span className="ml-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    ({allocatedSubjects.length} allocated)
+                  </span>
+                )}
               </label>
               <select
                 value={formData.subject}
@@ -473,13 +529,18 @@ export default function TeacherCreateLiveClassPage() {
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                 Academic Grade / Level <span className="text-rose-500">*</span>
+                {allocatedClasses.length > 0 && (
+                  <span className="ml-1.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    ({allocatedClasses.length} allocated)
+                  </span>
+                )}
               </label>
               <select
                 value={formData.classLevel}
-                onChange={(e) => setFormData({ ...formData, classLevel: e.target.value })}
+                onChange={(e) => handleClassChange(e.target.value)}
                 className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#004b79] transition-colors shadow-xs cursor-pointer"
               >
-                {CLASS_LIST.map((cls) => (
+                {classOptions.map((cls) => (
                   <option key={cls} value={cls}>
                     {cls}
                   </option>

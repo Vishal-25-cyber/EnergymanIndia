@@ -7,6 +7,7 @@ import TeacherProfile from "@/models/TeacherProfile";
 import Notification from "@/models/Notification";
 import { recordAuditLog } from "@/lib/audit";
 import { resolveClassStreamAndStudents } from "@/lib/class-stream";
+import { getTeacherAllocations } from "@/lib/teacher-allocation";
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,7 +24,16 @@ export async function GET(req: NextRequest) {
       .sort({ date: -1, startTime: 1 })
       .lean();
 
-    return NextResponse.json({ sessions, classes: sessions });
+    const allocations = await getTeacherAllocations(session.userId);
+
+    return NextResponse.json({
+      sessions,
+      classes: sessions,
+      allocatedClasses: allocations.allocatedClasses,
+      allocatedSubjects: allocations.allocatedSubjects,
+      assignedClasses: allocations.allocatedClasses,
+      assignedSubjects: allocations.allocatedSubjects,
+    });
   } catch (error: any) {
     console.error("GET /api/teacher/classes error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

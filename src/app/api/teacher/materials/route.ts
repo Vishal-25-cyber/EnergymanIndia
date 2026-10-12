@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth/session";
 import Material from "@/models/Material";
 import StudentProfile from "@/models/StudentProfile";
 import Notification from "@/models/Notification";
+import { getTeacherAllocations } from "@/lib/teacher-allocation";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +24,15 @@ export async function GET() {
       .sort({ createdAt: -1 })
       .lean();
 
-    return NextResponse.json({ materials }, {
+    const allocations = await getTeacherAllocations(session.userId);
+
+    return NextResponse.json({
+      materials,
+      allocatedClasses: allocations.allocatedClasses,
+      allocatedSubjects: allocations.allocatedSubjects,
+      assignedClasses: allocations.allocatedClasses,
+      assignedSubjects: allocations.allocatedSubjects,
+    }, {
       headers: {
         "Cache-Control": "no-store, max-age=0, must-revalidate",
       },

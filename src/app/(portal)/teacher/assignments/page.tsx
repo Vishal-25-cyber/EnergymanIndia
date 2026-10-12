@@ -181,20 +181,46 @@ export default function TeacherAssignmentsPage() {
   };
   const [batches, setBatches] = useState<any[]>([]);
 
-  const availableSubjects = Array.from(
-    new Set([
-      ...getSubjectsForClassAndBoard(formData.classLevel, "CBSE"),
-      ...getSubjectsForClassAndBoard(formData.classLevel, "State Board"),
-    ])
-  );
+  const allocatedClasses: string[] = data?.allocatedClasses || data?.assignedClasses || [];
+  const allocatedSubjects: string[] = data?.allocatedSubjects || data?.assignedSubjects || [];
+
+  const classOptions = allocatedClasses.length > 0 ? allocatedClasses : CLASS_LIST;
+
+  const subjectOptions = allocatedSubjects.length > 0
+    ? allocatedSubjects
+    : Array.from(
+        new Set([
+          ...getSubjectsForClassAndBoard(formData.classLevel, "CBSE"),
+          ...getSubjectsForClassAndBoard(formData.classLevel, "State Board"),
+        ])
+      );
+
+  // Sync initial class & subject with teacher's allocations once data loads
+  useEffect(() => {
+    if (data?.allocatedClasses?.length > 0 || data?.allocatedSubjects?.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        classLevel: (prev.classLevel === "Class 10" && data.allocatedClasses?.length > 0)
+          ? data.allocatedClasses[0]
+          : prev.classLevel,
+        subject: (prev.subject === "Mathematics" && data.allocatedSubjects?.length > 0)
+          ? data.allocatedSubjects[0]
+          : prev.subject,
+      }));
+    }
+  }, [data]);
 
   const handleClassChange = (newClass: string) => {
-    const newSubjects = getSubjectsForClassAndBoard(newClass, "CBSE");
-    setFormData((prev) => ({
-      ...prev,
-      classLevel: newClass,
-      subject: newSubjects[0] || "Mathematics",
-    }));
+    setFormData((prev) => {
+      const nextSubject = allocatedSubjects.length > 0
+        ? (allocatedSubjects.includes(prev.subject) ? prev.subject : allocatedSubjects[0])
+        : (getSubjectsForClassAndBoard(newClass, "CBSE")[0] || "Mathematics");
+      return {
+        ...prev,
+        classLevel: newClass,
+        subject: nextSubject,
+      };
+    });
   };
 
   useEffect(() => {
@@ -566,12 +592,14 @@ export default function TeacherAssignmentsPage() {
       if (res.ok) {
         setIsCreateModal(false);
         setPublishError("");
+        const defaultClass = allocatedClasses[0] || "Class 10";
+        const defaultSubject = allocatedSubjects[0] || subjectOptions[0] || "Mathematics";
         setFormData({
           type: activeCategory === "ALL" ? "ASSIGNMENT" : activeCategory,
           title: "",
           description: "",
-          subject: availableSubjects[0] || "Mathematics",
-          classLevel: "Class 10",
+          subject: defaultSubject,
+          classLevel: defaultClass,
           batchId: batches[0]?._id || "",
           durationMinutes: 45,
           proctoringRequired: true,
@@ -645,12 +673,14 @@ export default function TeacherAssignmentsPage() {
               const { dateStr, timeStr } = getSystemDateAndDefaultTime();
               setPublishError("");
               setIsPublishing(false);
+              const defaultClass = allocatedClasses[0] || "Class 10";
+              const defaultSubject = allocatedSubjects[0] || subjectOptions[0] || "Mathematics";
               setFormData({
                 type: activeCategory === "ALL" ? "ASSIGNMENT" : activeCategory,
                 title: "",
                 description: "",
-                subject: availableSubjects[0] || "Mathematics",
-                classLevel: "Class 10",
+                subject: defaultSubject,
+                classLevel: defaultClass,
                 batchId: batches[0]?._id || "",
                 durationMinutes: 45,
                 proctoringRequired: true,
@@ -1296,26 +1326,40 @@ export default function TeacherAssignmentsPage() {
             {/* Row 2: 4-Column Grid (Grade, Subject, Batch, Max Marks) */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Target Grade *</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Target Grade *
+                  {allocatedClasses.length > 0 && (
+                    <span className="ml-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      ({allocatedClasses.length} allocated)
+                    </span>
+                  )}
+                </label>
                 <select
                   value={formData.classLevel}
                   onChange={(e) => handleClassChange(e.target.value)}
                   className="w-full px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                 >
-                  {CLASS_LIST.map((c) => (
+                  {classOptions.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">Subject *</label>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                  Subject *
+                  {allocatedSubjects.length > 0 && (
+                    <span className="ml-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                      ({allocatedSubjects.length} allocated)
+                    </span>
+                  )}
+                </label>
                 <select
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   className="w-full px-2.5 py-1.5 text-xs font-semibold rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                 >
-                  {availableSubjects.map((s) => (
+                  {subjectOptions.map((s) => (
                     <option key={s} value={s}>{s}</option>
                   ))}
                 </select>

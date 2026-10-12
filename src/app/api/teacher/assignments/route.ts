@@ -8,6 +8,7 @@ import StudentProfile from "@/models/StudentProfile";
 import Notification from "@/models/Notification";
 import TeacherProfile from "@/models/TeacherProfile";
 import { invalidateStudentAssignmentsCache } from "@/app/api/student/assignments/route";
+import { getTeacherAllocations } from "@/lib/teacher-allocation";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -21,6 +22,8 @@ export async function GET(req: NextRequest) {
 
     await connectToDatabase();
 
+    const allocations = await getTeacherAllocations(session.userId);
+
     const { searchParams } = new URL(req.url);
     const typeFilter = searchParams.get("type"); // "ASSIGNMENT" | "TEST" | "HOMEWORK" | "ALL"
 
@@ -30,13 +33,8 @@ export async function GET(req: NextRequest) {
     }
 
     if (session.role === "TEACHER") {
-      const teacherProfile = await TeacherProfile.findOne({ userId: session.userId }).lean();
-      const teacherSubjects = teacherProfile?.subjects && teacherProfile.subjects.length > 0
-        ? teacherProfile.subjects
-        : [];
-      const classesTaught = teacherProfile?.classesTaught && teacherProfile.classesTaught.length > 0
-        ? teacherProfile.classesTaught
-        : [];
+      const teacherSubjects = allocations.allocatedSubjects || [];
+      const classesTaught = allocations.allocatedClasses || [];
 
       const teacherObjId = mongoose.Types.ObjectId.isValid(session.userId)
         ? new mongoose.Types.ObjectId(session.userId)
@@ -116,6 +114,10 @@ export async function GET(req: NextRequest) {
       {
         assignments: enrichedAssignments,
         submissions,
+        allocatedClasses: allocations.allocatedClasses,
+        allocatedSubjects: allocations.allocatedSubjects,
+        assignedClasses: allocations.allocatedClasses,
+        assignedSubjects: allocations.allocatedSubjects,
         serverTime: new Date().toISOString(),
         serverTimeMs: nowMs,
         timeZone: "Asia/Kolkata",

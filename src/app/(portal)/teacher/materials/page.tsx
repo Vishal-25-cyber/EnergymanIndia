@@ -67,22 +67,51 @@ export default function TeacherMaterialsPage() {
     fileSize: "",
   });
 
-  const availableSubjectsForUpload = Array.from(
-    new Set([
-      ...getSubjectsForClassAndBoard(formData.classLevel, "CBSE"),
-      ...getSubjectsForClassAndBoard(formData.classLevel, "State Board"),
-    ])
-  );
+  const allocatedClasses: string[] = data?.allocatedClasses || data?.assignedClasses || [];
+  const allocatedSubjects: string[] = data?.allocatedSubjects || data?.assignedSubjects || [];
 
-  const filterSubjects = ["ALL", "Mathematics", "Science", "Physics", "Chemistry", "Biology", "English", "Social Science"];
+  const classOptions = allocatedClasses.length > 0 ? allocatedClasses : CLASS_LIST;
+
+  const availableSubjectsForUpload = allocatedSubjects.length > 0
+    ? allocatedSubjects
+    : Array.from(
+        new Set([
+          ...getSubjectsForClassAndBoard(formData.classLevel, "CBSE"),
+          ...getSubjectsForClassAndBoard(formData.classLevel, "State Board"),
+        ])
+      );
+
+  const filterSubjects = [
+    "ALL",
+    ...(allocatedSubjects.length > 0 ? allocatedSubjects : ["Mathematics", "Science", "Physics", "Chemistry", "Biology", "English", "Social Science"]),
+  ];
+
+  // Sync initial class & subject with teacher allocations once data loads
+  React.useEffect(() => {
+    if (data?.allocatedClasses?.length > 0 || data?.allocatedSubjects?.length > 0) {
+      setFormData((prev) => ({
+        ...prev,
+        classLevel: (prev.classLevel === "Class 10" && data.allocatedClasses?.length > 0)
+          ? data.allocatedClasses[0]
+          : prev.classLevel,
+        subject: (prev.subject === "Mathematics" && data.allocatedSubjects?.length > 0)
+          ? data.allocatedSubjects[0]
+          : prev.subject,
+      }));
+    }
+  }, [data]);
 
   const handleClassChange = (newClass: string) => {
-    const newSubjects = getSubjectsForClassAndBoard(newClass, "CBSE");
-    setFormData((prev) => ({
-      ...prev,
-      classLevel: newClass,
-      subject: newSubjects[0] || "Mathematics",
-    }));
+    setFormData((prev) => {
+      const nextSubject = allocatedSubjects.length > 0
+        ? (allocatedSubjects.includes(prev.subject) ? prev.subject : allocatedSubjects[0])
+        : (getSubjectsForClassAndBoard(newClass, "CBSE")[0] || "Mathematics");
+      return {
+        ...prev,
+        classLevel: newClass,
+        subject: nextSubject,
+      };
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,12 +312,14 @@ export default function TeacherMaterialsPage() {
 
           <button
             onClick={() => {
+              const defaultClass = allocatedClasses[0] || "Class 10";
+              const defaultSubject = allocatedSubjects[0] || "Mathematics";
               setFormData({
                 title: "",
                 description: "",
                 category: "NOTES",
-                classLevel: "Class 10",
-                subject: "Mathematics",
+                classLevel: defaultClass,
+                subject: defaultSubject,
                 fileUrl: "",
                 fileName: "",
                 fileSize: "",
@@ -488,13 +519,18 @@ export default function TeacherMaterialsPage() {
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                     Grade Level <span className="text-rose-500">*</span>
+                    {allocatedClasses.length > 0 && (
+                      <span className="ml-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        ({allocatedClasses.length} allocated)
+                      </span>
+                    )}
                   </label>
                   <select
                     value={formData.classLevel}
                     onChange={(e) => handleClassChange(e.target.value)}
                     className="w-full h-10 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#004b79] transition-colors shadow-xs cursor-pointer"
                   >
-                    {CLASS_LIST.map((cls) => (
+                    {classOptions.map((cls) => (
                       <option key={cls} value={cls}>
                         {cls}
                       </option>
@@ -505,6 +541,11 @@ export default function TeacherMaterialsPage() {
                 <div className="space-y-1.5">
                   <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
                     Subject <span className="text-rose-500">*</span>
+                    {allocatedSubjects.length > 0 && (
+                      <span className="ml-1 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                        ({allocatedSubjects.length} allocated)
+                      </span>
+                    )}
                   </label>
                   <select
                     value={formData.subject}

@@ -4,7 +4,8 @@ import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar, Clock, BookOpen, FileText, CheckCircle2, AlertCircle, Trash2 } from "lucide-react";
+import { Calendar, Clock, BookOpen, FileText, CheckCircle2, AlertCircle, Trash2, GraduationCap } from "lucide-react";
+import { CLASS_LIST } from "@/lib/curriculum";
 
 interface EditClassModalProps {
   isOpen: boolean;
@@ -32,18 +33,47 @@ export function EditClassModal({
   onSuccess,
   onDelete,
 }: EditClassModalProps) {
+  const [classLevel, setClassLevel] = useState("Class 10");
   const [subject, setSubject] = useState("");
   const [topic, setTopic] = useState("");
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("18:00");
   const [endTime, setEndTime] = useState("19:00");
   const [description, setDescription] = useState("");
+  const [allocatedClasses, setAllocatedClasses] = useState<string[]>([]);
+  const [allocatedSubjects, setAllocatedSubjects] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
   useEffect(() => {
+    async function loadAllocations() {
+      try {
+        const token =
+          typeof window !== "undefined"
+            ? localStorage.getItem("acuity_auth_token") || sessionStorage.getItem("acuity_auth_token") || ""
+            : "";
+        const res = await fetch("/api/teacher/profile", {
+          credentials: "include",
+          headers: token ? { Authorization: `Bearer ${token}`, "x-auth-token": token } : {},
+        });
+        if (res.ok) {
+          const d = await res.json();
+          if (d.allocatedClasses?.length) setAllocatedClasses(d.allocatedClasses);
+          if (d.allocatedSubjects?.length) setAllocatedSubjects(d.allocatedSubjects);
+        }
+      } catch (e) {
+        console.error("Error loading allocations:", e);
+      }
+    }
+    if (isOpen) {
+      loadAllocations();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (sessionDoc) {
+      setClassLevel(sessionDoc.classLevel || "Class 10");
       setSubject(sessionDoc.subject || "Mathematics");
       setTopic(sessionDoc.topic || "");
       setDate(sessionDoc.date || new Date().toISOString().split("T")[0]);
@@ -56,6 +86,9 @@ export function EditClassModal({
   }, [sessionDoc]);
 
   if (!sessionDoc) return null;
+
+  const classOptions = allocatedClasses.length > 0 ? allocatedClasses : CLASS_LIST;
+  const subjectOptions = allocatedSubjects.length > 0 ? allocatedSubjects : COMMON_SUBJECTS;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,9 +117,10 @@ export function EditClassModal({
         headers,
         credentials: "include",
         body: JSON.stringify({
+          classLevel: classLevel.trim(),
           subject: subject.trim(),
           topic: topic.trim(),
-          title: `${sessionDoc.classLevel || "Class 10"} ${subject.trim()} — ${topic.trim()}`,
+          title: `${classLevel.trim()} ${subject.trim()} — ${topic.trim()}`,
           date,
           startTime,
           endTime,
@@ -135,19 +169,51 @@ export function EditClassModal({
           </div>
         )}
 
-        {/* Subject Selection */}
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-            <BookOpen className="w-3.5 h-3.5 text-[#004b79] dark:text-[#dfb74a]" />
-            <span>Subject</span>
-          </label>
-          <div className="flex gap-2">
+        {/* Class and Subject Selection Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <GraduationCap className="w-3.5 h-3.5 text-[#004b79] dark:text-[#dfb74a]" />
+                <span>Class / Grade</span>
+              </span>
+              {allocatedClasses.length > 0 && (
+                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  {allocatedClasses.length} allocated
+                </span>
+              )}
+            </label>
+            <select
+              value={classLevel}
+              onChange={(e) => setClassLevel(e.target.value)}
+              className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#004b79]"
+            >
+              {classOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-[#004b79] dark:text-[#dfb74a]" />
+                <span>Subject</span>
+              </span>
+              {allocatedSubjects.length > 0 && (
+                <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                  {allocatedSubjects.length} allocated
+                </span>
+              )}
+            </label>
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
               className="flex h-10 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2 text-xs font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#004b79]"
             >
-              {COMMON_SUBJECTS.map((s) => (
+              {subjectOptions.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>

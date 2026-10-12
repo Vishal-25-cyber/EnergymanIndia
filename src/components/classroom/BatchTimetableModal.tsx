@@ -31,6 +31,7 @@ export function BatchTimetableModal({
 }: BatchTimetableModalProps) {
   const [batches, setBatches] = useState<any[]>([]);
   const [teachers, setTeachers] = useState<any[]>([]);
+  const [allocatedSubjects, setAllocatedSubjects] = useState<string[]>([]);
   const [selectedBatchId, setSelectedBatchId] = useState<string>("");
   const [scheduleData, setScheduleData] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -54,10 +55,16 @@ export function BatchTimetableModal({
   const loadData = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch("/api/teacher/schedule/batch-timetable", {
-        headers: getAuthHeaders(),
-        credentials: "include",
-      });
+      const [res, pRes] = await Promise.all([
+        fetch("/api/teacher/schedule/batch-timetable", {
+          headers: getAuthHeaders(),
+          credentials: "include",
+        }),
+        fetch("/api/teacher/profile", {
+          headers: getAuthHeaders(),
+          credentials: "include",
+        }).catch(() => null),
+      ]);
       const data = await res.json();
       if (data.batches && Array.isArray(data.batches)) {
         setBatches(data.batches);
@@ -67,6 +74,12 @@ export function BatchTimetableModal({
       }
       if (data.teachers && Array.isArray(data.teachers)) {
         setTeachers(data.teachers);
+      }
+      if (pRes && pRes.ok) {
+        const pData = await pRes.json().catch(() => ({}));
+        if (pData.allocatedSubjects?.length) {
+          setAllocatedSubjects(pData.allocatedSubjects);
+        }
       }
     } catch (err: any) {
       setErrorMessage("Failed to load batches and timetable.");
@@ -275,7 +288,7 @@ export function BatchTimetableModal({
                         onChange={(e) => handleDayFieldChange(day, "subject", e.target.value)}
                         className="w-full h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2 text-xs font-bold text-slate-900 dark:text-slate-100"
                       >
-                        {COMMON_SUBJECTS.map((s) => (
+                        {(allocatedSubjects.length > 0 ? allocatedSubjects : COMMON_SUBJECTS).map((s) => (
                           <option key={s} value={s}>
                             {s}
                           </option>
