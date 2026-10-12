@@ -17,6 +17,7 @@ import {
   sanitize10DigitPhone,
 } from "@/lib/validations/phone";
 import { emitPaymentStatusUpdate } from "@/lib/payment-events";
+import { recordAuditLog } from "@/lib/audit";
 
 export async function GET(req: NextRequest) {
   try {
@@ -477,13 +478,17 @@ export async function DELETE(req: NextRequest) {
 
     const studentName = user?.name || "Student";
 
-    await recordAuditLog({
-      actorId: session.userId,
-      action: "ADMIN_STUDENT_DELETED",
-      entityType: "USER",
-      entityId: (targetUserId || targetProfileId).toString(),
-      details: { name: studentName, email: user?.email, role: "STUDENT" },
-    });
+    try {
+      await recordAuditLog({
+        actorId: session.userId,
+        action: "ADMIN_STUDENT_DELETED",
+        entityType: "USER",
+        entityId: (targetUserId || targetProfileId).toString(),
+        details: { name: studentName, email: user?.email, role: "STUDENT" },
+      });
+    } catch (auditErr) {
+      console.warn("Audit log recording failed for student deletion:", auditErr);
+    }
 
     return NextResponse.json({
       success: true,
